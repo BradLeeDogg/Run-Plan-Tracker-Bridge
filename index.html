@@ -211,6 +211,10 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
 }
 .rowedit .lg{color:var(--accent);font-size:12px;margin-left:-4px}
 .btn.sm{min-height:42px;font-size:14px}
+.xs{
+  min-width:30px;min-height:30px;border-radius:8px;border:1px solid var(--line);
+  background:var(--surface2);color:var(--danger);font-size:16px;line-height:1;padding:0;
+}
 
 /* ---- breakdown tables ---- */
 .tbl{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px}
@@ -433,6 +437,10 @@ function load(){
   if (!s.settings || typeof s.settings !== "object") s.settings = {};
   if (!(s.settings.hrMax > 0))  s.settings.hrMax  = 190;   // edit in Stats
   if (!(s.settings.hrRest > 0)) s.settings.hrRest = 55;
+  // Runs that belong to no plan slot — history imported from before the block
+  // began, or anything run outside it. Kept apart from state.logs on purpose:
+  // see extraLogs().
+  if (!Array.isArray(s.extras)) s.extras = [];
   s.seq = Math.max(s.seq || 0, maxSeq(s.plan));
   s.version = 2;
   delete s.weekStarts;                                     // superseded by plan[].start
@@ -606,22 +614,39 @@ function vo2for(l){
   if (!(frac > 0.4) || frac > 1.05) return null;                // too easy or over max to be meaningful
   return Math.round(((cost - 3.5) / frac + 3.5) * 10) / 10;
 }
-/* Most recent runs first */
+/* ---------- runs outside the plan ----------
+   History imported from before the block started, or anything run alongside it.
+   These sit in state.extras rather than state.logs because they answer to no
+   plan slot, and because the plan-adherence machinery must not see them: a run
+   from last year should not count towards this week's volume, trip the 110%
+   warning, or make a recovery week look overshot. They do count towards
+   everything that is simply a record of running — monthly totals, lifetime
+   distance, the VO2 trend and average heart rate. */
+function extraLogs(){
+  return state.extras.filter(function(l){ return l && l.done; });
+}
+/* Every completed run, plan or not. Sorted by date. */
+function allLogs(){
+  var out = [];
+  Object.keys(state.logs).forEach(function(k){
+    var l = state.logs[k]; if (l && l.done) out.push(l);
+  });
+  extraLogs().forEach(function(l){ out.push(l); });
+  return out.sort(function(a, b){ return (a.date || "") < (b.date || "") ? -1 : 1; });
+}
+
+/* Oldest first */
 function vo2Series(){
   var out = [];
-  for (var w = 0; w < planLen(); w++){
-    for (var d = 0; d < runsOf(w).length; d++){
-      var l = getLog(w, d), v = vo2for(l);
-      if (v) out.push({ w:w, d:d, date:l.date, vo2:v });
-    }
-  }
+  allLogs().forEach(function(l){
+    var v = vo2for(l);
+    if (v) out.push({ date:l.date, vo2:v });
+  });
   return out.sort(function(a, b){ return a.date < b.date ? -1 : 1; });
 }
 function avgHR(){
   var hrs = [];
-  Object.keys(state.logs).forEach(function(k){
-    var l = state.logs[k]; if (l && l.done && l.hr > 0) hrs.push(l.hr);
-  });
+  allLogs().forEach(function(l){ if (l.hr > 0) hrs.push(l.hr); });
   return hrs.length ? Math.round(hrs.reduce(function(a, b){ return a+b; }, 0) / hrs.length) : null;
 }
 
@@ -667,12 +692,13 @@ function monthPlanned(){
 }
 function monthRows(){
   var by = {}, planned = monthPlanned();
-  Object.keys(state.logs).forEach(function(k){
-    var l = state.logs[k];
+  var push = function(l){
     if (!l || !l.date) return;
     var m = String(l.date).slice(0, 7);                  // YYYY-MM
     (by[m] = by[m] || []).push(l);
-  });
+  };
+  Object.keys(state.logs).forEach(function(k){ push(state.logs[k]); });
+  state.extras.forEach(push);                            // history counts here
   Object.keys(planned).forEach(function(m){ if (!by[m]) by[m] = []; });
   return Object.keys(by).sort().map(function(m){
     var s = summarise(by[m]);
@@ -1061,6 +1087,36 @@ function viewStats(){
     '<div class="tiny">Months are calendar months, taken from the date each run happened, so ' +
     'a week straddling the turn of a month is split between the two.</div></div>';
 
+  /* ---- runs outside the plan ---- */
+  if (state.extras.length){
+    var ex = extraLogs();
+    var exKm = ex.reduce(function(a, l){ return a + (l.km || 0); }, 0);
+    var exSec = ex.reduce(function(a, l){ return a + (l.durSec || 0); }, 0);
+    h += '<div class="card" style="margin-top:12px"><div class="label">History &middot; outside the plan</div>' +
+      '<div class="stats-row" style="margin:10px 0 12px">' +
+        '<div class="stat"><div class="v">' + ex.length + '</div><div class="k">Runs</div></div>' +
+        '<div class="stat"><div class="v">' + n1(exKm) + '</div><div class="k">km</div></div>' +
+      '</div>' +
+      '<div class="tbl"><table><thead><tr><th>Date</th><th class="n">km</th><th class="n">Time</th>' +
+      '<th class="n">Pace</th><th class="n">HR</th><th></th></tr></thead><tbody>';
+    state.extras.slice().reverse().forEach(function(l){
+      var i = state.extras.indexOf(l);
+      h += '<tr><td class="dim">' + esc(l.date || "&mdash;") + '</td>' +
+        '<td class="n">' + n1(l.km || 0) + '</td>' +
+        '<td class="n">' + (l.durSec ? durStr(l.durSec) : "&mdash;") + '</td>' +
+        '<td class="n">' + (l.km && l.durSec ? paceStr(l.km, l.durSec).replace(" /km", "") : "&mdash;") + '</td>' +
+        '<td class="n">' + (l.hr || "&mdash;") + '</td>' +
+        '<td class="n"><button class="xs" data-act="del-extra" data-i="' + i + '">&times;</button></td></tr>';
+    });
+    h += '</tbody></table></div>' +
+      '<div class="tiny">Runs with no place in the plan &mdash; imported history, or anything run ' +
+      'alongside the block. They count in the monthly table, the totals above, the VO<sub>2</sub> ' +
+      'trend and average heart rate, but never towards a plan week, so they cannot trip the ' +
+      'over-volume or recovery warnings. Total time ' + (exSec ? durStr(exSec) : "&mdash;") + '.' +
+      '<br><button class="btn ghost danger sm" data-act="clear-extras" style="margin-top:10px">' +
+      'Remove all history</button></div></div>';
+  }
+
   /* ---- VO2 max trend ---- */
   var vs = vo2Series(), hrAvg = avgHR();
   h += '<div class="card" style="margin-top:12px"><div class="label">Estimated VO<sub>2</sub> max</div>';
@@ -1405,7 +1461,8 @@ function drawWeekSheet(){
 function exportBlob(){
   return JSON.stringify({
     app:"run-plan-tracker", version:2, exported:new Date().toISOString(),
-    plan:state.plan, logs:state.logs, seq:state.seq, settings:state.settings
+    plan:state.plan, logs:state.logs, extras:state.extras,
+    seq:state.seq, settings:state.settings
   }, null, 2);
 }
 function doExport(){
@@ -1444,6 +1501,7 @@ function doImport(){
     var m = migrateV1({ logs:data.logs, weekStarts:data.weekStarts });
     state.plan = m.plan; state.logs = m.logs; state.seq = maxSeq(m.plan);
   }
+  state.extras = Array.isArray(data.extras) ? data.extras : [];
   if (data.settings && data.settings.hrMax > 0) state.settings = data.settings;
   save(); render();
   alert("Restored.");
@@ -1452,6 +1510,7 @@ function doReset(){
   if (!confirm("Erase every logged run and put the plan back to its original 12 weeks?\n\nThis cannot be undone. Export first if you want a copy.")) return;
   if (!confirm("Really erase everything?")) return;
   state.logs = {};
+  state.extras = [];
   state.plan = freshPlan();
   state.seq = maxSeq(state.plan);
   save(); render();
@@ -1770,6 +1829,14 @@ function parseActivities(t){
   return parseCSV(t);
 }
 
+/* Same day and within 50 m — re-importing an overlapping export is the normal
+   case, not an error, so those rows arrive already unticked. */
+function haveExtra(date, km){
+  return state.extras.some(function(l){
+    return l && l.date === date && Math.abs((l.km || 0) - km) < 0.05;
+  });
+}
+
 /* Pair each activity with the nearest free slot within 3 days. */
 function buildImportRows(acts){
   acts = acts.slice().sort(function(a, b){ return a.date < b.date ? -1 : 1; });
@@ -1786,7 +1853,11 @@ function buildImportRows(acts){
     if (!best || best.gap > 3) best = null; else taken[runAt(best.w, best.d).id] = true;
     var ex = best ? getLog(best.w, best.d) : null;
     var clash = !!(ex && (ex.done || ex.skipped));
-    return { act:a, slot:best, conflict:clash, on: !!best && !clash };
+    // No slot within 3 days means this is history, or a run outside the block.
+    // It is still worth keeping — it just does not answer to the plan.
+    var dupe = !best && haveExtra(a.date, a.km);
+    return { act:a, slot:best, conflict:clash, extra: !best, duplicate: dupe,
+             on: best ? !clash : !dupe };
   });
 }
 
@@ -1824,22 +1895,27 @@ function drawImport(){
   }
 
   var n = importRows.filter(function(r){ return r.on; }).length;
+  var nExtra = importRows.filter(function(r){ return r.on && r.extra; }).length;
   h += '<div class="sub">Found ' + importRows.length + '. Check the pairing before importing &mdash; ' +
-       'distance and time units are guessed from the numbers.</div>';
+       'distance and time units are guessed from the numbers.' +
+       (nExtra ? '<br><span style="color:var(--dim)">' + nExtra + ' fall outside the plan and will be ' +
+                 'kept as history: counted in monthly totals, VO<sub>2</sub> and average heart rate, ' +
+                 'but not against any week.</span>' : '') + '</div>';
 
   importRows.forEach(function(r, i){
     var a = r.act;
     var line2, cls = "imp" + (r.on ? " on" : "") + (r.conflict ? " conflict" : "");
-    if (!r.slot){
-      line2 = '<div class="b badt">No plan run within 3 days &mdash; cannot import</div>';
+    if (r.extra){
+      line2 = '<div class="b' + (r.duplicate ? ' warnt' : '') + '">' +
+              (r.duplicate ? '&rarr; Already in your history &middot; will add a second copy'
+                           : '&rarr; Outside the plan &middot; kept as history') + '</div>';
     } else {
       var p = runAt(r.slot.w, r.slot.d).km;
       line2 = '<div class="b' + (r.conflict ? ' warnt' : '') + '">&rarr; Week ' + (r.slot.w+1) + ' ' +
               dayName(r.slot.w, r.slot.d) + ' &middot; ' + n1(p) + ' km planned' +
               (r.conflict ? ' &middot; already logged, will overwrite' : '') + '</div>';
     }
-    h += '<button class="' + cls + '" data-act="imp-row" data-i="' + i + '"' +
-         (r.slot ? '' : ' disabled') + '>' +
+    h += '<button class="' + cls + '" data-act="imp-row" data-i="' + i + '">' +
       '<span class="tick">' + (r.on ? "&#10003;" : "") + '</span>' +
       '<span class="mid"><span class="a">' + a.date + ' &middot; ' + n1(a.km) + ' km' +
         (a.sec ? ' &middot; ' + durStr(a.sec) : '') +
@@ -1888,9 +1964,25 @@ function tryParse(text){
 }
 
 function applyImport(){
-  var n = 0;
+  var n = 0, x = 0;
   importRows.forEach(function(r){
-    if (!r.on || !r.slot) return;
+    if (!r.on) return;
+    if (r.extra){
+      state.extras.push({
+        id: newId(),
+        done:true, skipped:false,
+        km: Math.round(r.act.km * 100) / 100,
+        durSec: r.act.sec || 0,
+        hr: r.act.hr || null,
+        splits: r.act.splits || null,
+        effort: null,
+        date: r.act.date, ts: Date.now(),
+        imported: true, extra: true,
+        pain: null
+      });
+      x++;
+      return;
+    }
     var prev = getLog(r.slot.w, r.slot.d) || {};
     setLog(r.slot.w, r.slot.d, {
       done:true, skipped:false,
@@ -1905,8 +1997,15 @@ function applyImport(){
     });
     n++;
   });
+  if (x) state.extras.sort(function(a, b){ return (a.date || "") < (b.date || "") ? -1 : 1; });
   save(); closeSheet(); render();
-  alert("Imported " + n + " run" + (n === 1 ? "" : "s") + ".\n\nEffort and pain are not in the file — tap any run to add them.");
+  var msg = [];
+  if (n) msg.push(n + " onto the plan");
+  if (x) msg.push(x + " as history");
+  alert("Imported " + (n + x) + " run" + ((n + x) === 1 ? "" : "s") +
+    (msg.length > 1 ? " — " + msg.join(", ") : "") + ".\n\n" +
+    (n ? "Effort and pain are not in the file — tap any run to add them." :
+         "History shows in the monthly table and the VO₂ trend."));
 }
 
 /* ============================ EVENTS ============================ */
@@ -1976,6 +2075,16 @@ document.addEventListener("click", function(e){
         alert("Max heart rate has to be above resting."); return;
       }
       state.settings.hrMax = mx; state.settings.hrRest = rs;
+      save(); render();
+    }
+    else if (a === "del-extra"){
+      state.extras.splice(+el.dataset.i, 1);
+      save(); render();
+    }
+    else if (a === "clear-extras"){
+      if (!confirm("Remove all " + state.extras.length + " runs kept as history?\n\n" +
+                   "Runs logged against the plan are not touched.")) return;
+      state.extras = [];
       save(); render();
     }
     else if (a === "export") doExport();

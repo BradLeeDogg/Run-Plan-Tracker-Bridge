@@ -89,6 +89,37 @@ shapes are still out in the wild.
 
 ---
 
+## Backfilling everything you have already run
+
+Route 2 is also how you get your history in. The export contains every running
+workout Health has ever held, and the importer takes the lot in one go.
+
+Runs from before the plan began have no slot to attach to — the plan only has
+36 of them, on fixed dates — so they are kept as **history** instead. The import
+screen labels them, and Stats grows a **History** card listing them with a total.
+
+History counts towards:
+
+- the month-by-month table
+- the VO<sub>2</sub> max trend
+- average heart rate
+
+History deliberately does **not** count towards:
+
+- any plan week's actual distance
+- the 110% over-volume warning
+- the recovery-week check
+
+A run from last year should not make this week look overshot, and should not
+argue with a recovery week. Adherence is measured against the plan; history is
+just a record of running.
+
+Re-importing an export that overlaps one you already loaded is fine. Anything
+already held for the same date and distance is flagged as a duplicate and
+arrives unticked, so the usual case — exporting again a month later — does not
+double anything up. You can remove any single history entry, or all of them, in
+the History card; runs logged against the plan are untouched by that.
+
 ## What this does not solve
 
 The two-step shuffle. There is no one-tap route from Health into this app,
