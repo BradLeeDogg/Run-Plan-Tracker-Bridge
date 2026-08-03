@@ -120,7 +120,10 @@ Neither gives splits. Apple Health has nowhere to keep per-kilometre splits for
 a third-party workout, so they are lost before this app sees the data. That is
 the one thing the watch app below exists to provide.
 
-See **[APPLE-HEALTH.md](APPLE-HEALTH.md)** for both recipes.
+See **[APPLE-HEALTH.md](APPLE-HEALTH.md)** for both recipes. The full export also
+backfills everything you have already run: pre-plan runs are kept as **history**,
+counted in the monthly table, VO<sub>2</sub> trend and average heart rate, but never
+against a plan week.
 
 ## The watch half
 
