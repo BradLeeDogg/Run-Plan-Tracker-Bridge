@@ -1668,11 +1668,104 @@ function parseCSV(t){
   }).filter(function(r){ return r && r.km > 0; });
 }
 
+/* ---------- Apple Health ----------
+   Health's own "Export All Health Data" zip contains an export.xml that can run
+   to hundreds of megabytes — a whole life of samples. Building a DOM from that
+   on a phone is a good way to kill the tab, so the workouts are picked out by
+   scanning rather than parsing. Apple's file is machine-generated and uniform,
+   which is what makes that safe here.
+
+   Note this yields distance, duration and average heart rate but never splits:
+   Health has nowhere to store per-kilometre splits for a third-party workout,
+   so they do not survive the trip in. Splits come from a watch file or are
+   typed. */
+var HK_WORKOUT_RE = /<Workout\b(?:[^>]*\/>|[^>]*>[\s\S]*?<\/Workout>)/g;
+
+function hkAttr(chunk, name){
+  var m = new RegExp("\\b" + name + '="([^"]*)"').exec(chunk);
+  return m ? m[1] : null;
+}
+/* "2026-08-04 06:00:00 +0100" — not a format Date parses reliably. */
+function hkDate(s){
+  if (!s) return null;
+  var m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})(?:\s*([+-]\d{2}):?(\d{2}))?/.exec(s);
+  if (m){
+    var tz = m[7] ? m[7] + ":" + (m[8] || "00") : "";
+    var d = new Date(m[1]+"-"+m[2]+"-"+m[3]+"T"+m[4]+":"+m[5]+":"+m[6]+tz);
+    if (!isNaN(d)) return d;
+  }
+  var f = new Date(s);
+  return isNaN(f) ? null : f;
+}
+function hkSeconds(value, unit){
+  var v = parseFloat(value);
+  if (!isFinite(v) || v <= 0) return 0;
+  unit = String(unit || "min").toLowerCase();
+  if (unit.indexOf("hr") === 0 || unit.indexOf("hour") === 0) return Math.round(v * 3600);
+  if (unit.indexOf("s") === 0) return Math.round(v);
+  return Math.round(v * 60);                       // Apple's default is minutes
+}
+function hkKm(value, unit){
+  var v = parseFloat(value);
+  if (!isFinite(v) || v <= 0) return 0;
+  unit = String(unit || "km").toLowerCase();
+  if (unit === "mi") return v * 1.609344;
+  if (unit === "m")  return v / 1000;
+  return v;
+}
+/* Newer exports moved distance and heart rate into <WorkoutStatistics>; older
+   ones carry distance as an attribute. Both shapes appear in the wild. */
+function hkStat(chunk, typeFragment, attr){
+  var re = new RegExp('<WorkoutStatistics\\b[^>]*type="[^"]*' + typeFragment + '"[^>]*>', "i");
+  var m = re.exec(chunk);
+  if (!m) return null;
+  var v = hkAttr(m[0], attr);
+  return v === null ? null : { value: v, unit: hkAttr(m[0], "unit") };
+}
+
+function parseAppleHealth(t){
+  var out = [], m;
+  HK_WORKOUT_RE.lastIndex = 0;
+  while ((m = HK_WORKOUT_RE.exec(t)) !== null){
+    var chunk = m[0];
+    if (!/Running/i.test(hkAttr(chunk, "workoutActivityType") || "")) continue;
+
+    var start = hkDate(hkAttr(chunk, "startDate"));
+    if (!start) continue;
+
+    var km = hkKm(hkAttr(chunk, "totalDistance"), hkAttr(chunk, "totalDistanceUnit"));
+    if (!km){
+      var ds = hkStat(chunk, "DistanceWalkingRunning", "sum");
+      if (ds) km = hkKm(ds.value, ds.unit);
+    }
+    if (!(km > 0)) continue;                        // no distance, nothing to log
+
+    var sec = hkSeconds(hkAttr(chunk, "duration"), hkAttr(chunk, "durationUnit"));
+    if (!sec){
+      var end = hkDate(hkAttr(chunk, "endDate"));
+      if (end) sec = Math.round((end - start) / 1000);
+    }
+
+    var hr = null, hs = hkStat(chunk, "HeartRate", "average");
+    if (hs){
+      var h = Math.round(parseFloat(hs.value));
+      if (isFinite(h) && h > 0) hr = h;
+    }
+
+    out.push({ date: localISO(start), km: km, sec: sec, hr: hr, splits: null });
+  }
+  if (!out.length)
+    throw new Error("No running workouts found in that Health export.");
+  return out;
+}
+
 function parseActivities(t){
   t = String(t || "").trim();
   if (!t) throw new Error("Nothing to read.");
-  if (t.charAt(0) === "<")
+  if (t.charAt(0) === "<"){
+    if (/<HealthData|HKWorkoutActivityType/i.test(t)) return parseAppleHealth(t);
     return /TrainingCenterDatabase|<Activity/i.test(t) ? parseTCX(t) : parseGPX(t);
+  }
   if (t.charAt(0) === "[" || t.charAt(0) === "{") return parseJSONActs(t);
   return parseCSV(t);
 }
@@ -1707,8 +1800,10 @@ function drawImport(){
   var h = '<div class="grab"></div><h2>Import runs</h2>';
 
   if (!importRows){
-    h += '<div class="sub">Anything your watch or phone can produce: TCX, GPX, JSON or CSV. ' +
-         'It is read here on the device &mdash; nothing is uploaded.</div>' +
+    h += '<div class="sub">Anything your watch or phone can produce: TCX, GPX, an Apple Health ' +
+         'export, JSON or CSV. It is read here on the device &mdash; nothing is uploaded.<br>' +
+         '<span style="color:var(--dim)">Health gives distance, time and heart rate but never ' +
+         'splits &mdash; it has nowhere to keep them.</span></div>' +
          '<div class="drop" id="drop">Drop a file here<br><span style="font-size:12px">or use the button below</span></div>' +
          '<button class="btn" data-act="pick-file" style="margin-bottom:14px">Choose a file</button>' +
          '<div class="field"><span class="label">Or paste it</span>' +

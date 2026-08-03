@@ -109,6 +109,19 @@ Backups written by the previous version — logs keyed `"week-day"`, with a
 separate `weekStarts` array — are migrated on load and on restore, so older
 exports still work.
 
+## Getting runs in without typing
+
+Bridge already syncs the Galaxy Watch into Apple Health, and this app can read
+what lands there — via a Shortcut for routine use, or Health's own "Export All
+Health Data" as the always-works fallback. Both give distance, duration and
+average heart rate, and therefore pace and the VO<sub>2</sub> estimate.
+
+Neither gives splits. Apple Health has nowhere to keep per-kilometre splits for
+a third-party workout, so they are lost before this app sees the data. That is
+the one thing the watch app below exists to provide.
+
+See **[APPLE-HEALTH.md](APPLE-HEALTH.md)** for both recipes.
+
 ## The watch half
 
 `samsung-watch-sync/` holds the other end of this: a Wear OS app that records a
