@@ -77,11 +77,15 @@ find a workout action at all, use route 2 — it does not depend on any of this.
 
 The app scans it for running workouts and ignores everything else.
 
-**It is a big file.** The export contains your entire Health history, so it can
-run to hundreds of megabytes. This app deliberately scans it rather than parsing
-it as a document, which is what stops a large export from killing the tab, but
-the export itself can still take a few minutes to generate. Fine occasionally;
-not something to do weekly.
+**It is a very big file.** The export holds your entire Health history — every
+heart rate reading the phone has ever taken — and routinely passes a gigabyte.
+Files that size cannot be read into memory in one go; the tab dies first. So the
+app reads it in slices and keeps only the `<Workout>` blocks, showing progress
+as it goes. A 1.3 GB export has been tested end to end.
+
+Keep the app open while it reads. Generating the export in Health is itself
+slow, often several minutes. Fine occasionally; not something to do weekly —
+that is what the Shortcut is for.
 
 Both older and newer export layouts are handled — Apple moved distance from an
 attribute on the workout into a nested `WorkoutStatistics` element, and both
