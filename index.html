@@ -184,6 +184,50 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
 .seg button.on[data-v=easy]{background:var(--easy);color:#06210f;border-color:var(--easy)}
 .seg button.on[data-v=moderate]{background:var(--moderate);color:#241500;border-color:var(--moderate)}
 .seg button.on[data-v=hard]{background:var(--hard);color:#2a0000;border-color:var(--hard)}
+
+/* ---- day picker: seven tap targets, so it has to stay compact ---- */
+.days{display:flex;gap:5px}
+.days button{
+  flex:1;min-height:44px;border-radius:11px;border:1.5px solid var(--line);
+  background:var(--surface2);font-weight:700;font-size:13px;padding:0;
+}
+.days button.on{background:var(--accent);color:#06210f;border-color:var(--accent)}
+.days button.busy{opacity:.32}
+
+/* ---- one editable run: day, distance, remove ---- */
+.rowedit{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.rowedit select{
+  min-height:var(--tap);border-radius:12px;border:1.5px solid var(--line);
+  background:var(--surface2);color:var(--text);font-weight:700;font-size:15px;
+  padding:0 8px;flex:0 0 88px;
+}
+.rowedit .inp{flex:1}
+/* the column header already says km — repeating it per row doubles the height */
+.rowedit .inp .u{display:none}
+.rowedit .x{
+  flex:0 0 var(--tap);min-height:var(--tap);border-radius:12px;
+  border:1.5px solid var(--line);background:var(--surface2);
+  color:var(--danger);font-size:22px;line-height:1;
+}
+.rowedit .lg{color:var(--accent);font-size:12px;margin-left:-4px}
+.btn.sm{min-height:42px;font-size:14px}
+
+/* ---- breakdown tables ---- */
+.tbl{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px}
+.tbl table{border-collapse:collapse;width:100%;font-size:13px;white-space:nowrap}
+.tbl th,.tbl td{padding:7px 8px;text-align:left;border-bottom:1px solid var(--line)}
+.tbl th{color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.tbl td.n,.tbl th.n{text-align:right;font-variant-numeric:tabular-nums}
+.tbl td.dim{color:var(--muted)}
+.tbl tr.cur td{background:rgba(60,224,140,.07)}
+.tbl td.good{color:var(--accent);font-weight:700}
+.tbl td.over{color:var(--warn);font-weight:700}
+.tbl .sk{color:var(--danger);font-size:11px}
+.tbl tbody tr:last-child td{border-bottom:none}
+.dotm{display:inline-block;width:6px;height:6px;border-radius:50%;vertical-align:middle}
+.dotm.rc{background:var(--recovery)}
+.dotm.pk{background:var(--warn)}
+
 .inputs{display:flex;gap:10px;align-items:flex-end}
 .inp{flex:1}
 .inp input{
@@ -268,26 +312,30 @@ textarea:focus{outline:none;border-color:var(--accent)}
 "use strict";
 
 /* ============================ PLAN ============================ */
-/* Runs on Tue / Thu / Sun. Sunday is the long run. Weeks start Monday. */
-var PLAN = [
-  { km:[7,7,8],    total:22, tag:null },
-  { km:[7,8,9],    total:24, tag:null },
-  { km:[8,8,10],   total:26, tag:null },
-  { km:[6,6,7],    total:19, tag:"RECOVERY" },
-  { km:[8,8,10],   total:26, tag:null },
-  { km:[8,9,11],   total:28, tag:null },
-  { km:[9,10,11],  total:30, tag:null },
-  { km:[7,7,8],    total:22, tag:"RECOVERY" },
-  { km:[9,10,11],  total:30, tag:null },
-  { km:[10,10,12], total:32, tag:null },
-  { km:[11,11,12], total:34, tag:"PEAK" },
-  { km:[8,8,9],    total:25, tag:"RECOVERY" }
+/* The plan is editable and lives in storage alongside the logs. What follows
+   is only the starting point — used on a first run, and by "Reset the plan".
+   Week totals are never stored; they are always summed from the runs, so an
+   edited distance cannot drift out of step with its week. */
+var DEFAULT_PLAN = [
+  { km:[7,7,8],    tag:null },
+  { km:[7,8,9],    tag:null },
+  { km:[8,8,10],   tag:null },
+  { km:[6,6,7],    tag:"RECOVERY" },
+  { km:[8,8,10],   tag:null },
+  { km:[8,9,11],   tag:null },
+  { km:[9,10,11],  tag:null },
+  { km:[7,7,8],    tag:"RECOVERY" },
+  { km:[9,10,11],  tag:null },
+  { km:[10,10,12], tag:null },
+  { km:[11,11,12], tag:"PEAK" },
+  { km:[8,8,9],    tag:"RECOVERY" }
 ];
 var WEEK1_MONDAY = "2026-08-03";
-var DAY_OFFSET = [1, 3, 6];              // Mon+1=Tue, +3=Thu, +6=Sun
-var DAY_NAME   = ["Tue", "Thu", "Sun"];
+var DEFAULT_OFFSET = [1, 3, 6];          // Mon+1=Tue, +3=Thu, +6=Sun
+var WD_SHORT = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];   // index = days from Monday
 var OVER_LIMIT = 1.10;                   // flag above 110% of planned week volume
 var PAIN_WINDOW_DAYS = 14;
+var MAX_WEEKS = 52;
 
 var AREAS = ["Knee","Shin","Calf","Achilles","Ankle","Foot",
              "Hamstring","Quad","Hip","IT band","Groin","Lower back","Other"];
@@ -317,22 +365,77 @@ function mondayOf(d){
 /* ============================ STATE ============================ */
 var KEY = "runplan.v1";
 var state = load();
+// Write the migrated shape straight back, rather than leaving v1 on disk until
+// the next edit — a half-migrated store is the kind of thing that bites later.
+if (state.migrated){ delete state.migrated; save(); }
 
-function freshWeekStarts(){
-  var out = [], base = parseISO(WEEK1_MONDAY);
-  for (var i = 0; i < PLAN.length; i++) out.push(toISO(addDays(base, i*7)));
+/* Every run carries an id, and logs are stored against that id rather than
+   against its position. This is what makes the plan safe to edit: inserting,
+   deleting or reordering weeks moves runs around, and under the old
+   "week-day" keying every log after the edit would silently re-point to a
+   different run. Ids move with the run. */
+function freshPlan(){
+  var base = parseISO(WEEK1_MONDAY), out = [], n = 0;
+  DEFAULT_PLAN.forEach(function(p, i){
+    out.push({
+      start: toISO(addDays(base, i*7)),
+      tag: p.tag,
+      runs: p.km.map(function(km, d){ return { id:"r" + (++n), km:km, off:DEFAULT_OFFSET[d] }; })
+    });
+  });
   return out;
+}
+function planOK(p){
+  return Array.isArray(p) && p.length > 0 && p.every(function(w){
+    return w && typeof w.start === "string" && /^\d{4}-\d{2}-\d{2}$/.test(w.start) &&
+      Array.isArray(w.runs) && w.runs.every(function(r){
+        return r && typeof r.id === "string" && typeof r.km === "number" &&
+               r.km >= 0 && r.off >= 0 && r.off <= 6;
+      });
+  });
+}
+function maxSeq(p){
+  var m = 0;
+  (p || []).forEach(function(w){
+    (w.runs || []).forEach(function(r){
+      var n = parseInt(String(r.id).replace(/^r/, ""), 10);
+      if (isFinite(n) && n > m) m = n;
+    });
+  });
+  return m;
+}
+/* v1 stored weekStarts[] parallel to a hardcoded plan, and logs keyed "w-d".
+   Rebuild the default plan, carry the saved week starts across, and re-point
+   every log onto the id of the run that slot used to mean. */
+function migrateV1(s){
+  var plan = freshPlan();
+  if (Array.isArray(s.weekStarts)){
+    for (var i = 0; i < plan.length && i < s.weekStarts.length; i++)
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s.weekStarts[i])) plan[i].start = s.weekStarts[i];
+  }
+  var logs = {};
+  Object.keys(s.logs || {}).forEach(function(k){
+    var m = /^(\d+)-(\d+)$/.exec(k);
+    if (!m){ logs[k] = s.logs[k]; return; }          // already an id — leave it
+    var w = +m[1], d = +m[2];
+    if (plan[w] && plan[w].runs[d]) logs[plan[w].runs[d].id] = s.logs[k];
+  });
+  s.plan = plan;
+  s.logs = logs;
+  return s;
 }
 function load(){
   var s = null;
   try { s = JSON.parse(localStorage.getItem(KEY) || "null"); } catch(e){ s = null; }
   if (!s || typeof s !== "object") s = {};
-  if (!Array.isArray(s.weekStarts) || s.weekStarts.length !== PLAN.length) s.weekStarts = freshWeekStarts();
   if (!s.logs || typeof s.logs !== "object") s.logs = {};
+  if (!planOK(s.plan)){ s = migrateV1(s); s.migrated = true; }
   if (!s.settings || typeof s.settings !== "object") s.settings = {};
   if (!(s.settings.hrMax > 0))  s.settings.hrMax  = 190;   // edit in Stats
   if (!(s.settings.hrRest > 0)) s.settings.hrRest = 55;
-  s.version = 1;
+  s.seq = Math.max(s.seq || 0, maxSeq(s.plan));
+  s.version = 2;
+  delete s.weekStarts;                                     // superseded by plan[].start
   return s;
 }
 function save(){
@@ -340,38 +443,61 @@ function save(){
   catch(e){ alert("Could not save — device storage may be full or private browsing is on."); }
 }
 
-function slotKey(w, d){ return w + "-" + d; }
-function runDate(w, d){ return addDays(parseISO(state.weekStarts[w]), DAY_OFFSET[d]); }
-function getLog(w, d){ return state.logs[slotKey(w,d)] || null; }
+/* ---------- plan accessors ---------- */
+function planLen(){ return state.plan.length; }
+function wk(w){ return state.plan[w]; }
+function runsOf(w){ return state.plan[w].runs; }
+function runAt(w, d){ return state.plan[w].runs[d]; }
+function weekStart(w){ return parseISO(state.plan[w].start); }
+function weekTotal(w){
+  return runsOf(w).reduce(function(a, r){ return a + (r.km || 0); }, 0);
+}
+function newId(){ state.seq = (state.seq || 0) + 1; return "r" + state.seq; }
+function runDate(w, d){ return addDays(weekStart(w), runAt(w, d).off); }
+function getLog(w, d){ var r = runAt(w, d); return r ? (state.logs[r.id] || null) : null; }
+function setLog(w, d, v){ state.logs[runAt(w, d).id] = v; }
+function dayName(w, d){ return WD_SHORT[runAt(w, d).off]; }
+/* Keep runs in day order. Safe to call after any edit — logs key on id. */
+function sortRuns(w){ runsOf(w).sort(function(a, b){ return a.off - b.off; }); }
+/* The longest run of the week, which is what "long run" means here. */
+function isLong(w, d){
+  var rs = runsOf(w), mx = -1, at = -1;
+  rs.forEach(function(r, i){ if (r.km >= mx){ mx = r.km; at = i; } });
+  return rs.length > 1 && at === d;
+}
+function lastRunDate(w){
+  var rs = runsOf(w), mx = 6;
+  if (rs.length) mx = rs.reduce(function(a, r){ return Math.max(a, r.off); }, 0);
+  return addDays(weekStart(w), mx);
+}
 
 /* ============================ DERIVED ============================ */
 function weekActual(w){
   var sum = 0;
-  for (var d = 0; d < 3; d++){
+  runsOf(w).forEach(function(r, d){
     var l = getLog(w, d);
     if (l && l.done && typeof l.km === "number") sum += l.km;
-  }
+  });
   return sum;
 }
 function weekIsPast(w){
-  return dayDiff(runDate(w, 2), today()) > 0;      // after the Sunday long run
+  return dayDiff(lastRunDate(w), today()) > 0;     // after the week's final run
 }
 function weekIsCurrent(w){
-  var t = today();
-  var start = parseISO(state.weekStarts[w]);
+  var t = today(), start = weekStart(w);
   return dayDiff(start, t) >= 0 && dayDiff(t, addDays(start, 6)) >= 0;
 }
 function currentWeekIndex(){
-  for (var w = 0; w < PLAN.length; w++) if (weekIsCurrent(w)) return w;
+  for (var w = 0; w < planLen(); w++) if (weekIsCurrent(w)) return w;
   // before the plan starts -> week 1; after it ends -> last week
-  if (dayDiff(today(), parseISO(state.weekStarts[0])) > 0) return 0;
-  return PLAN.length - 1;
+  if (dayDiff(today(), weekStart(0)) > 0) return 0;
+  return planLen() - 1;
 }
 /* Next run that has not been logged either way */
 function nextRun(){
   var t = today();
-  for (var w = 0; w < PLAN.length; w++){
-    for (var d = 0; d < 3; d++){
+  for (var w = 0; w < planLen(); w++){
+    for (var d = 0; d < runsOf(w).length; d++){
       var l = getLog(w, d);
       if (l && (l.done || l.skipped)) continue;
       if (dayDiff(t, runDate(w, d)) >= 0) return { w:w, d:d };   // today or later
@@ -381,14 +507,14 @@ function nextRun(){
 }
 function rolling4(){
   var c = currentWeekIndex(), a = 0, p = 0;
-  for (var w = Math.max(0, c-3); w <= c; w++){ a += weekActual(w); p += PLAN[w].total; }
+  for (var w = Math.max(0, c-3); w <= c; w++){ a += weekActual(w); p += weekTotal(w); }
   return { actual:a, planned:p };
 }
 /* Consecutive completed runs, walking backwards from the last run due */
 function streak(){
   var t = today(), slots = [];
-  for (var w = 0; w < PLAN.length; w++)
-    for (var d = 0; d < 3; d++)
+  for (var w = 0; w < planLen(); w++)
+    for (var d = 0; d < runsOf(w).length; d++)
       if (dayDiff(t, runDate(w, d)) <= 0) slots.push([w, d]);    // already due
   var n = 0;
   for (var i = slots.length - 1; i >= 0; i--){
@@ -412,19 +538,20 @@ function painFlags(){
 }
 /* A fully past week with nothing completed */
 function missedWeek(){
-  for (var w = 0; w < PLAN.length; w++){
+  for (var w = 0; w < planLen(); w++){
     if (!weekIsPast(w)) return null;               // stop at the first non-past week
+    if (!runsOf(w).length) continue;               // an empty week cannot be missed
     var any = false;
-    for (var d = 0; d < 3; d++){ var l = getLog(w, d); if (l && l.done) { any = true; break; } }
+    for (var d = 0; d < runsOf(w).length; d++){ var l = getLog(w, d); if (l && l.done) { any = true; break; } }
     if (!any) return w;
   }
   return null;
 }
 function overWeeks(){
   var out = [];
-  for (var w = 0; w < PLAN.length; w++){
-    var a = weekActual(w);
-    if (a > PLAN[w].total * OVER_LIMIT) out.push({ w:w, actual:a, planned:PLAN[w].total });
+  for (var w = 0; w < planLen(); w++){
+    var a = weekActual(w), p = weekTotal(w);
+    if (p > 0 && a > p * OVER_LIMIT) out.push({ w:w, actual:a, planned:p });
   }
   return out;
 }
@@ -482,8 +609,8 @@ function vo2for(l){
 /* Most recent runs first */
 function vo2Series(){
   var out = [];
-  for (var w = 0; w < PLAN.length; w++){
-    for (var d = 0; d < 3; d++){
+  for (var w = 0; w < planLen(); w++){
+    for (var d = 0; d < runsOf(w).length; d++){
       var l = getLog(w, d), v = vo2for(l);
       if (v) out.push({ w:w, d:d, date:l.date, vo2:v });
     }
@@ -498,6 +625,66 @@ function avgHR(){
   return hrs.length ? Math.round(hrs.reduce(function(a, b){ return a+b; }, 0) / hrs.length) : null;
 }
 
+/* ---------- period breakdowns ----------
+   One summariser, fed either a week's slots or a calendar month's logs, so
+   the two tables cannot drift apart in how they count things. */
+function summarise(logs){
+  var km = 0, sec = 0, n = 0, hrs = [], vs = [], skip = 0;
+  logs.forEach(function(l){
+    if (!l) return;
+    if (l.skipped){ skip++; return; }
+    if (!l.done) return;
+    n++; km += (l.km || 0); sec += (l.durSec || 0);
+    if (l.hr > 0) hrs.push(l.hr);
+    var v = vo2for(l); if (v) vs.push(v);
+  });
+  return {
+    runs:n, km:km, sec:sec, skipped:skip,
+    hr: hrs.length ? Math.round(hrs.reduce(function(a,b){ return a+b; }, 0) / hrs.length) : null,
+    vo2: vs.length ? Math.max.apply(null, vs) : null
+  };
+}
+function weekRows(){
+  var out = [];
+  for (var w = 0; w < planLen(); w++){
+    var ls = runsOf(w).map(function(r, d){ return getLog(w, d); });
+    var s = summarise(ls);
+    s.w = w; s.planned = weekTotal(w); s.tag = wk(w).tag;
+    s.start = weekStart(w); s.end = addDays(weekStart(w), 6);
+    out.push(s);
+  }
+  return out;
+}
+/* Planned km per calendar month, from where each run actually falls. */
+function monthPlanned(){
+  var by = {};
+  for (var w = 0; w < planLen(); w++)
+    runsOf(w).forEach(function(r, d){
+      var m = toISO(runDate(w, d)).slice(0, 7);
+      by[m] = (by[m] || 0) + (r.km || 0);
+    });
+  return by;
+}
+function monthRows(){
+  var by = {}, planned = monthPlanned();
+  Object.keys(state.logs).forEach(function(k){
+    var l = state.logs[k];
+    if (!l || !l.date) return;
+    var m = String(l.date).slice(0, 7);                  // YYYY-MM
+    (by[m] = by[m] || []).push(l);
+  });
+  Object.keys(planned).forEach(function(m){ if (!by[m]) by[m] = []; });
+  return Object.keys(by).sort().map(function(m){
+    var s = summarise(by[m]);
+    var p = m.split("-");
+    s.month = m;
+    s.planned = planned[m] || 0;
+    s.label = new Date(+p[0], +p[1]-1, 1)
+      .toLocaleDateString(undefined, { month:"long", year:"numeric" });
+    return s;
+  });
+}
+
 function esc(s){
   return String(s).replace(/[&<>"']/g, function(c){
     return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
@@ -505,17 +692,108 @@ function esc(s){
 }
 function n1(x){ return (Math.round(x * 10) / 10).toString(); }
 
-/* ============================ SHIFT ============================ */
+/* ============================ PLAN EDITS ============================
+   Every one of these can move runs between positions. None of them touch
+   log keys, because logs are stored against run ids — see freshPlan.
+   ==================================================================== */
+
 /* Move week w (and every week after it) so w starts on the next Monday. */
 function shiftFrom(w){
   var t = today(), m = mondayOf(t);
   var target = (dayDiff(m, t) === 0) ? m : addDays(m, 7);
-  var weeks = Math.round(dayDiff(parseISO(state.weekStarts[w]), target) / 7);
+  var weeks = Math.round(dayDiff(weekStart(w), target) / 7);
   if (weeks <= 0) weeks = 1;
-  for (var i = w; i < PLAN.length; i++)
-    state.weekStarts[i] = toISO(addDays(parseISO(state.weekStarts[i]), weeks * 7));
+  for (var i = w; i < planLen(); i++)
+    state.plan[i].start = toISO(addDays(weekStart(i), weeks * 7));
   save();
   render();
+}
+
+/* Nudge one week, and everything after it, by whole weeks in either
+   direction. Used by the per-week "earlier / later" controls. */
+function nudgeWeek(w, weeks){
+  if (w === 0 && weeks < 0 && dayDiff(addDays(weekStart(0), weeks*7), today()) > 365) return;
+  for (var i = w; i < planLen(); i++)
+    state.plan[i].start = toISO(addDays(weekStart(i), weeks * 7));
+  save(); render();
+}
+
+function addWeek(){
+  if (planLen() >= MAX_WEEKS){ alert("That is as long as the plan goes."); return; }
+  var last = state.plan[planLen()-1];
+  state.plan.push({
+    start: toISO(addDays(parseISO(last.start), 7)),
+    tag: null,
+    // mirror the shape of the final week, so a new week is a sane starting point
+    runs: last.runs.map(function(r){ return { id:newId(), km:r.km, off:r.off }; })
+  });
+  save(); render();
+}
+
+function deleteWeek(w){
+  if (planLen() <= 1){ alert("The plan needs at least one week."); return; }
+  var n = 0;
+  runsOf(w).forEach(function(r){ if (state.logs[r.id]) n++; });
+  if (!confirm("Delete week " + (w+1) +
+      (n ? ", including " + n + " logged run" + (n === 1 ? "" : "s") : "") +
+      "?\n\nThis cannot be undone.")) return;
+  runsOf(w).forEach(function(r){ delete state.logs[r.id]; });
+  state.plan.splice(w, 1);
+  // pull the later weeks back so the calendar stays tight
+  for (var i = w; i < planLen(); i++)
+    state.plan[i].start = toISO(addDays(weekStart(i), -7));
+  save(); render();
+}
+
+function setWeekTag(w, tag){
+  wk(w).tag = tag || null;
+  save(); render();
+}
+
+function setRunKm(w, d, km){
+  if (!(km >= 0)) return;
+  runAt(w, d).km = Math.round(km * 10) / 10;
+  save();
+}
+
+/* Move a run to another day of its own week. Keeping it inside the week is
+   deliberate: weekly totals stay meaningful, and the recovery and over-volume
+   guards keep working. To move further than that, shift the whole week. */
+function setRunDay(w, d, off){
+  var r = runAt(w, d);
+  if (off < 0 || off > 6) return;
+  if (runsOf(w).some(function(o){ return o !== r && o.off === off; })){
+    alert("There is already a run on that day this week.");
+    return false;
+  }
+  r.off = off;
+  var l = state.logs[r.id];
+  // an unlogged run follows the schedule; a logged one keeps the date it happened
+  if (l && !l.done && !l.skipped) delete state.logs[r.id];
+  sortRuns(w);
+  save();
+  return true;
+}
+
+function addRun(w){
+  var used = {}, rs = runsOf(w);
+  if (rs.length >= 7){ alert("That week already has a run every day."); return; }
+  rs.forEach(function(r){ used[r.off] = true; });
+  var off = 0;
+  for (var i = 0; i < 7; i++) if (!used[i]){ off = i; break; }
+  var km = rs.length ? Math.round(rs.reduce(function(a,r){ return a+r.km; }, 0) / rs.length * 10)/10 : 5;
+  rs.push({ id:newId(), km:km, off:off });
+  sortRuns(w);
+  save(); render();
+}
+
+function deleteRun(w, d){
+  var r = runAt(w, d);
+  if (runsOf(w).length <= 1){ alert("A week needs at least one run. Delete the week instead."); return; }
+  if (state.logs[r.id] && !confirm("That run is logged. Delete it and its log?")) return;
+  delete state.logs[r.id];
+  runsOf(w).splice(d, 1);
+  save(); render();
 }
 
 /* ============================ VIEWS ============================ */
@@ -535,7 +813,7 @@ function bannersHTML(){
   if (mw !== null){
     h += '<div class="banner info"><div class="ico">&#8635;</div><div>' +
          '<b>Week ' + (mw+1) + ' was missed entirely</b>' +
-         'Jumping back in at ' + PLAN[currentWeekIndex()].total + ' km risks injury. ' +
+         'Jumping back in at ' + n1(weekTotal(currentWeekIndex())) + ' km risks injury. ' +
          'Shift the rest of the plan forward instead.' +
          '<button class="act" data-act="shift" data-w="' + mw + '">Shift week ' + (mw+1) +
          ' and later to next Monday</button></div></div>';
@@ -559,7 +837,7 @@ function runRowHTML(w, d, showToday){
   var right, sub = fmtDate(dt);
 
   if (l && l.done){
-    right = '<div class="km">' + n1(l.km) + '<small>' + PLAN[w].km[d] + ' plan</small></div>';
+    right = '<div class="km">' + n1(l.km) + '<small>' + n1(runAt(w,d).km) + ' plan</small></div>';
     var bits = [];
     if (l.durSec) bits.push(durStr(l.durSec));
     if (l.km && l.durSec) bits.push(paceStr(l.km, l.durSec));
@@ -571,7 +849,7 @@ function runRowHTML(w, d, showToday){
   } else if (l && l.skipped){
     right = '<div class="km" style="color:var(--danger);font-size:14px">Skipped</div>';
   } else {
-    right = '<div class="km" style="color:var(--muted)">' + PLAN[w].km[d] + '<small>km plan</small></div>';
+    right = '<div class="km" style="color:var(--muted)">' + n1(runAt(w,d).km) + '<small>km plan</small></div>';
   }
 
   var eff = (l && l.done && l.effort) ? '<span class="eff" style="background:var(--' + l.effort + ')"></span>' : "";
@@ -579,7 +857,7 @@ function runRowHTML(w, d, showToday){
 
   return '<button class="' + cls + '" data-run="' + w + ',' + d + '">' +
     '<span class="dot"></span>' +
-    '<span class="day">' + DAY_NAME[d] + '</span>' +
+    '<span class="day">' + dayName(w, d) + '</span>' +
     '<span class="mid"><span class="date">' + sub + eff + '</span>' + pain + '</span>' +
     right + '</button>';
 }
@@ -591,19 +869,19 @@ function viewToday(){
   if (!nx){
     h += '<div class="card hero"><div class="when">Plan complete</div>' +
          '<div class="dist">&#127937;</div>' +
-         '<div class="countdown">All 12 weeks are logged. Nicely done.</div></div>';
+         '<div class="countdown">All ' + planLen() + ' weeks are logged. Nicely done.</div></div>';
   } else {
     var dt = runDate(nx.w, nx.d), days = dayDiff(t, dt);
-    var p = PLAN[nx.w];
+    var p = wk(nx.w);
     var when = days === 0 ? "Today" : days === 1 ? "Tomorrow" : fmtLong(dt);
     var badge = days === 0 ? '<span class="badge today">Run day</span>' :
                 p.tag === "RECOVERY" ? '<span class="badge rec">Recovery week</span>' :
                 p.tag === "PEAK" ? '<span class="badge peak">Peak week</span>' : "";
 
     h += '<div class="card hero' + (p.tag === "RECOVERY" ? " recovery" : "") + '">' +
-      '<div class="when">' + esc(when) + ' &middot; Week ' + (nx.w+1) + ' &middot; ' + DAY_NAME[nx.d] +
-      (nx.d === 2 ? " long run" : "") + '</div>' +
-      '<div class="dist">' + p.km[nx.d] + '<span>km</span></div>' +
+      '<div class="when">' + esc(when) + ' &middot; Week ' + (nx.w+1) + ' &middot; ' + dayName(nx.w, nx.d) +
+      (isLong(nx.w, nx.d) ? " long run" : "") + '</div>' +
+      '<div class="dist">' + n1(runAt(nx.w, nx.d).km) + '<span>km</span></div>' +
       '<div class="countdown">' +
         (days === 0 ? '<b>Due today</b>' :
          days === 1 ? 'In <b>1 day</b>' : 'In <b>' + days + ' days</b>') +
@@ -614,18 +892,18 @@ function viewToday(){
     h += '<button class="btn ghost" data-act="import-runs" style="margin-top:10px">Import from a file</button>';
   }
 
-  var c = currentWeekIndex(), act = weekActual(c), pl = PLAN[c].total;
-  var pct = Math.round(act / pl * 100);
+  var c = currentWeekIndex(), act = weekActual(c), pl = weekTotal(c);
+  var pct = pl > 0 ? Math.round(act / pl * 100) : 0;
   h += '<div style="height:12px"></div>';
-  h += '<div class="card' + (PLAN[c].tag === "RECOVERY" ? " recovery" : "") + '">' +
+  h += '<div class="card' + (wk(c).tag === "RECOVERY" ? " recovery" : "") + '">' +
     '<div class="wk-head"><div><div class="t">Week ' + (c+1) +
-      (PLAN[c].tag ? ' <span class="badge ' + (PLAN[c].tag === "PEAK" ? "peak" : "rec") + '">' + PLAN[c].tag + '</span>' : '') +
-      '</div><div class="d">' + fmtDate(parseISO(state.weekStarts[c])) + ' &ndash; ' +
-      fmtDate(addDays(parseISO(state.weekStarts[c]), 6)) + '</div></div>' +
-    '<div class="wk-nums"><div class="a">' + n1(act) + ' / ' + pl + '</div><div class="p">km &middot; ' + pct + '%</div></div></div>' +
-    '<div class="bar"><i class="' + (act > pl * OVER_LIMIT ? "over" : "") + '" style="width:' +
-      Math.min(100, act / pl * 100) + '%"></i></div>' +
-    '<div class="runs">' + [0,1,2].map(function(d){ return runRowHTML(c, d, true); }).join("") + '</div>' +
+      (wk(c).tag ? ' <span class="badge ' + (wk(c).tag === "PEAK" ? "peak" : "rec") + '">' + wk(c).tag + '</span>' : '') +
+      '</div><div class="d">' + fmtDate(weekStart(c)) + ' &ndash; ' +
+      fmtDate(addDays(weekStart(c), 6)) + '</div></div>' +
+    '<div class="wk-nums"><div class="a">' + n1(act) + ' / ' + n1(pl) + '</div><div class="p">km &middot; ' + pct + '%</div></div></div>' +
+    '<div class="bar"><i class="' + (pl > 0 && act > pl * OVER_LIMIT ? "over" : "") + '" style="width:' +
+      (pl > 0 ? Math.min(100, act / pl * 100) : 0) + '%"></i></div>' +
+    '<div class="runs">' + runsOf(c).map(function(r, d){ return runRowHTML(c, d, true); }).join("") + '</div>' +
   '</div>';
 
   var r4 = rolling4();
@@ -638,35 +916,50 @@ function viewToday(){
 }
 
 function viewPlan(){
-  var c = currentWeekIndex(), h = "";
-  for (var w = 0; w < PLAN.length; w++){
-    var p = PLAN[w], act = weekActual(w), open = (w === c);
-    var start = parseISO(state.weekStarts[w]);
+  var c = currentWeekIndex(), h = "", grand = 0, w;
+  for (w = 0; w < planLen(); w++) grand += weekTotal(w);
+
+  for (w = 0; w < planLen(); w++){
+    var p = wk(w), act = weekActual(w), tot = weekTotal(w), open = (w === c);
+    var start = weekStart(w);
+    var pctW = tot > 0 ? Math.round(act / tot * 100) : 0;
     h += '<div class="card wk' + (p.tag === "RECOVERY" ? " recovery" : "") +
          (w === c ? " current" : "") + (open ? " open" : "") + '" data-wk="' + w + '">' +
       '<button class="wk-head" data-toggle="' + w + '">' +
         '<div><div class="t">Week ' + (w+1) +
           (p.tag ? ' <span class="badge ' + (p.tag === "PEAK" ? "peak" : "rec") + '">' + p.tag + '</span>' : '') +
         '</div><div class="d">' + fmtDate(start) + ' &ndash; ' + fmtDate(addDays(start, 6)) + '</div></div>' +
-        '<div class="wk-nums"><div class="a">' + (act ? n1(act) + " / " : "") + p.total + '</div>' +
-        '<div class="p">km' + (act ? " &middot; " + Math.round(act/p.total*100) + "%" : " planned") + '</div></div>' +
+        '<div class="wk-nums"><div class="a">' + (act ? n1(act) + " / " : "") + n1(tot) + '</div>' +
+        '<div class="p">km' + (act ? " &middot; " + pctW + "%" : " planned") + '</div></div>' +
       '</button>' +
-      '<div class="wk-body"><div class="bar"><i class="' + (act > p.total*OVER_LIMIT ? "over" : "") +
-        '" style="width:' + Math.min(100, act/p.total*100) + '%"></i></div>' +
-        '<div class="runs">' + [0,1,2].map(function(d){ return runRowHTML(w, d, true); }).join("") + '</div>' +
+      '<div class="wk-body"><div class="bar"><i class="' + (tot > 0 && act > tot*OVER_LIMIT ? "over" : "") +
+        '" style="width:' + (tot > 0 ? Math.min(100, act/tot*100) : 0) + '%"></i></div>' +
+        '<div class="runs">' + runsOf(w).map(function(r, d){ return runRowHTML(w, d, true); }).join("") + '</div>' +
+        '<button class="btn ghost sm" data-act="edit-week" data-w="' + w + '">Edit this week</button>' +
       '</div></div>';
   }
+
+  h += '<div class="card"><div class="wk-head" style="padding:0">' +
+      '<div><div class="t">Whole plan</div>' +
+      '<div class="d">' + planLen() + ' weeks &middot; ' +
+        fmtDate(weekStart(0)) + ' &ndash; ' + fmtDate(lastRunDate(planLen()-1)) + '</div></div>' +
+      '<div class="wk-nums"><div class="a">' + n1(grand) + '</div><div class="p">km total</div></div>' +
+    '</div>' +
+    '<button class="btn" data-act="add-week" style="margin-top:12px">Add a week at the end</button>' +
+    '<div class="tiny">Weeks copy the shape of the last one, so add and then edit. ' +
+      'Editing the plan never disturbs runs you have already logged.</div></div>';
   return h;
 }
 
 function viewStats(){
   var maxKm = 0, i;
-  for (i = 0; i < PLAN.length; i++) maxKm = Math.max(maxKm, PLAN[i].total, weekActual(i));
-  maxKm = Math.ceil((maxKm + 2) / 5) * 5;
+  for (i = 0; i < planLen(); i++) maxKm = Math.max(maxKm, weekTotal(i), weekActual(i));
+  maxKm = Math.ceil((maxKm + 2) / 5) * 5 || 5;
 
   var W = 340, H = 190, padL = 26, padB = 24, padT = 8;
   var plotW = W - padL - 6, plotH = H - padB - padT;
-  var step = plotW / PLAN.length, bw = Math.min(20, step * 0.62);
+  var step = plotW / planLen(), bw = Math.min(20, step * 0.62);
+  var labelEvery = planLen() <= 16 ? 1 : Math.ceil(planLen() / 12);
 
   var svg = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet">';
   [0, 0.5, 1].forEach(function(f){
@@ -676,26 +969,28 @@ function viewStats(){
            '<text x="' + (padL-5) + '" y="' + (y+3.5) + '" fill="#6b7688" font-size="9" text-anchor="end">' +
            Math.round(maxKm*f) + '</text>';
   });
-  for (i = 0; i < PLAN.length; i++){
+  for (i = 0; i < planLen(); i++){
     var cx = padL + step * i + step/2;
-    var ph = plotH * (PLAN[i].total / maxKm);
+    var tot = weekTotal(i);
+    var ph = plotH * (tot / maxKm);
     var a  = weekActual(i), ah = plotH * (a / maxKm);
-    var isRec = PLAN[i].tag === "RECOVERY";
+    var isRec = wk(i).tag === "RECOVERY";
     svg += '<rect x="' + (cx - bw/2) + '" y="' + (padT + plotH - ph) + '" width="' + bw +
            '" height="' + ph + '" rx="3" fill="' + (isRec ? "#2a3f5c" : "#333e4e") + '"/>';
     if (a > 0){
-      var over = a > PLAN[i].total * OVER_LIMIT;
+      var over = tot > 0 && a > tot * OVER_LIMIT;
       svg += '<rect x="' + (cx - bw/2 + 3) + '" y="' + (padT + plotH - ah) + '" width="' + (bw-6) +
              '" height="' + ah + '" rx="2" fill="' + (over ? "#ffb03a" : "#3ce08c") + '"/>';
     }
-    svg += '<text x="' + cx + '" y="' + (H-8) + '" fill="' + (isRec ? "#5ea8ff" : "#6b7688") +
-           '" font-size="9" text-anchor="middle">' + (i+1) + '</text>';
+    if (i % labelEvery === 0 || i === planLen()-1)
+      svg += '<text x="' + cx + '" y="' + (H-8) + '" fill="' + (isRec ? "#5ea8ff" : "#6b7688") +
+             '" font-size="9" text-anchor="middle">' + (i+1) + '</text>';
   }
   svg += '</svg>';
 
   var r4 = rolling4();
   var totalA = 0, totalP = 0, doneN = 0, skipN = 0;
-  for (i = 0; i < PLAN.length; i++){ totalA += weekActual(i); totalP += PLAN[i].total; }
+  for (i = 0; i < planLen(); i++){ totalA += weekActual(i); totalP += weekTotal(i); }
   Object.keys(state.logs).forEach(function(k){
     var l = state.logs[k]; if (l && l.done) doneN++; else if (l && l.skipped) skipN++;
   });
@@ -720,6 +1015,51 @@ function viewStats(){
     '<div class="stat"><div class="v">' + doneN + '</div><div class="k">Runs done</div></div>' +
     '<div class="stat"><div class="v">' + skipN + '</div><div class="k">Skipped</div></div>' +
     '</div>';
+
+  /* ---- week by week ---- */
+  var wr = weekRows(), anyWeek = wr.some(function(r){ return r.runs || r.skipped; });
+  h += '<div class="card" style="margin-top:12px"><div class="label">Week by week</div><div class="tbl"><table>' +
+    '<thead><tr><th>Wk</th><th>From</th><th class="n">Plan</th><th class="n">Done</th>' +
+    '<th class="n">%</th><th class="n">Runs</th><th class="n">Pace</th><th class="n">HR</th></tr></thead><tbody>';
+  wr.forEach(function(r){
+    var pct = r.planned > 0 ? Math.round(r.km / r.planned * 100) : 0;
+    var cls = r.planned > 0 && r.km > r.planned * OVER_LIMIT ? "over"
+            : (pct >= 100 ? "good" : "");
+    h += '<tr' + (r.w === currentWeekIndex() ? ' class="cur"' : '') + '>' +
+      '<td>' + (r.w+1) + (r.tag ? ' <span class="dotm ' + (r.tag === "PEAK" ? "pk" : "rc") + '"></span>' : '') + '</td>' +
+      '<td class="dim">' + fmtDate(r.start) + '</td>' +
+      '<td class="n">' + n1(r.planned) + '</td>' +
+      '<td class="n">' + (r.km ? n1(r.km) : "&mdash;") + '</td>' +
+      '<td class="n ' + cls + '">' + (r.km ? pct + "%" : "&mdash;") + '</td>' +
+      '<td class="n">' + (r.runs || "&mdash;") + (r.skipped ? '<span class="sk"> ' + r.skipped + 's</span>' : '') + '</td>' +
+      '<td class="n">' + (r.km && r.sec ? paceStr(r.km, r.sec).replace(" /km", "") : "&mdash;") + '</td>' +
+      '<td class="n">' + (r.hr || "&mdash;") + '</td></tr>';
+  });
+  h += '</tbody></table></div>' +
+    (anyWeek ? '' : '<div class="tiny">Nothing logged yet, so only the plan column is filled.</div>') +
+    '</div>';
+
+  /* ---- month by month ---- */
+  var mr = monthRows();
+  h += '<div class="card" style="margin-top:12px"><div class="label">Month by month</div><div class="tbl"><table>' +
+    '<thead><tr><th>Month</th><th class="n">Plan</th><th class="n">Done</th><th class="n">Runs</th>' +
+    '<th class="n">Time</th><th class="n">Pace</th><th class="n">HR</th></tr></thead><tbody>';
+  if (!mr.length){
+    h += '<tr><td colspan="7" class="dim">Nothing yet.</td></tr>';
+  } else {
+    mr.forEach(function(r){
+      h += '<tr><td>' + esc(r.label) + '</td>' +
+        '<td class="n">' + (r.planned ? n1(r.planned) : "&mdash;") + '</td>' +
+        '<td class="n">' + (r.km ? n1(r.km) : "&mdash;") + '</td>' +
+        '<td class="n">' + (r.runs || "&mdash;") + '</td>' +
+        '<td class="n">' + (r.sec ? durStr(r.sec) : "&mdash;") + '</td>' +
+        '<td class="n">' + (r.km && r.sec ? paceStr(r.km, r.sec).replace(" /km", "") : "&mdash;") + '</td>' +
+        '<td class="n">' + (r.hr || "&mdash;") + '</td></tr>';
+    });
+  }
+  h += '</tbody></table></div>' +
+    '<div class="tiny">Months are calendar months, taken from the date each run happened, so ' +
+    'a week straddling the turn of a month is split between the two.</div></div>';
 
   /* ---- VO2 max trend ---- */
   var vs = vo2Series(), hrAvg = avgHR();
@@ -784,7 +1124,7 @@ function viewStats(){
       '<button class="btn" data-act="copy">Copy</button>' +
     '</div>' +
     '<button class="btn ghost" data-act="import" style="margin-bottom:10px">Restore a backup</button>' +
-    '<button class="btn ghost danger" data-act="reset">Erase all logs</button>' +
+    '<button class="btn ghost danger" data-act="reset">Erase logs and reset the plan</button>' +
     '<div class="tiny">Everything lives in this browser only &mdash; no account, no server, no network calls. ' +
     'Clearing Safari website data will wipe it, so export now and again.</div></div>';
 
@@ -794,9 +1134,9 @@ function viewStats(){
 function render(){
   var t = today();
   document.getElementById("title").textContent =
-    tab === "today" ? "Today" : tab === "plan" ? "12-week plan" : "Stats";
+    tab === "today" ? "Today" : tab === "plan" ? planLen() + "-week plan" : "Stats";
   document.getElementById("subtitle").textContent =
-    tab === "today" ? fmtLong(t) : "Week " + (currentWeekIndex()+1) + " of " + PLAN.length;
+    tab === "today" ? fmtLong(t) : "Week " + (currentWeekIndex()+1) + " of " + planLen();
 
   document.getElementById("view").innerHTML =
     tab === "today" ? viewToday() : tab === "plan" ? viewPlan() : viewStats();
@@ -821,7 +1161,7 @@ function openSheet(w, d){
   draft = {
     w:w, d:d,
     status: l.done ? "done" : l.skipped ? "skipped" : "done",
-    km: (typeof l.km === "number") ? l.km : PLAN[w].km[d],
+    km: (typeof l.km === "number") ? l.km : runAt(w, d).km,
     min: l.durSec ? Math.floor(l.durSec/60) : "",
     sec: l.durSec ? l.durSec%60 : "",
     hr: l.hr || "",
@@ -837,21 +1177,39 @@ function openSheet(w, d){
 }
 function closeSheet(){
   scrim.classList.remove("on"); sheet.classList.remove("on");
-  draft = null;
+  draft = null; editW = null;
+}
+/* Position of a run inside its week, by id — indices move when days change. */
+function indexOfRun(w, id){
+  var rs = runsOf(w);
+  for (var i = 0; i < rs.length; i++) if (rs[i].id === id) return i;
+  return -1;
 }
 
 function drawSheet(){
-  var w = draft.w, d = draft.d, p = PLAN[w], dt = runDate(w, d);
+  var w = draft.w, d = draft.d, p = wk(w), r = runAt(w, d), dt = runDate(w, d);
   var seg = function(name, val, label){
     return '<button data-field="' + name + '" data-v="' + val + '"' +
            (draft[name] === val ? ' class="on"' : '') + '>' + label + '</button>';
   };
 
   var h = '<div class="grab"></div>' +
-    '<h2>Week ' + (w+1) + ' &middot; ' + DAY_NAME[d] + (d === 2 ? " long run" : "") + '</h2>' +
-    '<div class="sub">' + fmtLong(dt) + ' &middot; ' + p.km[d] + ' km planned' +
+    '<h2>Week ' + (w+1) + ' &middot; ' + dayName(w, d) + (isLong(w, d) ? " long run" : "") + '</h2>' +
+    '<div class="sub">' + fmtLong(dt) + ' &middot; ' + n1(r.km) + ' km planned' +
     (p.tag === "RECOVERY" ? ' &middot; <span style="color:var(--recovery);font-weight:700">recovery week</span>' : '') +
     '</div>';
+
+  /* Reschedule in place — the common case is "cannot make it today". */
+  if (!draft.existing){
+    h += '<div class="field"><span class="label">Scheduled day</span><div class="days">' +
+      WD_SHORT.map(function(nm, off){
+        var taken = runsOf(w).some(function(o){ return o !== r && o.off === off; });
+        return '<button data-act="move-run" data-w="' + w + '" data-d="' + d + '" data-off="' + off + '"' +
+               (r.off === off ? ' class="on"' : (taken ? ' class="busy" disabled' : '')) + '>' + nm + '</button>';
+      }).join("") + '</div>' +
+      '<div class="tiny" style="margin-top:6px">Moves this run inside its own week, so the week&rsquo;s ' +
+      'total and the guards still hold. To move further, shift the week from the plan.</div></div>';
+  }
 
   h += '<div class="field"><span class="label">Status</span><div class="seg">' +
     seg("status","done","Completed") + seg("status","skipped","Skipped") + '</div></div>';
@@ -942,14 +1300,13 @@ function syncPace(){
 
 function saveDraft(){
   readInputs();
-  var w = draft.w, d = draft.d, p = PLAN[w];
-  var key = slotKey(w, d);
+  var w = draft.w, d = draft.d, p = wk(w), pkm = runAt(w, d).km;
 
   if (draft.status === "skipped"){
-    state.logs[key] = {
+    setLog(w, d, {
       done:false, skipped:true, date:toISO(runDate(w, d)), ts:Date.now(),
       pain: draft.painOn && draft.area ? { area:draft.area, note:draft.note } : null
-    };
+    });
     save(); closeSheet(); render(); return;
   }
 
@@ -963,31 +1320,92 @@ function saveDraft(){
   if (p.tag === "RECOVERY"){
     var prev = getLog(w, d);
     var others = weekActual(w) - (prev && prev.done ? prev.km : 0);
+    var wtot = weekTotal(w);
     var msgs = [];
-    if (km > p.km[d]) msgs.push("This run is " + n1(km) + " km against " + p.km[d] + " km planned.");
-    if (others + km > p.total) msgs.push("The week would reach " + n1(others + km) + " km against " + p.total + " km planned.");
+    if (km > pkm) msgs.push("This run is " + n1(km) + " km against " + n1(pkm) + " km planned.");
+    if (others + km > wtot) msgs.push("The week would reach " + n1(others + km) + " km against " + n1(wtot) + " km planned.");
     if (msgs.length && !confirm(
         "Week " + (w+1) + " is a recovery week.\n\n" + msgs.join("\n") +
         "\n\nRecovery weeks are what let the build weeks work. Save anyway?")) return;
   }
 
   var hr = parseInt(draft.hr, 10);
-  state.logs[key] = {
+  setLog(w, d, {
     done:true, skipped:false,
     km:km, durSec:sec, effort:draft.effort,
     hr: (hr > 0 ? hr : null),
     splits: parseSplits(draft.splits),
     date:toISO(runDate(w, d)), ts:Date.now(),
     pain: draft.painOn && draft.area ? { area:draft.area, note:draft.note } : null
-  };
+  });
   save(); closeSheet(); render();
+}
+
+/* ============================ WEEK EDIT SHEET ============================ */
+var editW = null;
+
+function openWeekSheet(w){
+  editW = w;
+  draft = null;
+  drawWeekSheet();
+  scrim.classList.add("on"); sheet.classList.add("on");
+}
+
+function drawWeekSheet(){
+  var w = editW, p = wk(w), start = weekStart(w);
+  var tagBtn = function(val, label){
+    return '<button data-act="set-tag" data-w="' + w + '" data-tag="' + val + '"' +
+           ((p.tag || "") === val ? ' class="on"' : '') + '>' + label + '</button>';
+  };
+
+  var h = '<div class="grab"></div>' +
+    '<h2>Week ' + (w+1) + '</h2>' +
+    '<div class="sub">' + fmtDate(start) + ' &ndash; ' + fmtDate(addDays(start, 6)) +
+    ' &middot; ' + n1(weekTotal(w)) + ' km planned</div>';
+
+  h += '<div class="field"><span class="label">Week type</span><div class="seg">' +
+    tagBtn("", "Normal") + tagBtn("RECOVERY", "Recovery") + tagBtn("PEAK", "Peak") +
+    '</div><div class="tiny" style="margin-top:6px">Recovery weeks ask before you save a run longer ' +
+    'than planned. Peak is a label only.</div></div>';
+
+  h += '<div class="field"><span class="label">Runs &middot; day and distance in km</span>';
+  runsOf(w).forEach(function(r, d){
+    var logged = !!state.logs[r.id];
+    h += '<div class="rowedit">' +
+      '<select data-act="set-day" data-w="' + w + '" data-d="' + d + '">' +
+        WD_SHORT.map(function(nm, off){
+          var taken = runsOf(w).some(function(o){ return o !== r && o.off === off; });
+          return '<option value="' + off + '"' + (r.off === off ? ' selected' : '') +
+                 (taken ? ' disabled' : '') + '>' + nm + '</option>';
+        }).join("") +
+      '</select>' +
+      '<div class="inp"><input type="number" inputmode="decimal" step="0.5" min="0" value="' + r.km +
+        '" data-act="set-km" data-w="' + w + '" data-d="' + d + '"><span class="u">km</span></div>' +
+      '<button class="x" data-act="del-run" data-w="' + w + '" data-d="' + d + '" title="Remove">&times;</button>' +
+      (logged ? '<span class="lg" title="Logged">&#9679;</span>' : '') +
+      '</div>';
+  });
+  h += '<button class="btn ghost sm" data-act="add-run" data-w="' + w + '" style="margin-top:8px">Add a run</button>';
+  h += '<div class="tiny" style="margin-top:6px">A dot marks a run you have already logged. ' +
+       'Changing its distance leaves the logged result alone &mdash; only the target moves.</div></div>';
+
+  h += '<div class="field"><span class="label">Move this week and everything after it</span>' +
+    '<div class="btn-row">' +
+      '<button class="btn" data-act="nudge" data-w="' + w + '" data-n="-1">&larr; A week earlier</button>' +
+      '<button class="btn" data-act="nudge" data-w="' + w + '" data-n="1">A week later &rarr;</button>' +
+    '</div></div>';
+
+  h += '<button class="btn primary" data-act="cancel" style="margin-bottom:10px">Done</button>';
+  h += '<button class="btn ghost danger" data-act="del-week" data-w="' + w + '">Delete week ' + (w+1) + '</button>';
+
+  sheet.innerHTML = h;
 }
 
 /* ============================ DATA I/O ============================ */
 function exportBlob(){
   return JSON.stringify({
-    app:"run-plan-tracker", version:1, exported:new Date().toISOString(),
-    weekStarts:state.weekStarts, logs:state.logs
+    app:"run-plan-tracker", version:2, exported:new Date().toISOString(),
+    plan:state.plan, logs:state.logs, seq:state.seq, settings:state.settings
   }, null, 2);
 }
 function doExport(){
@@ -1018,16 +1436,24 @@ function doImport(){
   if (!data || typeof data !== "object" || !data.logs){ alert("No logs found in that file."); return; }
   if (!confirm("Replace everything currently stored with this backup?")) return;
   state.logs = data.logs;
-  if (Array.isArray(data.weekStarts) && data.weekStarts.length === PLAN.length)
-    state.weekStarts = data.weekStarts;
+  if (planOK(data.plan)){
+    state.plan = data.plan;                       // v2 backup: plan travels with the logs
+    state.seq = Math.max(data.seq || 0, maxSeq(data.plan));
+  } else {
+    // v1 backup: rebuild the default plan and re-point its "w-d" keys
+    var m = migrateV1({ logs:data.logs, weekStarts:data.weekStarts });
+    state.plan = m.plan; state.logs = m.logs; state.seq = maxSeq(m.plan);
+  }
+  if (data.settings && data.settings.hrMax > 0) state.settings = data.settings;
   save(); render();
   alert("Restored.");
 }
 function doReset(){
-  if (!confirm("Erase every logged run and reset the plan dates?\n\nThis cannot be undone. Export first if you want a copy.")) return;
+  if (!confirm("Erase every logged run and put the plan back to its original 12 weeks?\n\nThis cannot be undone. Export first if you want a copy.")) return;
   if (!confirm("Really erase everything?")) return;
   state.logs = {};
-  state.weekStarts = freshWeekStarts();
+  state.plan = freshPlan();
+  state.seq = maxSeq(state.plan);
   save(); render();
 }
 
@@ -1257,14 +1683,14 @@ function buildImportRows(acts){
   var taken = {};
   return acts.map(function(a){
     var best = null, bestGap = 999, w, d;
-    for (w = 0; w < PLAN.length; w++){
-      for (d = 0; d < 3; d++){
-        if (taken[slotKey(w, d)]) continue;
+    for (w = 0; w < planLen(); w++){
+      for (d = 0; d < runsOf(w).length; d++){
+        if (taken[runAt(w, d).id]) continue;
         var gap = Math.abs(dayDiff(parseISO(a.date), runDate(w, d)));
         if (gap < bestGap){ bestGap = gap; best = { w:w, d:d, gap:gap }; }
       }
     }
-    if (!best || best.gap > 3) best = null; else taken[slotKey(best.w, best.d)] = true;
+    if (!best || best.gap > 3) best = null; else taken[runAt(best.w, best.d).id] = true;
     var ex = best ? getLog(best.w, best.d) : null;
     var clash = !!(ex && (ex.done || ex.skipped));
     return { act:a, slot:best, conflict:clash, on: !!best && !clash };
@@ -1312,9 +1738,9 @@ function drawImport(){
     if (!r.slot){
       line2 = '<div class="b badt">No plan run within 3 days &mdash; cannot import</div>';
     } else {
-      var p = PLAN[r.slot.w].km[r.slot.d];
+      var p = runAt(r.slot.w, r.slot.d).km;
       line2 = '<div class="b' + (r.conflict ? ' warnt' : '') + '">&rarr; Week ' + (r.slot.w+1) + ' ' +
-              DAY_NAME[r.slot.d] + ' &middot; ' + p + ' km planned' +
+              dayName(r.slot.w, r.slot.d) + ' &middot; ' + n1(p) + ' km planned' +
               (r.conflict ? ' &middot; already logged, will overwrite' : '') + '</div>';
     }
     h += '<button class="' + cls + '" data-act="imp-row" data-i="' + i + '"' +
@@ -1371,7 +1797,7 @@ function applyImport(){
   importRows.forEach(function(r){
     if (!r.on || !r.slot) return;
     var prev = getLog(r.slot.w, r.slot.d) || {};
-    state.logs[slotKey(r.slot.w, r.slot.d)] = {
+    setLog(r.slot.w, r.slot.d, {
       done:true, skipped:false,
       km: Math.round(r.act.km * 100) / 100,
       durSec: r.act.sec || 0,
@@ -1381,7 +1807,7 @@ function applyImport(){
       date: r.act.date, ts: Date.now(),
       imported: true,
       pain: prev.pain || null             // pain never comes from a file
-    };
+    });
     n++;
   });
   save(); closeSheet(); render();
@@ -1421,10 +1847,25 @@ document.addEventListener("click", function(e){
     if (a === "save")   saveDraft();
     else if (a === "cancel") closeSheet();
     else if (a === "clear"){
-      delete state.logs[slotKey(draft.w, draft.d)];
+      delete state.logs[runAt(draft.w, draft.d).id];
       save(); closeSheet(); render();
     }
     else if (a === "shift") shiftFrom(+el.dataset.w);
+    /* ---- plan editing ---- */
+    else if (a === "edit-week") openWeekSheet(+el.dataset.w);
+    else if (a === "add-week") addWeek();
+    else if (a === "del-week"){ closeSheet(); deleteWeek(+el.dataset.w); }
+    else if (a === "set-tag"){ setWeekTag(+el.dataset.w, el.dataset.tag); drawWeekSheet(); }
+    else if (a === "add-run"){ addRun(+el.dataset.w); drawWeekSheet(); }
+    else if (a === "del-run"){ deleteRun(+el.dataset.w, +el.dataset.d); drawWeekSheet(); }
+    else if (a === "nudge"){ nudgeWeek(+el.dataset.w, +el.dataset.n); drawWeekSheet(); }
+    else if (a === "move-run"){
+      var mw = +el.dataset.w, md = +el.dataset.d, id = runAt(mw, md).id;
+      if (setRunDay(mw, md, +el.dataset.off) !== false){
+        draft.d = indexOfRun(mw, id);       // sorting may have moved it
+        drawSheet(); render();
+      }
+    }
     else if (a === "import-runs") openImport();
     else if (a === "pick-file") document.getElementById("fileIn").click();
     else if (a === "parse-text") tryParse(document.getElementById("imp-text").value);
@@ -1460,6 +1901,22 @@ document.getElementById("fileIn").addEventListener("change", function(e){
 sheet.addEventListener("input", function(e){
   if (/^f-(km|min|sec|hr|splits)$/.test(e.target.id || "")){
     readInputs(); syncPace();
+    return;
+  }
+  // live-edit a planned distance without redrawing, so the field keeps focus
+  if (e.target.dataset && e.target.dataset.act === "set-km"){
+    var v = parseFloat(e.target.value);
+    if (isFinite(v) && v >= 0) setRunKm(+e.target.dataset.w, +e.target.dataset.d, v);
+  }
+});
+
+sheet.addEventListener("change", function(e){
+  var a = e.target.dataset ? e.target.dataset.act : null;
+  if (a === "set-day"){
+    setRunDay(+e.target.dataset.w, +e.target.dataset.d, +e.target.value);
+    drawWeekSheet(); render();
+  } else if (a === "set-km"){
+    drawWeekSheet(); render();      // on blur, refresh the week total
   }
 });
 
