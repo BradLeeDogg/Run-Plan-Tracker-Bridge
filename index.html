@@ -38,6 +38,14 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
   padding:14px 14px calc(96px + env(safe-area-inset-bottom));
   max-width:640px;margin:0 auto;
 }
+/* Cards arriving all at once reads as a flash; a short stagger reads as a page. */
+@media (prefers-reduced-motion:no-preference){
+  #view.anim>*{animation:rise .26s cubic-bezier(.22,.9,.3,1) both}
+  #view.anim>*:nth-child(2){animation-delay:.03s}
+  #view.anim>*:nth-child(3){animation-delay:.06s}
+  #view.anim>*:nth-child(n+4){animation-delay:.09s}
+}
+@keyframes rise{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
 .topbar{
   padding:calc(10px + env(safe-area-inset-top)) 14px 6px;
   max-width:640px;margin:0 auto;
@@ -47,13 +55,22 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
 .topbar .sub{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
 
 /* ---------- cards ---------- */
-.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px}
+.card{
+  background:linear-gradient(180deg,rgba(255,255,255,.022),rgba(255,255,255,0)) var(--surface);
+  border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:12px;
+  box-shadow:0 1px 0 rgba(255,255,255,.03) inset;
+}
 .card.recovery{border-color:var(--recovery);background:linear-gradient(180deg,rgba(94,168,255,.10),rgba(94,168,255,.02))}
-.label{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.label{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700}
 
 /* ---------- today hero ---------- */
 .hero .when{font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:600}
-.hero .dist{font-size:64px;line-height:1;font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.hero{position:relative;overflow:hidden}
+.hero::after{
+  content:"";position:absolute;top:-70px;right:-70px;width:200px;height:200px;
+  background:radial-gradient(circle,rgba(60,224,140,.13),transparent 68%);pointer-events:none;
+}
+.hero .dist{font-size:66px;line-height:1;font-weight:800;letter-spacing:-.045em;font-variant-numeric:tabular-nums}
 .hero .dist span{font-size:24px;font-weight:700;color:var(--muted);margin-left:4px;letter-spacing:0}
 .hero .countdown{margin-top:10px;font-size:15px;color:var(--muted)}
 .hero .countdown b{color:var(--text)}
@@ -82,12 +99,18 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
 
 /* ---------- weekly strip ---------- */
 .stats-row{display:flex;gap:10px}
-.stat{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px}
+.stat{
+  flex:1;background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:13px;
+  background:linear-gradient(180deg,rgba(255,255,255,.022),rgba(255,255,255,0)) var(--surface);
+}
 .stat .v{font-size:26px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.1}
 .stat .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:700;margin-top:3px}
 .bar{height:10px;border-radius:6px;background:var(--planned);overflow:hidden;margin-top:10px}
-.bar>i{display:block;height:100%;background:var(--accent);border-radius:6px;transition:width .3s}
-.bar>i.over{background:var(--warn)}
+.bar>i{
+  display:block;height:100%;border-radius:6px;transition:width .45s cubic-bezier(.22,.9,.3,1);
+  background:linear-gradient(90deg,var(--accent-dim),var(--accent));
+}
+.bar>i.over{background:linear-gradient(90deg,#a86a12,var(--warn))}
 
 /* ---------- banners ---------- */
 .banner{
@@ -110,20 +133,33 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
 .runs{display:flex;flex-direction:column;gap:8px;margin-top:12px}
 .run{
   display:flex;align-items:center;gap:12px;width:100%;text-align:left;
-  min-height:60px;padding:10px 12px;border-radius:13px;
+  min-height:60px;padding:11px 12px;border-radius:14px;
   background:var(--surface2);border:1px solid transparent;
+  transition:transform .12s ease, border-color .2s ease;
 }
-.run.is-today{border-color:var(--accent)}
+.run:active{transform:scale(.99)}
+.run.done{border-color:rgba(60,224,140,.18)}
+.run.is-today{border-color:var(--accent);box-shadow:0 0 0 3px rgba(60,224,140,.10)}
 .run .dot{width:11px;height:11px;border-radius:50%;background:var(--dim);flex:0 0 auto}
 .run.done .dot{background:var(--accent)}
 .run.skipped .dot{background:var(--danger)}
 .run .day{width:34px;font-weight:800;font-size:14px;flex:0 0 auto}
-.run .date{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.run .date{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;font-weight:600}
 .run .mid{flex:1;min-width:0}
 .run .km{font-weight:800;font-variant-numeric:tabular-nums;font-size:17px;text-align:right}
 .run .km small{display:block;font-weight:600;font-size:11px;color:var(--muted);letter-spacing:.02em}
-.run .pain{color:var(--danger);font-size:11px;font-weight:700}
+.run .pain{color:var(--danger);font-size:11px;font-weight:700;margin-top:3px}
 .run .eff{display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:6px;vertical-align:middle}
+
+/* A run carries five or six numbers. As a run-on sentence of middots they are
+   unreadable; as value+unit pairs the eye can jump straight to the one it
+   wants, and the strip wraps instead of overflowing. */
+.mets{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:5px}
+.mets em{
+  font-style:normal;font-weight:700;font-size:13px;
+  font-variant-numeric:tabular-nums;color:var(--text);white-space:nowrap;
+}
+.mets em i{font-style:normal;font-weight:600;font-size:11px;color:var(--dim)}
 
 /* ---------- week list ---------- */
 .wk-head{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%}
@@ -137,9 +173,25 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
 .wk.current{border-color:var(--accent)}
 
 /* ---------- chart ---------- */
-.chart{width:100%;height:210px;display:block}
-.legend{display:flex;gap:16px;margin-top:10px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.chart{width:100%;height:210px;display:block;touch-action:manipulation}
+/* The bars are painted over the tap targets, so without this they swallow the
+   tap and the most natural place to press — the bar itself — does nothing. */
+.chart>*{pointer-events:none}
+.chart .hit{pointer-events:auto;cursor:pointer}
+.legend{display:flex;gap:14px;margin-top:12px;font-size:12px;color:var(--muted);flex-wrap:wrap}
 .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.readout{
+  margin-top:12px;padding:11px 12px;border-radius:12px;
+  background:var(--surface2);border:1px solid var(--line);
+}
+.readout .rh{
+  display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;
+  font-size:14px;font-weight:800;margin-bottom:7px;
+}
+.readout .rd{font-size:12px;font-weight:600;color:var(--muted)}
+.readout .mets{margin-top:0}
+.readout .mets em.good{color:var(--accent)}
+.readout .mets em.over{color:var(--warn)}
 
 /* ---------- tab bar ---------- */
 .tabbar{
@@ -654,17 +706,17 @@ function avgHR(){
    One summariser, fed either a week's slots or a calendar month's logs, so
    the two tables cannot drift apart in how they count things. */
 function summarise(logs){
-  var km = 0, sec = 0, n = 0, hrs = [], vs = [], skip = 0;
+  var km = 0, sec = 0, n = 0, hrs = [], vs = [], skip = 0, kcal = 0;
   logs.forEach(function(l){
     if (!l) return;
     if (l.skipped){ skip++; return; }
     if (!l.done) return;
-    n++; km += (l.km || 0); sec += (l.durSec || 0);
+    n++; km += (l.km || 0); sec += (l.durSec || 0); kcal += (l.kcal || 0);
     if (l.hr > 0) hrs.push(l.hr);
     var v = vo2for(l); if (v) vs.push(v);
   });
   return {
-    runs:n, km:km, sec:sec, skipped:skip,
+    runs:n, km:km, sec:sec, skipped:skip, kcal:kcal,
     hr: hrs.length ? Math.round(hrs.reduce(function(a,b){ return a+b; }, 0) / hrs.length) : null,
     vo2: vs.length ? Math.max.apply(null, vs) : null
   };
@@ -717,6 +769,10 @@ function esc(s){
   });
 }
 function n1(x){ return (Math.round(x * 10) / 10).toString(); }
+/* 12,400 kcal will not fit a stat tile; 12.4k will. */
+function fmtK(x){
+  return x >= 10000 ? (Math.round(x / 100) / 10) + "k" : String(Math.round(x));
+}
 
 /* ============================ PLAN EDITS ============================
    Every one of these can move runs between positions. None of them touch
@@ -860,18 +916,20 @@ function runRowHTML(w, d, showToday){
   var isToday = dayDiff(dt, t) === 0;
   var cls = "run" + (l && l.done ? " done" : "") + (l && l.skipped ? " skipped" : "") +
             (showToday && isToday ? " is-today" : "");
-  var right, sub = fmtDate(dt);
+  var right, sub = fmtDate(dt), mets = "";
 
   if (l && l.done){
     right = '<div class="km">' + n1(l.km) + '<small>' + n1(runAt(w,d).km) + ' plan</small></div>';
+    var met = function(v, unit){ return '<em>' + v + (unit ? ' <i>' + unit + '</i>' : '') + '</em>'; };
     var bits = [];
-    if (l.durSec) bits.push(durStr(l.durSec));
-    if (l.km && l.durSec) bits.push(paceStr(l.km, l.durSec));
-    if (l.hr) bits.push(l.hr + " bpm");
+    if (l.durSec) bits.push(met(durStr(l.durSec), ""));
+    if (l.km && l.durSec) bits.push(met(paceStr(l.km, l.durSec).replace(" /km", ""), "/km"));
+    if (l.hr) bits.push(met(l.hr, "bpm"));
+    if (l.kcal) bits.push(met(l.kcal, "kcal"));
     var v = vo2for(l);
-    if (v) bits.push("VO&#8322; " + v);
-    if (l.splits && l.splits.length) bits.push(l.splits.length + " splits");
-    if (bits.length) sub += " &middot; " + bits.join(" &middot; ");
+    if (v) bits.push(met(v, "VO&#8322;"));
+    if (l.splits && l.splits.length) bits.push(met(l.splits.length, "splits"));
+    if (bits.length) mets = '<span class="mets">' + bits.join("") + '</span>';
   } else if (l && l.skipped){
     right = '<div class="km" style="color:var(--danger);font-size:14px">Skipped</div>';
   } else {
@@ -884,7 +942,7 @@ function runRowHTML(w, d, showToday){
   return '<button class="' + cls + '" data-run="' + w + ',' + d + '">' +
     '<span class="dot"></span>' +
     '<span class="day">' + dayName(w, d) + '</span>' +
-    '<span class="mid"><span class="date">' + sub + eff + '</span>' + pain + '</span>' +
+    '<span class="mid"><span class="date">' + sub + eff + '</span>' + mets + pain + '</span>' +
     right + '</button>';
 }
 
@@ -977,6 +1035,29 @@ function viewPlan(){
   return h;
 }
 
+/* Tapping a column fills this in. A chart on a phone has no hover, so the
+   numbers behind a bar need somewhere to land. */
+function barReadoutHTML(i){
+  if (i == null || i < 0 || i >= planLen()) return "";
+  var tot = weekTotal(i), act = weekActual(i);
+  var r = summarise(runsOf(i).map(function(x, d){ return getLog(i, d); }));
+  var pct = tot > 0 ? Math.round(act / tot * 100) : 0;
+  var over = tot > 0 && act > tot * OVER_LIMIT;
+  var start = weekStart(i);
+  var bits = [];
+  bits.push('<em>' + n1(act) + ' <i>of ' + n1(tot) + ' km</i></em>');
+  if (act) bits.push('<em class="' + (over ? "over" : "good") + '">' + pct + ' <i>%</i></em>');
+  if (r.runs) bits.push('<em>' + r.runs + ' <i>runs</i></em>');
+  if (r.sec) bits.push('<em>' + durStr(r.sec) + '</em>');
+  if (r.km && r.sec) bits.push('<em>' + paceStr(r.km, r.sec).replace(" /km","") + ' <i>/km</i></em>');
+  if (r.hr) bits.push('<em>' + r.hr + ' <i>bpm</i></em>');
+  if (r.kcal) bits.push('<em>' + r.kcal + ' <i>kcal</i></em>');
+  return '<div class="readout"><div class="rh">Week ' + (i+1) +
+    (wk(i).tag ? ' <span class="badge ' + (wk(i).tag === "PEAK" ? "peak" : "rec") + '">' + wk(i).tag + '</span>' : '') +
+    '<span class="rd">' + fmtDate(start) + ' &ndash; ' + fmtDate(addDays(start, 6)) + '</span></div>' +
+    '<div class="mets">' + bits.join("") + '</div></div>';
+}
+
 function viewStats(){
   var maxKm = 0, i;
   for (i = 0; i < planLen(); i++) maxKm = Math.max(maxKm, weekTotal(i), weekActual(i));
@@ -995,22 +1076,39 @@ function viewStats(){
            '<text x="' + (padL-5) + '" y="' + (y+3.5) + '" fill="#6b7688" font-size="9" text-anchor="end">' +
            Math.round(maxKm*f) + '</text>';
   });
+  var cur = currentWeekIndex();
   for (i = 0; i < planLen(); i++){
     var cx = padL + step * i + step/2;
     var tot = weekTotal(i);
     var ph = plotH * (tot / maxKm);
     var a  = weekActual(i), ah = plotH * (a / maxKm);
     var isRec = wk(i).tag === "RECOVERY";
-    svg += '<rect x="' + (cx - bw/2) + '" y="' + (padT + plotH - ph) + '" width="' + bw +
-           '" height="' + ph + '" rx="3" fill="' + (isRec ? "#2a3f5c" : "#333e4e") + '"/>';
+    var base = padT + plotH;
+
+    // Full-height invisible target: a 20px bar is not a tap target, and on a
+    // phone the whole column has to be pressable.
+    svg += '<rect class="hit" x="' + (padL + step*i) + '" y="' + padT + '" width="' + step +
+           '" height="' + plotH + '" fill="transparent" data-bar="' + i + '"/>';
+
+    // A tick under the axis, not a filled column: a pale full-height block
+    // behind the bar reads as a bar itself and misstates the week's volume.
+    if (i === cur)
+      svg += '<rect x="' + (cx - bw/2) + '" y="' + (base + 3) + '" width="' + bw +
+             '" height="2.5" rx="1.25" fill="#3ce08c"/>';
+
+    svg += '<rect x="' + (cx - bw/2) + '" y="' + (base - ph) + '" width="' + bw +
+           '" height="' + Math.max(ph, 2) + '" rx="4" fill="' + (isRec ? "#2a3f5c" : "#333e4e") + '"/>';
     if (a > 0){
       var over = tot > 0 && a > tot * OVER_LIMIT;
-      svg += '<rect x="' + (cx - bw/2 + 3) + '" y="' + (padT + plotH - ah) + '" width="' + (bw-6) +
-             '" height="' + ah + '" rx="2" fill="' + (over ? "#ffb03a" : "#3ce08c") + '"/>';
+      // 2px of surface either side, so planned and actual read as two marks
+      svg += '<rect x="' + (cx - bw/2 + 3) + '" y="' + (base - ah) + '" width="' + (bw-6) +
+             '" height="' + Math.max(ah, 2) + '" rx="3" fill="' + (over ? "#ffb03a" : "#3ce08c") + '"/>';
     }
-    if (i % labelEvery === 0 || i === planLen()-1)
-      svg += '<text x="' + cx + '" y="' + (H-8) + '" fill="' + (isRec ? "#5ea8ff" : "#6b7688") +
-             '" font-size="9" text-anchor="middle">' + (i+1) + '</text>';
+    if (i % labelEvery === 0 || i === planLen()-1 || i === cur)
+      svg += '<text x="' + cx + '" y="' + (H-8) + '" fill="' +
+             (i === cur ? "#f3f6fa" : isRec ? "#5ea8ff" : "#6b7688") +
+             '" font-size="9" font-weight="' + (i === cur ? "700" : "400") +
+             '" text-anchor="middle">' + (i+1) + '</text>';
   }
   svg += '</svg>';
 
@@ -1022,6 +1120,7 @@ function viewStats(){
   });
 
   var h = '<div class="card"><div class="label">Planned vs actual &middot; km per week</div>' + svg +
+    '<div id="barReadout">' + barReadoutHTML(cur) + '</div>' +
     '<div class="legend">' +
       '<span><i style="background:#333e4e"></i>Planned</span>' +
       '<span><i style="background:#3ce08c"></i>Actual</span>' +
@@ -1037,16 +1136,27 @@ function viewStats(){
     '<div class="stat"><div class="v">' + n1(r4.actual) + '</div><div class="k">Rolling 4 wk</div></div>' +
     '<div class="stat"><div class="v">' + streak() + '</div><div class="k">Streak</div></div>' +
     '</div>';
+  var allKcal = 0, allSec = 0;
+  allLogs().forEach(function(l){ allKcal += (l.kcal || 0); allSec += (l.durSec || 0); });
   h += '<div class="stats-row">' +
     '<div class="stat"><div class="v">' + doneN + '</div><div class="k">Runs done</div></div>' +
     '<div class="stat"><div class="v">' + skipN + '</div><div class="k">Skipped</div></div>' +
     '</div>';
+  if (allKcal || allSec){
+    h += '<div class="stats-row" style="margin-top:12px">' +
+      '<div class="stat"><div class="v">' + (allKcal ? fmtK(allKcal) : "&mdash;") +
+        '</div><div class="k">kcal burned</div></div>' +
+      '<div class="stat"><div class="v">' + (allSec ? n1(allSec / 3600) : "&mdash;") +
+        '</div><div class="k">hours running</div></div>' +
+      '</div>';
+  }
 
   /* ---- week by week ---- */
   var wr = weekRows(), anyWeek = wr.some(function(r){ return r.runs || r.skipped; });
   h += '<div class="card" style="margin-top:12px"><div class="label">Week by week</div><div class="tbl"><table>' +
     '<thead><tr><th>Wk</th><th>From</th><th class="n">Plan</th><th class="n">Done</th>' +
-    '<th class="n">%</th><th class="n">Runs</th><th class="n">Pace</th><th class="n">HR</th></tr></thead><tbody>';
+    '<th class="n">%</th><th class="n">Runs</th><th class="n">Pace</th><th class="n">HR</th>' +
+    '<th class="n">kcal</th></tr></thead><tbody>';
   wr.forEach(function(r){
     var pct = r.planned > 0 ? Math.round(r.km / r.planned * 100) : 0;
     var cls = r.planned > 0 && r.km > r.planned * OVER_LIMIT ? "over"
@@ -1059,7 +1169,8 @@ function viewStats(){
       '<td class="n ' + cls + '">' + (r.km ? pct + "%" : "&mdash;") + '</td>' +
       '<td class="n">' + (r.runs || "&mdash;") + (r.skipped ? '<span class="sk"> ' + r.skipped + 's</span>' : '') + '</td>' +
       '<td class="n">' + (r.km && r.sec ? paceStr(r.km, r.sec).replace(" /km", "") : "&mdash;") + '</td>' +
-      '<td class="n">' + (r.hr || "&mdash;") + '</td></tr>';
+      '<td class="n">' + (r.hr || "&mdash;") + '</td>' +
+      '<td class="n">' + (r.kcal ? r.kcal : "&mdash;") + '</td></tr>';
   });
   h += '</tbody></table></div>' +
     (anyWeek ? '' : '<div class="tiny">Nothing logged yet, so only the plan column is filled.</div>') +
@@ -1069,9 +1180,10 @@ function viewStats(){
   var mr = monthRows();
   h += '<div class="card" style="margin-top:12px"><div class="label">Month by month</div><div class="tbl"><table>' +
     '<thead><tr><th>Month</th><th class="n">Plan</th><th class="n">Done</th><th class="n">Runs</th>' +
-    '<th class="n">Time</th><th class="n">Pace</th><th class="n">HR</th></tr></thead><tbody>';
+    '<th class="n">Time</th><th class="n">Pace</th><th class="n">HR</th>' +
+    '<th class="n">kcal</th></tr></thead><tbody>';
   if (!mr.length){
-    h += '<tr><td colspan="7" class="dim">Nothing yet.</td></tr>';
+    h += '<tr><td colspan="8" class="dim">Nothing yet.</td></tr>';
   } else {
     mr.forEach(function(r){
       h += '<tr><td>' + esc(r.label) + '</td>' +
@@ -1080,7 +1192,8 @@ function viewStats(){
         '<td class="n">' + (r.runs || "&mdash;") + '</td>' +
         '<td class="n">' + (r.sec ? durStr(r.sec) : "&mdash;") + '</td>' +
         '<td class="n">' + (r.km && r.sec ? paceStr(r.km, r.sec).replace(" /km", "") : "&mdash;") + '</td>' +
-        '<td class="n">' + (r.hr || "&mdash;") + '</td></tr>';
+        '<td class="n">' + (r.hr || "&mdash;") + '</td>' +
+        '<td class="n">' + (r.kcal ? r.kcal : "&mdash;") + '</td></tr>';
     });
   }
   h += '</tbody></table></div>' +
@@ -1098,7 +1211,7 @@ function viewStats(){
         '<div class="stat"><div class="v">' + n1(exKm) + '</div><div class="k">km</div></div>' +
       '</div>' +
       '<div class="tbl"><table><thead><tr><th>Date</th><th class="n">km</th><th class="n">Time</th>' +
-      '<th class="n">Pace</th><th class="n">HR</th><th></th></tr></thead><tbody>';
+      '<th class="n">Pace</th><th class="n">HR</th><th class="n">kcal</th><th></th></tr></thead><tbody>';
     state.extras.slice().reverse().forEach(function(l){
       var i = state.extras.indexOf(l);
       h += '<tr><td class="dim">' + esc(l.date || "&mdash;") + '</td>' +
@@ -1106,6 +1219,7 @@ function viewStats(){
         '<td class="n">' + (l.durSec ? durStr(l.durSec) : "&mdash;") + '</td>' +
         '<td class="n">' + (l.km && l.durSec ? paceStr(l.km, l.durSec).replace(" /km", "") : "&mdash;") + '</td>' +
         '<td class="n">' + (l.hr || "&mdash;") + '</td>' +
+        '<td class="n">' + (l.kcal || "&mdash;") + '</td>' +
         '<td class="n"><button class="xs" data-act="del-extra" data-i="' + i + '">&times;</button></td></tr>';
     });
     h += '</tbody></table></div>' +
@@ -1138,12 +1252,27 @@ function viewStats(){
              (Math.round(g*10)/10) + '</text>';
     });
     if (vs.length > 1){
-      svg += '<polyline fill="none" stroke="#3ce08c" stroke-width="2.5" stroke-linejoin="round" points="' +
-             vs.map(function(p, i){ return xf(i) + "," + yf(p.vo2); }).join(" ") + '"/>';
+      var pts = vs.map(function(p, i){ return xf(i) + "," + yf(p.vo2); }).join(" ");
+      // One series, so the fill carries no extra meaning — it just anchors the
+      // line to the baseline and stops it floating in the panel.
+      svg += '<defs><linearGradient id="vg" x1="0" y1="0" x2="0" y2="1">' +
+             '<stop offset="0%" stop-color="#3ce08c" stop-opacity=".26"/>' +
+             '<stop offset="100%" stop-color="#3ce08c" stop-opacity="0"/></linearGradient></defs>';
+      svg += '<polygon fill="url(#vg)" points="' + xf(0) + ',' + (8 + ch) + ' ' + pts + ' ' +
+             xf(vs.length-1) + ',' + (8 + ch) + '"/>';
+      svg += '<polyline fill="none" stroke="#3ce08c" stroke-width="2" stroke-linejoin="round" ' +
+             'stroke-linecap="round" points="' + pts + '"/>';
     }
+    // Only the endpoints are marked and labelled — a dot on all 40 runs is noise.
     vs.forEach(function(p, i){
-      svg += '<circle cx="' + xf(i) + '" cy="' + yf(p.vo2) + '" r="3.5" fill="#3ce08c"/>';
+      var last = i === vs.length - 1;
+      if (!last && i !== 0 && vs.length > 2) return;
+      svg += '<circle cx="' + xf(i) + '" cy="' + yf(p.vo2) + '" r="' + (last ? 4.5 : 3) +
+             '" fill="#3ce08c" stroke="#151920" stroke-width="2"/>';
     });
+    var lastP = vs[vs.length-1];
+    svg += '<text x="' + Math.min(xf(vs.length-1), CW - 16) + '" y="' + (yf(lastP.vo2) - 9) +
+           '" fill="#f3f6fa" font-size="11" font-weight="700" text-anchor="end">' + lastP.vo2 + '</text>';
     svg += '</svg>';
     var latest = vs[vs.length-1].vo2, first = vs[0].vo2, delta = Math.round((latest - first) * 10) / 10;
     h += svg + '<div class="legend"><span>Latest <b style="color:var(--text)">' + latest + '</b></span>' +
@@ -1187,6 +1316,7 @@ function viewStats(){
   return h;
 }
 
+var lastTab = null;
 function render(){
   var t = today();
   document.getElementById("title").textContent =
@@ -1194,8 +1324,14 @@ function render(){
   document.getElementById("subtitle").textContent =
     tab === "today" ? fmtLong(t) : "Week " + (currentWeekIndex()+1) + " of " + planLen();
 
-  document.getElementById("view").innerHTML =
+  var view = document.getElementById("view");
+  view.innerHTML =
     tab === "today" ? viewToday() : tab === "plan" ? viewPlan() : viewStats();
+
+  // Entrance is for arriving at a tab. Replaying it every time a run is saved
+  // turns a nicety into a stutter.
+  view.classList.toggle("anim", tab !== lastTab);
+  lastTab = tab;
 
   Array.prototype.forEach.call(document.querySelectorAll(".tabbar button"), function(b){
     b.classList.toggle("on", b.dataset.tab === tab);
@@ -1221,6 +1357,7 @@ function openSheet(w, d){
     min: l.durSec ? Math.floor(l.durSec/60) : "",
     sec: l.durSec ? l.durSec%60 : "",
     hr: l.hr || "",
+    kcal: l.kcal || "",
     splits: splitsToText(l.splits),
     effort: l.effort || "moderate",
     painOn: !!(l.pain && l.pain.area),
@@ -1277,8 +1414,9 @@ function drawSheet(){
       '<div class="inp"><input id="f-sec" type="number" inputmode="numeric" min="0" max="59" placeholder="00" value="' + draft.sec + '"><span class="u">sec</span></div>' +
       '</div></div><div class="pace" id="pace"></div>';
 
-    h += '<div class="field"><span class="label">Average heart rate</span><div class="inputs">' +
-      '<div class="inp"><input id="f-hr" type="number" inputmode="numeric" min="60" max="230" placeholder="&mdash;" value="' + draft.hr + '"><span class="u">bpm</span></div>' +
+    h += '<div class="field"><span class="label">Heart rate &amp; energy</span><div class="inputs">' +
+      '<div class="inp"><input id="f-hr" type="number" inputmode="numeric" min="60" max="230" placeholder="&mdash;" value="' + draft.hr + '"><span class="u">avg bpm</span></div>' +
+      '<div class="inp"><input id="f-kcal" type="number" inputmode="numeric" min="0" max="9999" placeholder="&mdash;" value="' + draft.kcal + '"><span class="u">kcal</span></div>' +
       '</div></div><div class="pace" id="vo2"></div>';
 
     h += '<div class="field"><span class="label">Splits &mdash; one per km</span>' +
@@ -1317,11 +1455,12 @@ function drawSheet(){
 function readInputs(){
   var km = document.getElementById("f-km"), mi = document.getElementById("f-min"), se = document.getElementById("f-sec"),
       hr = document.getElementById("f-hr"), sp = document.getElementById("f-splits"),
-      nt = document.getElementById("f-note");
+      kc = document.getElementById("f-kcal"), nt = document.getElementById("f-note");
   if (km) draft.km  = km.value === "" ? 0 : parseFloat(km.value);
   if (mi) draft.min = mi.value === "" ? "" : parseInt(mi.value, 10);
   if (se) draft.sec = se.value === "" ? "" : parseInt(se.value, 10);
   if (hr) draft.hr  = hr.value === "" ? "" : parseInt(hr.value, 10);
+  if (kc) draft.kcal = kc.value === "" ? "" : parseInt(kc.value, 10);
   if (sp) draft.splits = sp.value;
   if (nt) draft.note = nt.value;
 }
@@ -1385,11 +1524,12 @@ function saveDraft(){
         "\n\nRecovery weeks are what let the build weeks work. Save anyway?")) return;
   }
 
-  var hr = parseInt(draft.hr, 10);
+  var hr = parseInt(draft.hr, 10), kc = parseInt(draft.kcal, 10);
   setLog(w, d, {
     done:true, skipped:false,
     km:km, durSec:sec, effort:draft.effort,
     hr: (hr > 0 ? hr : null),
+    kcal: (kc > 0 ? kc : null),
     splits: parseSplits(draft.splits),
     date:toISO(runDate(w, d)), ts:Date.now(),
     pain: draft.painOn && draft.area ? { area:draft.area, note:draft.note } : null
@@ -1540,6 +1680,14 @@ function normKm(v){
   return v > 200 ? v / 1000 : v;
 }
 /* Same idea for time: under 600 has to be minutes, above it seconds. */
+/* Calories arrive as kcal everywhere that matters. A run past 5000 is a unit
+   mistake — almost certainly joules — so convert rather than store nonsense. */
+function normKcal(v){
+  v = parseFloat(v);
+  if (!isFinite(v) || v <= 0) return null;
+  if (v > 5000) v = v / 4.184;                 // kJ that were labelled calories
+  return Math.round(v);
+}
 function normSec(v){
   if (typeof v === "string" && v.indexOf(":") >= 0){
     var p = v.split(":").map(Number);
@@ -1587,10 +1735,12 @@ function parseTCX(t){
   var doc = new DOMParser().parseFromString(t, "application/xml");
   if (firstTag(doc, "parsererror")) throw new Error("That TCX file is malformed.");
   return xtags(doc, "Activity").map(function(a){
-    var laps = xtags(a, "Lap"), sec = 0, m = 0, hrs = [];
+    var laps = xtags(a, "Lap"), sec = 0, m = 0, hrs = [], kcal = 0;
     laps.forEach(function(l){
       sec += parseFloat(txt(firstTag(l, "TotalTimeSeconds"))) || 0;
       m   += parseFloat(txt(firstTag(l, "DistanceMeters"))) || 0;
+      // TCX reports calories per lap, so the run's total is their sum.
+      kcal += parseFloat(txt(firstTag(l, "Calories"))) || 0;
       var h = firstTag(l, "AverageHeartRateBpm");
       if (h){ var v = parseFloat(txt(firstTag(h, "Value"))); if (v) hrs.push(v); }
     });
@@ -1623,7 +1773,8 @@ function parseTCX(t){
     var d = new Date(when);
     if (isNaN(d) && pts.length) d = new Date(pts[0].t);
     return isNaN(d) ? null
-      : { date:localISO(d), km:m/1000, sec:Math.round(sec), hr:mean(hrs), splits:splits };
+      : { date:localISO(d), km:m/1000, sec:Math.round(sec), hr:mean(hrs), splits:splits,
+          kcal: kcal > 0 ? Math.round(kcal) : null };
   }).filter(function(r){ return r && r.km > 0; });
 }
 
@@ -1676,6 +1827,8 @@ var K_DATE = ["date","startdate","start","starttime","datetime","day","enddate"]
 var K_DIST = ["km","distancekm","distance","distancemeters","distancemetres","meters","metres","totaldistance"];
 var K_TIME = ["sec","seconds","duration","durationseconds","time","totaltimeseconds","minutes","elapsedtime","movingtime"];
 var K_HR   = ["hr","heartrate","avghr","averageheartrate","avgheartrate","meanheartrate"];
+var K_KCAL = ["kcal","calories","calorie","energy","activeenergy","activeenergyburned",
+              "totalenergyburned","energyburned","kilocalories"];
 
 function parseJSONActs(t){
   var data = JSON.parse(t);
@@ -1693,6 +1846,7 @@ function parseJSONActs(t){
       km: normKm(pick(o, K_DIST)),
       sec: normSec(pick(o, K_TIME)),
       hr: isFinite(hr) && hr > 0 ? Math.round(hr) : null,
+      kcal: normKcal(pick(o, K_KCAL)),
       splits: Array.isArray(sp) ? parseSplits(sp.join(" ")) : parseSplits(sp)
     };
   }).filter(function(r){ return r && r.km > 0; });
@@ -1713,7 +1867,8 @@ function parseCSV(t){
     for (var i = 0; i < names.length; i++){ var j = head.indexOf(names[i]); if (j >= 0) return j; }
     return -1;
   };
-  var iD = at(K_DATE, 0), iK = at(K_DIST, 1), iT = at(K_TIME, 2), iH = at(K_HR, -1);
+  var iD = at(K_DATE, 0), iK = at(K_DIST, 1), iT = at(K_TIME, 2), iH = at(K_HR, -1),
+      iC = at(K_KCAL, -1);
   if (iD < 0 || iK < 0) throw new Error("Could not find a date and a distance column.");
   return rows.map(function(l){
     var c = l.split(delim).map(function(s){ return s.trim().replace(/^"|"$/g, ""); });
@@ -1722,7 +1877,8 @@ function parseCSV(t){
     var hr = iH >= 0 ? parseFloat(c[iH]) : NaN;
     return {
       date: localISO(d), km: normKm(c[iK]), sec: iT >= 0 ? normSec(c[iT]) : 0,
-      hr: isFinite(hr) && hr > 0 ? Math.round(hr) : null
+      hr: isFinite(hr) && hr > 0 ? Math.round(hr) : null,
+      kcal: iC >= 0 ? normKcal(c[iC]) : null
     };
   }).filter(function(r){ return r && r.km > 0; });
 }
@@ -1808,7 +1964,15 @@ function parseWorkoutBlock(chunk){
     if (isFinite(h) && h > 0) hr = h;
   }
 
-  return { date: localISO(start), km: km, sec: sec, hr: hr, splits: null };
+  // Same story as distance: an attribute on older exports, a statistic on newer.
+  var kcal = parseFloat(hkAttr(chunk, "totalEnergyBurned"));
+  if (!(kcal > 0)){
+    var es = hkStat(chunk, "ActiveEnergyBurned", "sum");
+    if (es) kcal = parseFloat(es.value);
+  }
+
+  return { date: localISO(start), km: km, sec: sec, hr: hr, splits: null,
+           kcal: (isFinite(kcal) && kcal > 0) ? Math.round(kcal) : null };
 }
 
 /* Hands every complete block to sink and returns where the last one ended, so
@@ -1935,6 +2099,7 @@ function drawImport(){
         (a.sec ? ' &middot; ' + durStr(a.sec) : '') +
         (a.km && a.sec ? ' &middot; ' + paceStr(a.km, a.sec) : '') +
         (a.hr ? ' &middot; ' + a.hr + ' bpm' : '') +
+        (a.kcal ? ' &middot; ' + a.kcal + ' kcal' : '') +
         (a.splits && a.splits.length ? ' &middot; ' + a.splits.length + ' splits' : '') +
       '</span>' + line2 + '</span></button>';
   });
@@ -2101,6 +2266,7 @@ function applyImport(){
         km: Math.round(r.act.km * 100) / 100,
         durSec: r.act.sec || 0,
         hr: r.act.hr || null,
+        kcal: r.act.kcal || null,
         splits: r.act.splits || null,
         effort: null,
         date: r.act.date, ts: Date.now(),
@@ -2116,6 +2282,7 @@ function applyImport(){
       km: Math.round(r.act.km * 100) / 100,
       durSec: r.act.sec || 0,
       hr: r.act.hr || null,
+      kcal: r.act.kcal || prev.kcal || null,
       splits: r.act.splits || prev.splits || null,
       effort: prev.effort || null,        // not in the data — left for you to set
       date: r.act.date, ts: Date.now(),
@@ -2146,6 +2313,13 @@ document.addEventListener("click", function(e){
   if (el){
     var pr = el.dataset.run.split(",");
     openSheet(+pr[0], +pr[1]);
+    return;
+  }
+
+  el = e.target.closest("[data-bar]");
+  if (el){
+    var ro = document.getElementById("barReadout");
+    if (ro) ro.innerHTML = barReadoutHTML(+el.dataset.bar);
     return;
   }
 
@@ -2230,7 +2404,7 @@ document.getElementById("fileIn").addEventListener("change", function(e){
   e.target.value = "";        // so the same file can be picked again
 });
 sheet.addEventListener("input", function(e){
-  if (/^f-(km|min|sec|hr|splits)$/.test(e.target.id || "")){
+  if (/^f-(km|min|sec|hr|kcal|splits)$/.test(e.target.id || "")){
     readInputs(); syncPace();
     return;
   }

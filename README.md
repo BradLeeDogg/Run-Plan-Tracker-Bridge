@@ -46,17 +46,25 @@ Service workers need `http://localhost` or HTTPS — opening `index.html` as a
 
 ## What it tracks
 
-Per run: completed or skipped, actual distance and duration, effort
-(easy / moderate / hard), and any pain with a body-area tag and a note. Pace is
-derived and shown as you type.
+Per run: completed or skipped, actual distance and duration, average heart rate,
+calories, effort (easy / moderate / hard), and any pain with a body-area tag and
+a note. Pace and the VO<sub>2</sub> estimate are derived and shown as you type.
+
+Calories are read from whatever you import — TCX laps, Apple Health's
+`totalEnergyBurned`, or a calories column in JSON or CSV — and can be typed in
+alongside heart rate.
 
 Per week: actual against planned with a percentage, rolling 4-week volume, and
 a streak of consecutive completed runs.
 
 Stats also breaks the block down **week by week** and **month by month** —
 planned against done, run count, total time, average pace and average heart
-rate. Months are calendar months taken from the date each run happened, so a
-week straddling the turn of a month is split across both.
+rate and calories. Months are calendar months taken from the date each run
+happened, so a week straddling the turn of a month is split across both.
+
+Tapping a column in the weekly chart fills in a readout below it — that week's
+distance against plan, run count, time, pace, heart rate and calories. There is
+no hover on a phone, so the numbers behind a bar need somewhere to land.
 
 ## Changing the plan
 
