@@ -1782,37 +1782,51 @@ function hkStat(chunk, typeFragment, attr){
   return v === null ? null : { value: v, unit: hkAttr(m[0], "unit") };
 }
 
-function parseAppleHealth(t){
-  var out = [], m;
-  HK_WORKOUT_RE.lastIndex = 0;
-  while ((m = HK_WORKOUT_RE.exec(t)) !== null){
-    var chunk = m[0];
-    if (!/Running/i.test(hkAttr(chunk, "workoutActivityType") || "")) continue;
+/* One <Workout> block to an activity, or null if it is not a run we can use. */
+function parseWorkoutBlock(chunk){
+  if (!/Running/i.test(hkAttr(chunk, "workoutActivityType") || "")) return null;
 
-    var start = hkDate(hkAttr(chunk, "startDate"));
-    if (!start) continue;
+  var start = hkDate(hkAttr(chunk, "startDate"));
+  if (!start) return null;
 
-    var km = hkKm(hkAttr(chunk, "totalDistance"), hkAttr(chunk, "totalDistanceUnit"));
-    if (!km){
-      var ds = hkStat(chunk, "DistanceWalkingRunning", "sum");
-      if (ds) km = hkKm(ds.value, ds.unit);
-    }
-    if (!(km > 0)) continue;                        // no distance, nothing to log
-
-    var sec = hkSeconds(hkAttr(chunk, "duration"), hkAttr(chunk, "durationUnit"));
-    if (!sec){
-      var end = hkDate(hkAttr(chunk, "endDate"));
-      if (end) sec = Math.round((end - start) / 1000);
-    }
-
-    var hr = null, hs = hkStat(chunk, "HeartRate", "average");
-    if (hs){
-      var h = Math.round(parseFloat(hs.value));
-      if (isFinite(h) && h > 0) hr = h;
-    }
-
-    out.push({ date: localISO(start), km: km, sec: sec, hr: hr, splits: null });
+  var km = hkKm(hkAttr(chunk, "totalDistance"), hkAttr(chunk, "totalDistanceUnit"));
+  if (!km){
+    var ds = hkStat(chunk, "DistanceWalkingRunning", "sum");
+    if (ds) km = hkKm(ds.value, ds.unit);
   }
+  if (!(km > 0)) return null;                       // no distance, nothing to log
+
+  var sec = hkSeconds(hkAttr(chunk, "duration"), hkAttr(chunk, "durationUnit"));
+  if (!sec){
+    var end = hkDate(hkAttr(chunk, "endDate"));
+    if (end) sec = Math.round((end - start) / 1000);
+  }
+
+  var hr = null, hs = hkStat(chunk, "HeartRate", "average");
+  if (hs){
+    var h = Math.round(parseFloat(hs.value));
+    if (isFinite(h) && h > 0) hr = h;
+  }
+
+  return { date: localISO(start), km: km, sec: sec, hr: hr, splits: null };
+}
+
+/* Hands every complete block to sink and returns where the last one ended, so
+   a caller working in slices knows exactly how much of the buffer is spent. */
+function scanWorkouts(text, sink){
+  var m, lastEnd = 0;
+  HK_WORKOUT_RE.lastIndex = 0;
+  while ((m = HK_WORKOUT_RE.exec(text)) !== null){
+    var a = parseWorkoutBlock(m[0]);
+    if (a) sink(a);
+    lastEnd = m.index + m[0].length;
+  }
+  return lastEnd;
+}
+
+function parseAppleHealth(t){
+  var out = [];
+  scanWorkouts(t, function(a){ out.push(a); });
   if (!out.length)
     throw new Error("No running workouts found in that Health export.");
   return out;
@@ -1946,11 +1960,124 @@ function wireDrop(){
   });
 }
 
+/* ---------- large files ----------
+   A full Apple Health export is the whole history of every sensor the phone
+   has, and routinely runs past a gigabyte. Reading that with readAsText builds
+   one enormous string and the tab is killed long before parsing starts, so a
+   Health export is walked in slices instead and only its <Workout> blocks are
+   kept — a few hundred bytes each, and the only part this app wants.
+
+   Decoding uses TextDecoder in streaming mode because a slice boundary can
+   fall inside a multi-byte character; decoding each slice independently would
+   corrupt it. Any partial workout left at the end of a slice is carried into
+   the next one. */
+var STREAM_THRESHOLD = 20 * 1024 * 1024;    // 20 MB — above this, do not slurp
+var STREAM_CHUNK = 8 * 1024 * 1024;
+
+function canStream(f){
+  return typeof TextDecoder !== "undefined" && f && typeof f.slice === "function" &&
+         typeof Blob !== "undefined" && typeof Blob.prototype.arrayBuffer === "function";
+}
+
+/* Reads the first slice only, to find out what we are dealing with. */
+function peekFile(f){
+  return f.slice(0, 64 * 1024).arrayBuffer().then(function(buf){
+    return new TextDecoder("utf-8").decode(buf);
+  });
+}
+
+/* Index of the last real <Workout ...> opening tag. Cannot be lastIndexOf,
+   because "<Workout" is also a prefix of "<WorkoutStatistics" — cutting the
+   buffer there splits a workout down the middle and loses it. */
+function lastWorkoutStart(text){
+  var re = /<Workout[\s>\/]/g, m, at = -1;
+  while ((m = re.exec(text)) !== null) at = m.index;
+  return at;
+}
+
+function streamHealthWorkouts(f, onProgress){
+  var dec = new TextDecoder("utf-8");
+  var acts = [], tail = "", pos = 0;
+  var MAX_TAIL = 4 * 1024 * 1024;      // a workout is bytes, not megabytes
+
+  function step(){
+    if (pos >= f.size){
+      if (tail) collect(tail);
+      return Promise.resolve(acts);
+    }
+    var end = Math.min(pos + STREAM_CHUNK, f.size);
+    return f.slice(pos, end).arrayBuffer().then(function(buf){
+      var text = tail + dec.decode(buf, { stream: true });
+      pos = end;
+
+      // Take every complete block, then carry forward only what follows the
+      // last one — which is at most a partial workout, so the tail stays small.
+      // Anything already matched is spent and must never be re-scanned or
+      // dropped: that is where duplicates and losses come from.
+      var spent = scanWorkouts(text, function(a){ acts.push(a); });
+      var rest = text.slice(spent);
+      var open = lastWorkoutStart(rest);
+      tail = (open === -1) ? rest.slice(-2048) : rest.slice(open);
+
+      // Only reachable if a <Workout> never closes — malformed, not a run.
+      if (tail.length > MAX_TAIL) tail = tail.slice(-2048);
+
+      if (onProgress) onProgress(pos / f.size, acts.length);
+      // Yield to the UI so the progress line actually paints.
+      return new Promise(function(res){ setTimeout(res, 0); }).then(step);
+    });
+  }
+
+  function collect(text){
+    scanWorkouts(text, function(a){ acts.push(a); });
+  }
+
+  return step();
+}
+
 function readFile(f){
-  var fr = new FileReader();
-  fr.onload = function(){ tryParse(String(fr.result)); };
-  fr.onerror = function(){ alert("Could not read that file."); };
-  fr.readAsText(f);
+  // Small enough to read whole — every format, unchanged.
+  if (!canStream(f) || f.size < STREAM_THRESHOLD){
+    var fr = new FileReader();
+    fr.onload = function(){ tryParse(String(fr.result)); };
+    fr.onerror = function(){
+      alert(f.size >= STREAM_THRESHOLD
+        ? "That file is too large for this browser to read in one go."
+        : "Could not read that file.");
+    };
+    fr.readAsText(f);
+    return;
+  }
+
+  peekFile(f).then(function(head){
+    if (!/<HealthData|HKWorkoutActivityType/i.test(head)){
+      alert("That file is " + Math.round(f.size / 1048576) + " MB, which is too large to read " +
+            "unless it is an Apple Health export.");
+      return;
+    }
+    showScanning(0, 0);
+    return streamHealthWorkouts(f, showScanning).then(function(acts){
+      if (!acts.length){
+        alert("No running workouts found in that Health export.");
+        drawImport();
+        return;
+      }
+      importRows = buildImportRows(acts);
+      drawImport();
+    });
+  }).catch(function(err){
+    alert("Could not read that file. " + (err && err.message ? err.message : ""));
+  });
+}
+
+function showScanning(frac, found){
+  sheet.innerHTML = '<div class="grab"></div><h2>Reading the export</h2>' +
+    '<div class="sub">Health exports are large, so this is read in pieces. ' +
+    'Keep the app open.</div>' +
+    '<div class="bar" style="margin:18px 0 10px"><i style="width:' +
+      Math.round(frac * 100) + '%"></i></div>' +
+    '<div class="pace">' + Math.round(frac * 100) + '% &middot; <b>' + found +
+    '</b> run' + (found === 1 ? '' : 's') + ' found so far</div>';
 }
 
 function tryParse(text){
