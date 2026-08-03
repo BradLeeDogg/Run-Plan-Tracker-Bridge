@@ -85,41 +85,46 @@ testing; verified splits come back exact against known source paces.
 Activities pair with the nearest plan run within 3 days. Already-logged slots
 are flagged and left unticked. Parsing happens in the page; nothing uploads.
 
-**Log keys are `week-day` slots**, not dates. Editing a distance in `PLAN`
-keeps logs attached; reordering weeks would silently re-point them. If the
-block needs restructuring mid-training, change to date-stable keying first.
+**Logs key on run ids** — `state.logs[runId]`, not on position. They used to key
+on `week-day` slots, which meant deleting or reordering a week silently
+re-pointed every later log onto a different run. That was fixed when the plan
+became editable; ids move with the run, so weeks can be added, removed and
+reshaped freely. Do not reintroduce positional keys.
 
-## 5. Repo state — currently broken
+**The plan itself lives in storage**, not in the source. `DEFAULT_PLAN` and
+`WEEK1_MONDAY` are only the first-run seed and what "reset" restores. Week
+totals are summed from the runs and never stored, so an edited distance cannot
+leave a stale total behind. Exports carry the plan alongside the logs, and v1
+backups (`week-day` keys plus a `weekStarts` array) are migrated on load and on
+restore.
 
-The owner uploaded files through GitHub's web uploader. Commit `d63ee24`
-"Add files via upload" contains:
+## 5. Repo state — resolved
 
-```
-index (1).html   ← must be exactly index.html, or Pages serves nothing
-icon180.png      ← manifest expects icon-180.png
-icon512.png      ← manifest expects icon-512.png
-README.md  icon.svg  manifest.json  sw.js
-```
+The web uploader had left `index (1).html`, `icon180.png` and `icon512.png` —
+browser "(1)" suffixes and dropped hyphens. Both icons 404'd because
+`manifest.json`, `sw.js` and `index.html` all reference the hyphenated names,
+which cost the `apple-touch-icon` iOS uses for the home screen. Renamed, and the
+stale duplicate deleted.
 
-Two faults: **browser "(1)" suffixes and dropped hyphens**, and the uploaded
-`index.html` is the **old build** — no splits, HR, VO<sub>2</sub>, or import
-(verified: zero matches for `vo2for`, `splitsFromPoints`, `parseTCX`).
+The prior session's unpushed local commits did **not** survive — containers
+clone fresh, so anything uncommitted or unpushed is gone at session end. Push
+early. As it turned out the good build had already been uploaded separately, so
+the only real fault was the filenames.
 
-**To fix:** delete those three files, then commit the correct ones from this
-repo — `index.html`, `sw.js`, `icon-180.png`, `icon-512.png`. Then Settings →
-Pages → deploy from `main`, root.
+Pages is live from `main`, root. Note it took a while to appear: the site 404s
+until the first build actually publishes, and until then Settings shows the
+source as configured with no "Your site is live at…" banner. Branch-based Pages
+reports through neither Actions runs nor `/deployments`, so the absence of those
+records proves nothing either way — do not read it as a signal.
 
-Push access was never granted to the original session: `git push` returned 403,
-and the GitHub API said *"repository not configured for this session. Allowed
-repositories: bradleedogg/writability."* A local `settings.local.json` allow
-entry for `add_repo` existed and made no difference — the block is server-side
-session scope. **A session created against this repo should be able to push
-normally.** Verify early with a trivial commit rather than at the end.
+`.nojekyll` is committed so files are served exactly as written.
 
 ## 6. The other half — getting a TCX off the watch
 
-Lives in a **different repo**: `BradLeeDogg/Writability`, branch
-`claude/samsung-health-cross-device-sync-kp09ei`, under `samsung-watch-sync/`.
+Lives here, in **`samsung-watch-sync/`**. It used to sit on a branch of
+`BradLeeDogg/Writability` — a word processor — purely because the session that
+wrote it was scoped to that one repo and had nowhere else to push. It was moved
+here, where its other half already is.
 
 A Wear OS app in Kotlin that records runs with GPS and heart rate, computes
 splits, writes TCX, and serves it over local Wi-Fi:
@@ -128,28 +133,47 @@ splits, writes TCX, and serves it over local Wi-Fi:
 - `GET /runs/{id}.tcx` — the file
 - port **8787**
 
-Its TCX output was checked field-by-field against this app's importer and they
-match: `<Id>` start time, `<Lap>` with `TotalTimeSeconds`/`DistanceMeters`,
-`<Trackpoint>` with `Time`/`DistanceMeters`/`HeartRateBpm`. The `<Id>` is
-exactly what the split-origin fix keys on.
+**The TCX contract is verified, not just eyeballed.** `Splits.kt` and
+`TcxWriter.kt` carry no Android imports, so they compile and run on a plain JVM.
+Running them against synthetic runs and feeding the output into this app's own
+importer showed the two agree: `<Id>` start time, `<Lap>` with
+`TotalTimeSeconds`/`DistanceMeters`, `<Trackpoint>` with
+`Time`/`DistanceMeters`/`HeartRateBpm`.
 
-**It has never been built.** Kotlin source and Gradle files, no wrapper, no
-APK, never compiled. Getting it onto the watch needs Android Studio, developer
-mode on the watch, and ADB over Wi-Fi.
+That exercise found a real bug. The watch timed its first split from the first
+trackpoint, but GPS delivers nothing until it locks, so the opening kilometre
+was short by however long that took — 4:56 against a true 5:04, while this app
+said 5:04 because it already keys on `<Id>`. Fixed on the watch side; both now
+agree. `verify_splits.py` covers the case.
 
-**Unresolved:** an offer to install the Android SDK and produce an APK. Java 21
-and Gradle are present in the container; no SDK, ~30 GB free. Never attempted —
-awaiting a decision.
+**One known difference, by design:** the watch emits a trailing partial split
+(5.4 km gives six laps, the last 400 m); this app reports only whole
+kilometres. The tail does not appear in the split list.
+
+**No APK has ever been built, and it cannot be built in this container.** Not
+merely a missing SDK: Gradle's `google()` repository *is* `dl.google.com`, which
+serves both the SDK packages and the Android Gradle Plugin, and that host is
+blocked here — the build dies at plugin resolution before touching any Android
+code. `maven.google.com` resolves to the same host. This is settled; do not
+re-attempt it. Building needs a machine with ordinary access to Google's
+servers: Android Studio, developer mode on the watch, ADB over Wi-Fi.
+
+The Gradle wrapper is now committed (8.9, suiting AGP 8.5.2), so `cd
+samsung-watch-sync/wear && ./gradlew :app:assembleDebug` works from a clean
+checkout with only a JDK 17–21 plus the SDK that Android Studio provides.
 
 **Constraint to remember:** the PWA on GitHub Pages is HTTPS and browsers block
 HTTPS pages from fetching `http://`. So it cannot pull from the watch in one
 tap. The flow is: Safari to `http://<watch-ip>:8787/runs`, download the `.tcx`
 to Files, then Import in the app. Two steps, about a minute.
 
-## 7. The plan (hardcoded in `PLAN`, `index.html`)
+## 7. The starting plan (`DEFAULT_PLAN`, `index.html`)
 
 Tue / Thu / Sun, Sunday long, weeks start Monday. `WEEK1_MONDAY = 2026-08-03`.
 318 km total, finishing Sunday 25 Oct 2026. Totals verified against the sums.
+
+This is the seed only — the live plan is editable in the app and stored on the
+device, so what the owner is actually running may differ from the table below.
 
 | Week | Starts | Tue / Thu / Sun | Total |
 |-----:|--------|-----------------|------:|
@@ -168,11 +192,23 @@ Tue / Thu / Sun, Sunday long, weeks start Monday. `WEEK1_MONDAY = 2026-08-03`.
 
 ## 8. Next steps, in order
 
-1. Fix the repo filenames and push the current build (§5). Enable Pages.
-2. Install to the iPhone home screen, log one run, confirm it persists.
-3. Decide on the Android SDK build attempt (§6).
-4. If that goes ahead: build the APK, sideload, verify a real TCX imports and
-   the splits look right against the watch's own screen.
+Done: the filenames (§5), Pages, the editable plan with weekly and monthly
+stats, the watch app moved here, and the split-origin fix on the watch side.
+The Android SDK question is closed — it cannot be built in this container (§6),
+so there is nothing left to decide, only to do on a real machine.
+
+1. Install to the iPhone home screen, log one run, confirm it persists. If it
+   was installed before the icon fix, delete and re-add — iOS snapshots the
+   icon at install time and never refetches it.
+2. Build the APK on a machine with Android Studio: open `samsung-watch-sync/wear`,
+   let it sync, `./gradlew :app:assembleDebug`. Expect to fix the Health Services
+   generics in `HealthCollectorService.kt` — pinned to `1.0.0-rc02`, and its
+   shape moved between library versions.
+3. Sideload over ADB, record a real run, and check the watch's split table
+   against the app's after importing the TCX. They should now agree on the first
+   kilometre; that was the bug.
+4. Decide whether the trailing partial split should appear in the app's split
+   list (§6). Currently the watch reports it and the app does not.
 
 ---
 
