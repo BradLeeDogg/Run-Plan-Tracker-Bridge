@@ -1,10 +1,11 @@
 # Run Plan Tracker
 
-A single-file PWA for tracking a 12-week run block. Add it to the iPhone home
-screen and it behaves like an app: opens offline, no account, no network calls,
-no analytics. Everything is stored in `localStorage` on the device.
+A single-file PWA for tracking a run block. Add it to the iPhone home screen and
+it behaves like an app: opens offline, no account, no network calls, no
+analytics. Everything is stored in `localStorage` on the device.
 
-Runs are Tue / Thu / Sun, with Sunday as the long run.
+It ships with the 12-week block below, and the plan is editable in the app —
+distances, which day each run falls on, and how many weeks there are.
 
 | Week | Starts | Tue / Thu / Sun | Total |
 |-----:|--------|-----------------|------:|
@@ -52,6 +53,28 @@ derived and shown as you type.
 Per week: actual against planned with a percentage, rolling 4-week volume, and
 a streak of consecutive completed runs.
 
+Stats also breaks the block down **week by week** and **month by month** —
+planned against done, run count, total time, average pace and average heart
+rate. Months are calendar months taken from the date each run happened, so a
+week straddling the turn of a month is split across both.
+
+## Changing the plan
+
+- **A run you cannot make.** Tap it and pick another day of that week. Moving a
+  run is limited to its own week on purpose: weekly totals stay meaningful and
+  the volume guards keep working. To move further, shift the whole week.
+- **Distances, and how the week is shaped.** Plan → *Edit this week* sets each
+  run's distance and day, adds or removes runs, and marks the week normal,
+  recovery or peak. Week totals are always summed from the runs, never stored,
+  so they cannot drift.
+- **Length of the block.** *Add a week at the end* extends it, copying the shape
+  of the final week; *Delete week* shortens it and pulls the later weeks back so
+  the calendar stays tight.
+- **Slipping the whole thing.** The per-week controls move that week and
+  everything after it a week earlier or later.
+
+Editing the plan never disturbs runs you have already logged — see below.
+
 ## The parts that push back
 
 - **Over-reaching.** Logging more than 110% of a week's planned volume raises a
@@ -71,10 +94,20 @@ a streak of consecutive completed runs.
 clipboard when the download route is awkward on iOS. **Import** restores from
 either. Clearing Safari website data erases everything, so export occasionally.
 
-The plan itself is hardcoded in `PLAN` at the top of the script in
-`index.html`, alongside `WEEK1_MONDAY`. Editing those changes the block; logged
-runs are keyed by week and day, so they survive a distance edit but not a
-reordering of the plan.
+### How logs stay attached
+
+Every run carries an id, and logs are stored against that id rather than against
+the run's position in the plan. This is what makes the plan safe to edit:
+deleting week 2 shifts every later week up one, and under position-based keying
+each log after the edit would silently re-point to a different run.
+
+`DEFAULT_PLAN` and `WEEK1_MONDAY` at the top of the script are only the starting
+point, used on a first run and by **Erase logs and reset the plan**. After that
+the plan lives in storage next to the logs, and an exported backup carries both.
+
+Backups written by the previous version — logs keyed `"week-day"`, with a
+separate `weekStarts` array — are migrated on load and on restore, so older
+exports still work.
 
 ## Files
 
