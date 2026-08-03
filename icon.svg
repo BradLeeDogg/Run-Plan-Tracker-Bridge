@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Run Plan">
+  <rect width="512" height="512" rx="112" fill="#0a0c10"/>
+  <g fill="none" stroke="#3ce08c" stroke-width="34" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M302 200 L250 272"/>
+    <path d="M300 218 L352 240 L338 294"/>
+    <path d="M300 218 L246 196 L208 222"/>
+    <path d="M250 272 L292 332 L304 400"/>
+    <path d="M250 272 L192 314 L142 300"/>
+  </g>
+  <circle cx="318" cy="142" r="36" fill="#3ce08c"/>
+</svg>
