@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Run Plan</title>
+<meta name="theme-color" content="#0a0c10">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Run Plan">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<link rel="icon" type="image/svg+xml" href="./icon.svg">
+<style>
+:root{
+  --bg:#0a0c10; --surface:#151920; --surface2:#1d232d; --line:#2b333f;
+  --text:#f3f6fa; --muted:#95a1b4; --dim:#6b7688;
+  --accent:#3ce08c; --accent-dim:#1d6b45;
+  --planned:#333e4e;
+  --warn:#ffb03a; --danger:#ff5f5f; --recovery:#5ea8ff;
+  --easy:#3ce08c; --moderate:#ffb03a; --hard:#ff5f5f;
+  --tap:56px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--text);
+  font:16px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior-y:none;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer}
+h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
+
+#view{
+  padding:14px 14px calc(96px + env(safe-area-inset-bottom));
+  max-width:640px;margin:0 auto;
+}
+.topbar{
+  padding:calc(10px + env(safe-area-inset-top)) 14px 6px;
+  max-width:640px;margin:0 auto;
+  display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+}
+.topbar h1{font-size:19px}
+.topbar .sub{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+
+/* ---------- cards ---------- */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px}
+.card.recovery{border-color:var(--recovery);background:linear-gradient(180deg,rgba(94,168,255,.10),rgba(94,168,255,.02))}
+.label{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:700}
+
+/* ---------- today hero ---------- */
+.hero .when{font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:600}
+.hero .dist{font-size:64px;line-height:1;font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.hero .dist span{font-size:24px;font-weight:700;color:var(--muted);margin-left:4px;letter-spacing:0}
+.hero .countdown{margin-top:10px;font-size:15px;color:var(--muted)}
+.hero .countdown b{color:var(--text)}
+.badge{
+  display:inline-block;padding:4px 10px;border-radius:999px;
+  font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+}
+.badge.rec{background:rgba(94,168,255,.16);color:var(--recovery);border:1px solid rgba(94,168,255,.4)}
+.badge.today{background:rgba(60,224,140,.16);color:var(--accent);border:1px solid rgba(60,224,140,.4)}
+.badge.peak{background:rgba(255,95,95,.14);color:var(--danger);border:1px solid rgba(255,95,95,.4)}
+
+/* ---------- buttons ---------- */
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;min-height:var(--tap);border-radius:14px;
+  font-weight:700;font-size:17px;background:var(--surface2);
+  border:1px solid var(--line);padding:0 16px;
+}
+.btn:active{transform:scale(.985)}
+.btn.primary{background:var(--accent);color:#06210f;border-color:var(--accent);min-height:62px;font-size:19px}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--danger);border-color:rgba(255,95,95,.4)}
+.btn[disabled]{opacity:.4}
+.btn-row{display:flex;gap:10px}
+.btn-row>.btn{flex:1}
+
+/* ---------- weekly strip ---------- */
+.stats-row{display:flex;gap:10px}
+.stat{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px}
+.stat .v{font-size:26px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:700;margin-top:3px}
+.bar{height:10px;border-radius:6px;background:var(--planned);overflow:hidden;margin-top:10px}
+.bar>i{display:block;height:100%;background:var(--accent);border-radius:6px;transition:width .3s}
+.bar>i.over{background:var(--warn)}
+
+/* ---------- banners ---------- */
+.banner{
+  border-radius:14px;padding:13px 14px;margin-bottom:12px;
+  font-size:14px;line-height:1.4;border:1px solid;
+  display:flex;gap:11px;align-items:flex-start;
+}
+.banner .ico{font-size:17px;line-height:1.2}
+.banner b{display:block;margin-bottom:2px;font-size:14px}
+.banner.warn{background:rgba(255,176,58,.11);border-color:rgba(255,176,58,.42);color:#ffd699}
+.banner.danger{background:rgba(255,95,95,.11);border-color:rgba(255,95,95,.42);color:#ffbdbd}
+.banner.info{background:rgba(94,168,255,.11);border-color:rgba(94,168,255,.42);color:#c2ddff}
+.banner .act{
+  margin-top:10px;display:block;width:100%;min-height:46px;border-radius:11px;
+  background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);
+  font-weight:700;font-size:15px;color:inherit;
+}
+
+/* ---------- run rows ---------- */
+.runs{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.run{
+  display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+  min-height:60px;padding:10px 12px;border-radius:13px;
+  background:var(--surface2);border:1px solid transparent;
+}
+.run.is-today{border-color:var(--accent)}
+.run .dot{width:11px;height:11px;border-radius:50%;background:var(--dim);flex:0 0 auto}
+.run.done .dot{background:var(--accent)}
+.run.skipped .dot{background:var(--danger)}
+.run .day{width:34px;font-weight:800;font-size:14px;flex:0 0 auto}
+.run .date{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.run .mid{flex:1;min-width:0}
+.run .km{font-weight:800;font-variant-numeric:tabular-nums;font-size:17px;text-align:right}
+.run .km small{display:block;font-weight:600;font-size:11px;color:var(--muted);letter-spacing:.02em}
+.run .pain{color:var(--danger);font-size:11px;font-weight:700}
+.run .eff{display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:6px;vertical-align:middle}
+
+/* ---------- week list ---------- */
+.wk-head{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%}
+.wk-head .t{font-size:17px;font-weight:800}
+.wk-head .d{font-size:12px;color:var(--muted);font-weight:600}
+.wk-nums{text-align:right;font-variant-numeric:tabular-nums}
+.wk-nums .a{font-size:17px;font-weight:800}
+.wk-nums .p{font-size:12px;color:var(--muted)}
+.wk-body{display:none}
+.wk.open .wk-body{display:block}
+.wk.current{border-color:var(--accent)}
+
+/* ---------- chart ---------- */
+.chart{width:100%;height:210px;display:block}
+.legend{display:flex;gap:16px;margin-top:10px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+
+/* ---------- tab bar ---------- */
+.tabbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:40;
+  display:flex;background:rgba(10,12,16,.93);
+  backdrop-filter:saturate(150%) blur(14px);
+  -webkit-backdrop-filter:saturate(150%) blur(14px);
+  border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.tabbar button{
+  flex:1;min-height:62px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  color:var(--dim);font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+}
+.tabbar button.on{color:var(--accent)}
+.tabbar svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- sheet ---------- */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:50;opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:60;
+  background:var(--surface);border-radius:22px 22px 0 0;
+  border-top:1px solid var(--line);
+  transform:translateY(100%);transition:transform .26s cubic-bezier(.32,.72,0,1);
+  max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:8px 14px calc(20px + env(safe-area-inset-bottom));
+}
+.sheet.on{transform:translateY(0)}
+.grab{width:38px;height:5px;border-radius:3px;background:var(--line);margin:6px auto 14px}
+.sheet h2{font-size:21px;margin-bottom:3px}
+.sheet .sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+.field{margin-bottom:16px}
+.field>.label{display:block;margin-bottom:8px}
+.seg{display:flex;gap:8px}
+.seg button{
+  flex:1;min-height:var(--tap);border-radius:13px;border:1.5px solid var(--line);
+  background:var(--surface2);font-weight:700;font-size:16px;
+}
+.seg button.on{background:var(--accent);color:#06210f;border-color:var(--accent)}
+.seg button.on[data-v=skipped]{background:var(--danger);color:#2a0000;border-color:var(--danger)}
+.seg button.on[data-v=easy]{background:var(--easy);color:#06210f;border-color:var(--easy)}
+.seg button.on[data-v=moderate]{background:var(--moderate);color:#241500;border-color:var(--moderate)}
+.seg button.on[data-v=hard]{background:var(--hard);color:#2a0000;border-color:var(--hard)}
+.inputs{display:flex;gap:10px;align-items:flex-end}
+.inp{flex:1}
+.inp input{
+  width:100%;min-height:var(--tap);border-radius:13px;border:1.5px solid var(--line);
+  background:var(--surface2);padding:0 14px;font-size:22px;font-weight:700;
+  font-variant-numeric:tabular-nums;text-align:center;
+}
+.inp input:focus{outline:none;border-color:var(--accent)}
+.inp .u{display:block;text-align:center;font-size:11px;color:var(--muted);margin-top:5px;text-transform:uppercase;letter-spacing:.07em;font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{
+  min-height:46px;padding:0 15px;border-radius:12px;
+  border:1.5px solid var(--line);background:var(--surface2);font-weight:600;font-size:15px;
+}
+.chips button.on{background:var(--danger);color:#2a0000;border-color:var(--danger);font-weight:800}
+textarea{
+  width:100%;min-height:88px;border-radius:13px;border:1.5px solid var(--line);
+  background:var(--surface2);padding:12px 14px;font-size:16px;resize:vertical;
+}
+textarea:focus{outline:none;border-color:var(--accent)}
+.pace{
+  text-align:center;font-size:14px;color:var(--muted);margin-top:-6px;margin-bottom:14px;
+  font-variant-numeric:tabular-nums;min-height:20px;
+}
+.pace b{color:var(--accent);font-size:16px}
+.hidden{display:none!important}
+.empty{text-align:center;color:var(--muted);padding:40px 20px;font-size:15px}
+
+/* ---------- import preview ---------- */
+.imp{
+  display:flex;align-items:center;gap:11px;width:100%;text-align:left;
+  padding:11px 12px;border-radius:13px;background:var(--surface2);
+  border:1.5px solid transparent;margin-bottom:8px;
+}
+.imp.on{border-color:var(--accent)}
+.imp.conflict{border-color:var(--warn)}
+.imp .tick{
+  width:24px;height:24px;border-radius:7px;flex:0 0 auto;
+  border:2px solid var(--dim);display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:900;color:#06210f;
+}
+.imp.on .tick{background:var(--accent);border-color:var(--accent)}
+.imp .mid{flex:1;min-width:0}
+.imp .a{font-weight:800;font-size:15px;font-variant-numeric:tabular-nums}
+.imp .b{font-size:12px;color:var(--muted);margin-top:2px}
+.imp .b.warnt{color:var(--warn)}
+.imp .b.badt{color:var(--danger)}
+.drop{
+  border:2px dashed var(--line);border-radius:14px;padding:22px 14px;text-align:center;
+  color:var(--muted);font-size:14px;margin-bottom:12px;
+}
+.drop.over{border-color:var(--accent);color:var(--accent)}
+.tiny{font-size:12px;color:var(--dim);line-height:1.5;margin-top:10px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1 id="title">Today</h1>
+  <div class="sub" id="subtitle"></div>
+</div>
+
+<main id="view"></main>
+
+<nav class="tabbar">
+  <button data-tab="today" class="on">
+    <svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Today
+  </button>
+  <button data-tab="plan">
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>Plan
+  </button>
+  <button data-tab="stats">
+    <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Stats
+  </button>
+</nav>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet"></div>
+<input type="file" id="fileIn" class="hidden" accept=".tcx,.gpx,.json,.csv,.txt,text/xml,application/json,text/csv,text/plain">
+
+<script>
+"use strict";
+
+/* ============================ PLAN ============================ */
+/* Runs on Tue / Thu / Sun. Sunday is the long run. Weeks start Monday. */
+var PLAN = [
+  { km:[7,7,8],    total:22, tag:null },
+  { km:[7,8,9],    total:24, tag:null },
+  { km:[8,8,10],   total:26, tag:null },
+  { km:[6,6,7],    total:19, tag:"RECOVERY" },
+  { km:[8,8,10],   total:26, tag:null },
+  { km:[8,9,11],   total:28, tag:null },
+  { km:[9,10,11],  total:30, tag:null },
+  { km:[7,7,8],    total:22, tag:"RECOVERY" },
+  { km:[9,10,11],  total:30, tag:null },
+  { km:[10,10,12], total:32, tag:null },
+  { km:[11,11,12], total:34, tag:"PEAK" },
+  { km:[8,8,9],    total:25, tag:"RECOVERY" }
+];
+var WEEK1_MONDAY = "2026-08-03";
+var DAY_OFFSET = [1, 3, 6];              // Mon+1=Tue, +3=Thu, +6=Sun
+var DAY_NAME   = ["Tue", "Thu", "Sun"];
+var OVER_LIMIT = 1.10;                   // flag above 110% of planned week volume
+var PAIN_WINDOW_DAYS = 14;
+
+var AREAS = ["Knee","Shin","Calf","Achilles","Ankle","Foot",
+             "Hamstring","Quad","Hip","IT band","Groin","Lower back","Other"];
+
+/* ============================ DATES ============================ */
+function parseISO(s){ var p = s.split("-"); return new Date(+p[0], +p[1]-1, +p[2]); }
+function toISO(d){
+  var m = d.getMonth()+1, day = d.getDate();
+  return d.getFullYear() + "-" + (m<10?"0":"") + m + "-" + (day<10?"0":"") + day;
+}
+function addDays(d, n){ var c = new Date(d.getTime()); c.setDate(c.getDate()+n); return c; }
+function today(){ var n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); }
+function dayDiff(a, b){ return Math.round((b - a) / 86400000); }
+function fmtDate(d){
+  return d.toLocaleDateString(undefined, { month:"short", day:"numeric" });
+}
+function fmtLong(d){
+  return d.toLocaleDateString(undefined, { weekday:"long", month:"short", day:"numeric" });
+}
+/* Monday on or before d */
+function mondayOf(d){
+  var wd = d.getDay();               // 0 Sun .. 6 Sat
+  var back = (wd === 0) ? 6 : wd - 1;
+  return addDays(d, -back);
+}
+
+/* ============================ STATE ============================ */
+var KEY = "runplan.v1";
+var state = load();
+
+function freshWeekStarts(){
+  var out = [], base = parseISO(WEEK1_MONDAY);
+  for (var i = 0; i < PLAN.length; i++) out.push(toISO(addDays(base, i*7)));
+  return out;
+}
+function load(){
+  var s = null;
+  try { s = JSON.parse(localStorage.getItem(KEY) || "null"); } catch(e){ s = null; }
+  if (!s || typeof s !== "object") s = {};
+  if (!Array.isArray(s.weekStarts) || s.weekStarts.length !== PLAN.length) s.weekStarts = freshWeekStarts();
+  if (!s.logs || typeof s.logs !== "object") s.logs = {};
+  if (!s.settings || typeof s.settings !== "object") s.settings = {};
+  if (!(s.settings.hrMax > 0))  s.settings.hrMax  = 190;   // edit in Stats
+  if (!(s.settings.hrRest > 0)) s.settings.hrRest = 55;
+  s.version = 1;
+  return s;
+}
+function save(){
+  try { localStorage.setItem(KEY, JSON.stringify(state)); }
+  catch(e){ alert("Could not save — device storage may be full or private browsing is on."); }
+}
+
+function slotKey(w, d){ return w + "-" + d; }
+function runDate(w, d){ return addDays(parseISO(state.weekStarts[w]), DAY_OFFSET[d]); }
+function getLog(w, d){ return state.logs[slotKey(w,d)] || null; }
+
+/* ============================ DERIVED ============================ */
+function weekActual(w){
+  var sum = 0;
+  for (var d = 0; d < 3; d++){
+    var l = getLog(w, d);
+    if (l && l.done && typeof l.km === "number") sum += l.km;
+  }
+  return sum;
+}
+function weekIsPast(w){
+  return dayDiff(runDate(w, 2), today()) > 0;      // after the Sunday long run
+}
+function weekIsCurrent(w){
+  var t = today();
+  var start = parseISO(state.weekStarts[w]);
+  return dayDiff(start, t) >= 0 && dayDiff(t, addDays(start, 6)) >= 0;
+}
+function currentWeekIndex(){
+  for (var w = 0; w < PLAN.length; w++) if (weekIsCurrent(w)) return w;
+  // before the plan starts -> week 1; after it ends -> last week
+  if (dayDiff(today(), parseISO(state.weekStarts[0])) > 0) return 0;
+  return PLAN.length - 1;
+}
+/* Next run that has not been logged either way */
+function nextRun(){
+  var t = today();
+  for (var w = 0; w < PLAN.length; w++){
+    for (var d = 0; d < 3; d++){
+      var l = getLog(w, d);
+      if (l && (l.done || l.skipped)) continue;
+      if (dayDiff(t, runDate(w, d)) >= 0) return { w:w, d:d };   // today or later
+    }
+  }
+  return null;
+}
+function rolling4(){
+  var c = currentWeekIndex(), a = 0, p = 0;
+  for (var w = Math.max(0, c-3); w <= c; w++){ a += weekActual(w); p += PLAN[w].total; }
+  return { actual:a, planned:p };
+}
+/* Consecutive completed runs, walking backwards from the last run due */
+function streak(){
+  var t = today(), slots = [];
+  for (var w = 0; w < PLAN.length; w++)
+    for (var d = 0; d < 3; d++)
+      if (dayDiff(t, runDate(w, d)) <= 0) slots.push([w, d]);    // already due
+  var n = 0;
+  for (var i = slots.length - 1; i >= 0; i--){
+    var l = getLog(slots[i][0], slots[i][1]);
+    if (l && l.done) n++; else break;
+  }
+  return n;
+}
+/* Areas with >= 2 pain logs inside the trailing 14 days */
+function painFlags(){
+  var t = today(), byArea = {};
+  Object.keys(state.logs).forEach(function(k){
+    var l = state.logs[k];
+    if (!l || !l.pain || !l.pain.area || !l.date) return;
+    if (dayDiff(parseISO(l.date), t) > PAIN_WINDOW_DAYS) return;   // older than the window
+    if (dayDiff(t, parseISO(l.date)) > 0) return;                  // logged ahead of today
+    (byArea[l.pain.area] = byArea[l.pain.area] || []).push(l);
+  });
+  return Object.keys(byArea).filter(function(a){ return byArea[a].length >= 2; })
+    .map(function(a){ return { area:a, count:byArea[a].length }; });
+}
+/* A fully past week with nothing completed */
+function missedWeek(){
+  for (var w = 0; w < PLAN.length; w++){
+    if (!weekIsPast(w)) return null;               // stop at the first non-past week
+    var any = false;
+    for (var d = 0; d < 3; d++){ var l = getLog(w, d); if (l && l.done) { any = true; break; } }
+    if (!any) return w;
+  }
+  return null;
+}
+function overWeeks(){
+  var out = [];
+  for (var w = 0; w < PLAN.length; w++){
+    var a = weekActual(w);
+    if (a > PLAN[w].total * OVER_LIMIT) out.push({ w:w, actual:a, planned:PLAN[w].total });
+  }
+  return out;
+}
+function paceStr(km, sec){
+  if (!km || !sec) return "";
+  var s = Math.round(sec / km), m = Math.floor(s / 60), r = s % 60;
+  return m + ":" + (r < 10 ? "0" : "") + r + " /km";
+}
+function durStr(sec){
+  if (!sec) return "";
+  var h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = sec%60;
+  if (h) return h + ":" + (m<10?"0":"") + m + ":" + (s<10?"0":"") + s;
+  return m + ":" + (s<10?"0":"") + s;
+}
+/* ---------- splits ---------- */
+/* Accepts "5:02 4:58 5:10", commas, or raw seconds. Returns sec/km. */
+function parseSplits(s){
+  if (!s) return null;
+  var out = String(s).split(/[,;\s]+/).filter(Boolean).map(function(p){
+    if (p.indexOf(":") >= 0){
+      var q = p.split(":").map(Number);
+      if (q.length === 3) return q[0]*3600 + q[1]*60 + q[2];
+      if (q.length === 2 && isFinite(q[0]) && isFinite(q[1])) return q[0]*60 + q[1];
+      return NaN;
+    }
+    return parseFloat(p);
+  }).filter(function(v){ return isFinite(v) && v > 60 && v < 1800; });
+  return out.length ? out : null;
+}
+function splitStr(sec){
+  var m = Math.floor(sec/60), r = Math.round(sec%60);
+  if (r === 60){ m++; r = 0; }
+  return m + ":" + (r < 10 ? "0" : "") + r;
+}
+function splitsToText(a){
+  return a ? a.map(splitStr).join(" ") : "";
+}
+
+/* ---------- VO2 max estimate ----------
+   Pace -> oxygen cost (ACSM/Daniels running equation), then scaled by heart
+   rate reserve, since %HRreserve tracks %VO2reserve closely. This is an
+   estimate from your own run, not a reading off the watch — Samsung does not
+   expose its number to third-party apps. */
+function vo2for(l){
+  if (!l || !l.done || !(l.km > 0) || !(l.durSec > 0) || !(l.hr > 0)) return null;
+  var st = state.settings;
+  if (!(st.hrMax > st.hrRest)) return null;
+  var v = (l.km * 1000) / (l.durSec / 60);                      // metres per minute
+  if (!(v > 60) || v > 500) return null;
+  var cost = -4.60 + 0.182258 * v + 0.000104 * v * v;           // ml/kg/min at that pace
+  var frac = (l.hr - st.hrRest) / (st.hrMax - st.hrRest);       // heart rate reserve
+  if (!(frac > 0.4) || frac > 1.05) return null;                // too easy or over max to be meaningful
+  return Math.round(((cost - 3.5) / frac + 3.5) * 10) / 10;
+}
+/* Most recent runs first */
+function vo2Series(){
+  var out = [];
+  for (var w = 0; w < PLAN.length; w++){
+    for (var d = 0; d < 3; d++){
+      var l = getLog(w, d), v = vo2for(l);
+      if (v) out.push({ w:w, d:d, date:l.date, vo2:v });
+    }
+  }
+  return out.sort(function(a, b){ return a.date < b.date ? -1 : 1; });
+}
+function avgHR(){
+  var hrs = [];
+  Object.keys(state.logs).forEach(function(k){
+    var l = state.logs[k]; if (l && l.done && l.hr > 0) hrs.push(l.hr);
+  });
+  return hrs.length ? Math.round(hrs.reduce(function(a, b){ return a+b; }, 0) / hrs.length) : null;
+}
+
+function esc(s){
+  return String(s).replace(/[&<>"']/g, function(c){
+    return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
+  });
+}
+function n1(x){ return (Math.round(x * 10) / 10).toString(); }
+
+/* ============================ SHIFT ============================ */
+/* Move week w (and every week after it) so w starts on the next Monday. */
+function shiftFrom(w){
+  var t = today(), m = mondayOf(t);
+  var target = (dayDiff(m, t) === 0) ? m : addDays(m, 7);
+  var weeks = Math.round(dayDiff(parseISO(state.weekStarts[w]), target) / 7);
+  if (weeks <= 0) weeks = 1;
+  for (var i = w; i < PLAN.length; i++)
+    state.weekStarts[i] = toISO(addDays(parseISO(state.weekStarts[i]), weeks * 7));
+  save();
+  render();
+}
+
+/* ============================ VIEWS ============================ */
+var tab = "today";
+
+function bannersHTML(){
+  var h = "";
+
+  painFlags().forEach(function(f){
+    h += '<div class="banner danger"><div class="ico">&#9888;</div><div>' +
+         '<b>' + esc(f.area) + ' pain logged ' + f.count + ' times in ' + PAIN_WINDOW_DAYS + ' days</b>' +
+         'That is a pattern, not a one-off. Consider cutting volume back to the last recovery week ' +
+         'until it settles.</div></div>';
+  });
+
+  var mw = missedWeek();
+  if (mw !== null){
+    h += '<div class="banner info"><div class="ico">&#8635;</div><div>' +
+         '<b>Week ' + (mw+1) + ' was missed entirely</b>' +
+         'Jumping back in at ' + PLAN[currentWeekIndex()].total + ' km risks injury. ' +
+         'Shift the rest of the plan forward instead.' +
+         '<button class="act" data-act="shift" data-w="' + mw + '">Shift week ' + (mw+1) +
+         ' and later to next Monday</button></div></div>';
+  }
+
+  overWeeks().forEach(function(o){
+    h += '<div class="banner warn"><div class="ico">&#9650;</div><div>' +
+         '<b>Week ' + (o.w+1) + ': ' + n1(o.actual) + ' km logged vs ' + o.planned + ' planned</b>' +
+         'That is ' + Math.round(o.actual / o.planned * 100) + '% of the plan. ' +
+         'Overshooting build weeks is the fastest way to lose the block.</div></div>';
+  });
+
+  return h;
+}
+
+function runRowHTML(w, d, showToday){
+  var l = getLog(w, d), dt = runDate(w, d), t = today();
+  var isToday = dayDiff(dt, t) === 0;
+  var cls = "run" + (l && l.done ? " done" : "") + (l && l.skipped ? " skipped" : "") +
+            (showToday && isToday ? " is-today" : "");
+  var right, sub = fmtDate(dt);
+
+  if (l && l.done){
+    right = '<div class="km">' + n1(l.km) + '<small>' + PLAN[w].km[d] + ' plan</small></div>';
+    var bits = [];
+    if (l.durSec) bits.push(durStr(l.durSec));
+    if (l.km && l.durSec) bits.push(paceStr(l.km, l.durSec));
+    if (l.hr) bits.push(l.hr + " bpm");
+    var v = vo2for(l);
+    if (v) bits.push("VO&#8322; " + v);
+    if (l.splits && l.splits.length) bits.push(l.splits.length + " splits");
+    if (bits.length) sub += " &middot; " + bits.join(" &middot; ");
+  } else if (l && l.skipped){
+    right = '<div class="km" style="color:var(--danger);font-size:14px">Skipped</div>';
+  } else {
+    right = '<div class="km" style="color:var(--muted)">' + PLAN[w].km[d] + '<small>km plan</small></div>';
+  }
+
+  var eff = (l && l.done && l.effort) ? '<span class="eff" style="background:var(--' + l.effort + ')"></span>' : "";
+  var pain = (l && l.pain && l.pain.area) ? '<div class="pain">&#9888; ' + esc(l.pain.area) + '</div>' : "";
+
+  return '<button class="' + cls + '" data-run="' + w + ',' + d + '">' +
+    '<span class="dot"></span>' +
+    '<span class="day">' + DAY_NAME[d] + '</span>' +
+    '<span class="mid"><span class="date">' + sub + eff + '</span>' + pain + '</span>' +
+    right + '</button>';
+}
+
+function viewToday(){
+  var h = bannersHTML();
+  var nx = nextRun(), t = today();
+
+  if (!nx){
+    h += '<div class="card hero"><div class="when">Plan complete</div>' +
+         '<div class="dist">&#127937;</div>' +
+         '<div class="countdown">All 12 weeks are logged. Nicely done.</div></div>';
+  } else {
+    var dt = runDate(nx.w, nx.d), days = dayDiff(t, dt);
+    var p = PLAN[nx.w];
+    var when = days === 0 ? "Today" : days === 1 ? "Tomorrow" : fmtLong(dt);
+    var badge = days === 0 ? '<span class="badge today">Run day</span>' :
+                p.tag === "RECOVERY" ? '<span class="badge rec">Recovery week</span>' :
+                p.tag === "PEAK" ? '<span class="badge peak">Peak week</span>' : "";
+
+    h += '<div class="card hero' + (p.tag === "RECOVERY" ? " recovery" : "") + '">' +
+      '<div class="when">' + esc(when) + ' &middot; Week ' + (nx.w+1) + ' &middot; ' + DAY_NAME[nx.d] +
+      (nx.d === 2 ? " long run" : "") + '</div>' +
+      '<div class="dist">' + p.km[nx.d] + '<span>km</span></div>' +
+      '<div class="countdown">' +
+        (days === 0 ? '<b>Due today</b>' :
+         days === 1 ? 'In <b>1 day</b>' : 'In <b>' + days + ' days</b>') +
+        ' &middot; ' + fmtDate(dt) + ' &nbsp;' + badge +
+      '</div></div>';
+
+    h += '<button class="btn primary" data-run="' + nx.w + ',' + nx.d + '">Log this run</button>';
+    h += '<button class="btn ghost" data-act="import-runs" style="margin-top:10px">Import from a file</button>';
+  }
+
+  var c = currentWeekIndex(), act = weekActual(c), pl = PLAN[c].total;
+  var pct = Math.round(act / pl * 100);
+  h += '<div style="height:12px"></div>';
+  h += '<div class="card' + (PLAN[c].tag === "RECOVERY" ? " recovery" : "") + '">' +
+    '<div class="wk-head"><div><div class="t">Week ' + (c+1) +
+      (PLAN[c].tag ? ' <span class="badge ' + (PLAN[c].tag === "PEAK" ? "peak" : "rec") + '">' + PLAN[c].tag + '</span>' : '') +
+      '</div><div class="d">' + fmtDate(parseISO(state.weekStarts[c])) + ' &ndash; ' +
+      fmtDate(addDays(parseISO(state.weekStarts[c]), 6)) + '</div></div>' +
+    '<div class="wk-nums"><div class="a">' + n1(act) + ' / ' + pl + '</div><div class="p">km &middot; ' + pct + '%</div></div></div>' +
+    '<div class="bar"><i class="' + (act > pl * OVER_LIMIT ? "over" : "") + '" style="width:' +
+      Math.min(100, act / pl * 100) + '%"></i></div>' +
+    '<div class="runs">' + [0,1,2].map(function(d){ return runRowHTML(c, d, true); }).join("") + '</div>' +
+  '</div>';
+
+  var r4 = rolling4();
+  h += '<div class="stats-row">' +
+    '<div class="stat"><div class="v">' + n1(r4.actual) + '</div><div class="k">4-wk volume</div></div>' +
+    '<div class="stat"><div class="v">' + streak() + '</div><div class="k">Run streak</div></div>' +
+    '</div>';
+
+  return h;
+}
+
+function viewPlan(){
+  var c = currentWeekIndex(), h = "";
+  for (var w = 0; w < PLAN.length; w++){
+    var p = PLAN[w], act = weekActual(w), open = (w === c);
+    var start = parseISO(state.weekStarts[w]);
+    h += '<div class="card wk' + (p.tag === "RECOVERY" ? " recovery" : "") +
+         (w === c ? " current" : "") + (open ? " open" : "") + '" data-wk="' + w + '">' +
+      '<button class="wk-head" data-toggle="' + w + '">' +
+        '<div><div class="t">Week ' + (w+1) +
+          (p.tag ? ' <span class="badge ' + (p.tag === "PEAK" ? "peak" : "rec") + '">' + p.tag + '</span>' : '') +
+        '</div><div class="d">' + fmtDate(start) + ' &ndash; ' + fmtDate(addDays(start, 6)) + '</div></div>' +
+        '<div class="wk-nums"><div class="a">' + (act ? n1(act) + " / " : "") + p.total + '</div>' +
+        '<div class="p">km' + (act ? " &middot; " + Math.round(act/p.total*100) + "%" : " planned") + '</div></div>' +
+      '</button>' +
+      '<div class="wk-body"><div class="bar"><i class="' + (act > p.total*OVER_LIMIT ? "over" : "") +
+        '" style="width:' + Math.min(100, act/p.total*100) + '%"></i></div>' +
+        '<div class="runs">' + [0,1,2].map(function(d){ return runRowHTML(w, d, true); }).join("") + '</div>' +
+      '</div></div>';
+  }
+  return h;
+}
+
+function viewStats(){
+  var maxKm = 0, i;
+  for (i = 0; i < PLAN.length; i++) maxKm = Math.max(maxKm, PLAN[i].total, weekActual(i));
+  maxKm = Math.ceil((maxKm + 2) / 5) * 5;
+
+  var W = 340, H = 190, padL = 26, padB = 24, padT = 8;
+  var plotW = W - padL - 6, plotH = H - padB - padT;
+  var step = plotW / PLAN.length, bw = Math.min(20, step * 0.62);
+
+  var svg = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet">';
+  [0, 0.5, 1].forEach(function(f){
+    var y = padT + plotH * (1 - f);
+    svg += '<line x1="' + padL + '" y1="' + y + '" x2="' + (padL+plotW) + '" y2="' + y +
+           '" stroke="#2b333f" stroke-width="1"/>' +
+           '<text x="' + (padL-5) + '" y="' + (y+3.5) + '" fill="#6b7688" font-size="9" text-anchor="end">' +
+           Math.round(maxKm*f) + '</text>';
+  });
+  for (i = 0; i < PLAN.length; i++){
+    var cx = padL + step * i + step/2;
+    var ph = plotH * (PLAN[i].total / maxKm);
+    var a  = weekActual(i), ah = plotH * (a / maxKm);
+    var isRec = PLAN[i].tag === "RECOVERY";
+    svg += '<rect x="' + (cx - bw/2) + '" y="' + (padT + plotH - ph) + '" width="' + bw +
+           '" height="' + ph + '" rx="3" fill="' + (isRec ? "#2a3f5c" : "#333e4e") + '"/>';
+    if (a > 0){
+      var over = a > PLAN[i].total * OVER_LIMIT;
+      svg += '<rect x="' + (cx - bw/2 + 3) + '" y="' + (padT + plotH - ah) + '" width="' + (bw-6) +
+             '" height="' + ah + '" rx="2" fill="' + (over ? "#ffb03a" : "#3ce08c") + '"/>';
+    }
+    svg += '<text x="' + cx + '" y="' + (H-8) + '" fill="' + (isRec ? "#5ea8ff" : "#6b7688") +
+           '" font-size="9" text-anchor="middle">' + (i+1) + '</text>';
+  }
+  svg += '</svg>';
+
+  var r4 = rolling4();
+  var totalA = 0, totalP = 0, doneN = 0, skipN = 0;
+  for (i = 0; i < PLAN.length; i++){ totalA += weekActual(i); totalP += PLAN[i].total; }
+  Object.keys(state.logs).forEach(function(k){
+    var l = state.logs[k]; if (l && l.done) doneN++; else if (l && l.skipped) skipN++;
+  });
+
+  var h = '<div class="card"><div class="label">Planned vs actual &middot; km per week</div>' + svg +
+    '<div class="legend">' +
+      '<span><i style="background:#333e4e"></i>Planned</span>' +
+      '<span><i style="background:#3ce08c"></i>Actual</span>' +
+      '<span><i style="background:#ffb03a"></i>Over 110%</span>' +
+      '<span><i style="background:#2a3f5c"></i>Recovery week</span>' +
+    '</div></div>';
+
+  h += '<div class="stats-row" style="margin-bottom:12px">' +
+    '<div class="stat"><div class="v">' + n1(totalA) + '</div><div class="k">km logged</div></div>' +
+    '<div class="stat"><div class="v">' + totalP + '</div><div class="k">km planned</div></div>' +
+    '</div>';
+  h += '<div class="stats-row" style="margin-bottom:12px">' +
+    '<div class="stat"><div class="v">' + n1(r4.actual) + '</div><div class="k">Rolling 4 wk</div></div>' +
+    '<div class="stat"><div class="v">' + streak() + '</div><div class="k">Streak</div></div>' +
+    '</div>';
+  h += '<div class="stats-row">' +
+    '<div class="stat"><div class="v">' + doneN + '</div><div class="k">Runs done</div></div>' +
+    '<div class="stat"><div class="v">' + skipN + '</div><div class="k">Skipped</div></div>' +
+    '</div>';
+
+  /* ---- VO2 max trend ---- */
+  var vs = vo2Series(), hrAvg = avgHR();
+  h += '<div class="card" style="margin-top:12px"><div class="label">Estimated VO<sub>2</sub> max</div>';
+  if (vs.length < 1){
+    h += '<div class="empty" style="padding:22px 8px">Log a run with an average heart rate and an ' +
+         'estimate appears here.</div>';
+  } else {
+    var vv = vs.map(function(p){ return p.vo2; });
+    var lo = Math.floor(Math.min.apply(null, vv) - 2), hi = Math.ceil(Math.max.apply(null, vv) + 2);
+    if (hi - lo < 6){ lo -= 3; hi += 3; }
+    var CW = 340, CH = 140, cl = 30, cb = 18, cw = CW - cl - 8, ch = CH - cb - 8;
+    var xf = function(i){ return vs.length < 2 ? cl + cw/2 : cl + cw * (i / (vs.length - 1)); };
+    var yf = function(v){ return 8 + ch * (1 - (v - lo) / (hi - lo)); };
+    var svg = '<svg class="chart" style="height:150px" viewBox="0 0 ' + CW + ' ' + CH + '" preserveAspectRatio="xMidYMid meet">';
+    [lo, (lo+hi)/2, hi].forEach(function(g){
+      svg += '<line x1="' + cl + '" y1="' + yf(g) + '" x2="' + (cl+cw) + '" y2="' + yf(g) +
+             '" stroke="#2b333f" stroke-width="1"/>' +
+             '<text x="' + (cl-5) + '" y="' + (yf(g)+3.5) + '" fill="#6b7688" font-size="9" text-anchor="end">' +
+             (Math.round(g*10)/10) + '</text>';
+    });
+    if (vs.length > 1){
+      svg += '<polyline fill="none" stroke="#3ce08c" stroke-width="2.5" stroke-linejoin="round" points="' +
+             vs.map(function(p, i){ return xf(i) + "," + yf(p.vo2); }).join(" ") + '"/>';
+    }
+    vs.forEach(function(p, i){
+      svg += '<circle cx="' + xf(i) + '" cy="' + yf(p.vo2) + '" r="3.5" fill="#3ce08c"/>';
+    });
+    svg += '</svg>';
+    var latest = vs[vs.length-1].vo2, first = vs[0].vo2, delta = Math.round((latest - first) * 10) / 10;
+    h += svg + '<div class="legend"><span>Latest <b style="color:var(--text)">' + latest + '</b></span>' +
+      (vs.length > 1 ? '<span>Change <b style="color:' + (delta >= 0 ? "var(--accent)" : "var(--warn)") +
+        '">' + (delta > 0 ? "+" : "") + delta + '</b></span>' : '') +
+      '<span>From ' + vs.length + ' run' + (vs.length === 1 ? '' : 's') + '</span></div>' +
+      '<div class="tiny">Estimated from your pace and heart rate on each run, not read from the watch &mdash; ' +
+      'Samsung does not expose its own figure to other apps. Accuracy depends on the HR limits below.</div>';
+  }
+  h += '</div>';
+
+  if (hrAvg){
+    h += '<div class="stats-row" style="margin-bottom:12px">' +
+      '<div class="stat"><div class="v">' + hrAvg + '</div><div class="k">Avg HR (bpm)</div></div>' +
+      '<div class="stat"><div class="v">' + (vs.length ? vs[vs.length-1].vo2 : "&mdash;") + '</div><div class="k">Latest VO&#8322;</div></div>' +
+      '</div>';
+  }
+
+  /* ---- heart rate limits, needed by the VO2 estimate ---- */
+  h += '<div class="card"><div class="label" style="margin-bottom:12px">Heart rate limits</div>' +
+    '<div class="inputs">' +
+      '<div class="inp"><input id="s-hrmax" type="number" inputmode="numeric" min="120" max="230" value="' + state.settings.hrMax + '"><span class="u">max</span></div>' +
+      '<div class="inp"><input id="s-hrrest" type="number" inputmode="numeric" min="30" max="110" value="' + state.settings.hrRest + '"><span class="u">resting</span></div>' +
+    '</div>' +
+    '<button class="btn" data-act="save-hr" style="margin-top:12px">Save limits</button>' +
+    '<div class="tiny">Every VO<sub>2</sub> estimate is scaled by these. If you do not know your max, ' +
+    '220 minus your age is the usual starting point; the highest figure you have actually seen on a hard ' +
+    'effort is better.</div></div>';
+
+  h += '<div class="card"><div class="label" style="margin-bottom:12px">Your data</div>' +
+    '<button class="btn primary" data-act="import-runs" style="margin-bottom:10px">Import runs from a file</button>' +
+    '<div class="btn-row" style="margin-bottom:10px">' +
+      '<button class="btn" data-act="export">Export JSON</button>' +
+      '<button class="btn" data-act="copy">Copy</button>' +
+    '</div>' +
+    '<button class="btn ghost" data-act="import" style="margin-bottom:10px">Restore a backup</button>' +
+    '<button class="btn ghost danger" data-act="reset">Erase all logs</button>' +
+    '<div class="tiny">Everything lives in this browser only &mdash; no account, no server, no network calls. ' +
+    'Clearing Safari website data will wipe it, so export now and again.</div></div>';
+
+  return h;
+}
+
+function render(){
+  var t = today();
+  document.getElementById("title").textContent =
+    tab === "today" ? "Today" : tab === "plan" ? "12-week plan" : "Stats";
+  document.getElementById("subtitle").textContent =
+    tab === "today" ? fmtLong(t) : "Week " + (currentWeekIndex()+1) + " of " + PLAN.length;
+
+  document.getElementById("view").innerHTML =
+    tab === "today" ? viewToday() : tab === "plan" ? viewPlan() : viewStats();
+
+  Array.prototype.forEach.call(document.querySelectorAll(".tabbar button"), function(b){
+    b.classList.toggle("on", b.dataset.tab === tab);
+  });
+  if (tab === "plan"){
+    var cur = document.querySelector(".wk.current");
+    if (cur) cur.scrollIntoView({ block:"center" });
+  } else {
+    window.scrollTo(0, 0);
+  }
+}
+
+/* ============================ LOG SHEET ============================ */
+var scrim = document.getElementById("scrim"), sheet = document.getElementById("sheet");
+var draft = null;
+
+function openSheet(w, d){
+  var l = getLog(w, d) || {};
+  draft = {
+    w:w, d:d,
+    status: l.done ? "done" : l.skipped ? "skipped" : "done",
+    km: (typeof l.km === "number") ? l.km : PLAN[w].km[d],
+    min: l.durSec ? Math.floor(l.durSec/60) : "",
+    sec: l.durSec ? l.durSec%60 : "",
+    hr: l.hr || "",
+    splits: splitsToText(l.splits),
+    effort: l.effort || "moderate",
+    painOn: !!(l.pain && l.pain.area),
+    area: l.pain ? l.pain.area : null,
+    note: l.pain ? (l.pain.note || "") : "",
+    existing: !!(l.done || l.skipped)
+  };
+  drawSheet();
+  scrim.classList.add("on"); sheet.classList.add("on");
+}
+function closeSheet(){
+  scrim.classList.remove("on"); sheet.classList.remove("on");
+  draft = null;
+}
+
+function drawSheet(){
+  var w = draft.w, d = draft.d, p = PLAN[w], dt = runDate(w, d);
+  var seg = function(name, val, label){
+    return '<button data-field="' + name + '" data-v="' + val + '"' +
+           (draft[name] === val ? ' class="on"' : '') + '>' + label + '</button>';
+  };
+
+  var h = '<div class="grab"></div>' +
+    '<h2>Week ' + (w+1) + ' &middot; ' + DAY_NAME[d] + (d === 2 ? " long run" : "") + '</h2>' +
+    '<div class="sub">' + fmtLong(dt) + ' &middot; ' + p.km[d] + ' km planned' +
+    (p.tag === "RECOVERY" ? ' &middot; <span style="color:var(--recovery);font-weight:700">recovery week</span>' : '') +
+    '</div>';
+
+  h += '<div class="field"><span class="label">Status</span><div class="seg">' +
+    seg("status","done","Completed") + seg("status","skipped","Skipped") + '</div></div>';
+
+  if (draft.status === "done"){
+    h += '<div class="field"><span class="label">Distance &amp; time</span><div class="inputs">' +
+      '<div class="inp"><input id="f-km" type="number" inputmode="decimal" step="0.1" min="0" value="' + draft.km + '"><span class="u">km</span></div>' +
+      '<div class="inp"><input id="f-min" type="number" inputmode="numeric" min="0" placeholder="0" value="' + draft.min + '"><span class="u">min</span></div>' +
+      '<div class="inp"><input id="f-sec" type="number" inputmode="numeric" min="0" max="59" placeholder="00" value="' + draft.sec + '"><span class="u">sec</span></div>' +
+      '</div></div><div class="pace" id="pace"></div>';
+
+    h += '<div class="field"><span class="label">Average heart rate</span><div class="inputs">' +
+      '<div class="inp"><input id="f-hr" type="number" inputmode="numeric" min="60" max="230" placeholder="&mdash;" value="' + draft.hr + '"><span class="u">bpm</span></div>' +
+      '</div></div><div class="pace" id="vo2"></div>';
+
+    h += '<div class="field"><span class="label">Splits &mdash; one per km</span>' +
+      '<textarea id="f-splits" style="min-height:60px" placeholder="5:02 4:58 5:10 5:05&hellip;">' + esc(draft.splits) + '</textarea>' +
+      '<div class="pace" id="splitsum" style="margin-top:8px"></div></div>';
+
+    h += '<div class="field"><span class="label">Effort</span><div class="seg">' +
+      seg("effort","easy","Easy") + seg("effort","moderate","Moderate") + seg("effort","hard","Hard") +
+      '</div></div>';
+  }
+
+  h += '<div class="field"><span class="label">Pain</span><div class="seg">' +
+    '<button data-field="painOn" data-v="0"' + (!draft.painOn ? ' class="on"' : '') + '>None</button>' +
+    '<button data-field="painOn" data-v="1"' + (draft.painOn ? ' class="on"' : '') +
+      ' style="' + (draft.painOn ? 'background:var(--danger);color:#2a0000;border-color:var(--danger)' : '') + '">Had pain</button>' +
+    '</div></div>';
+
+  if (draft.painOn){
+    h += '<div class="field"><span class="label">Where</span><div class="chips">' +
+      AREAS.map(function(a){
+        return '<button data-field="area" data-v="' + a + '"' + (draft.area === a ? ' class="on"' : '') + '>' + a + '</button>';
+      }).join("") + '</div></div>' +
+      '<div class="field"><span class="label">Note</span>' +
+      '<textarea id="f-note" placeholder="Sharp on downhills, eased after 2 km&hellip;">' + esc(draft.note) + '</textarea></div>';
+  }
+
+  h += '<button class="btn primary" data-act="save" style="margin-bottom:10px">Save</button>';
+  if (draft.existing)
+    h += '<button class="btn ghost danger" data-act="clear" style="margin-bottom:10px">Clear this log</button>';
+  h += '<button class="btn ghost" data-act="cancel">Cancel</button>';
+
+  sheet.innerHTML = h;
+  syncPace();
+}
+
+function readInputs(){
+  var km = document.getElementById("f-km"), mi = document.getElementById("f-min"), se = document.getElementById("f-sec"),
+      hr = document.getElementById("f-hr"), sp = document.getElementById("f-splits"),
+      nt = document.getElementById("f-note");
+  if (km) draft.km  = km.value === "" ? 0 : parseFloat(km.value);
+  if (mi) draft.min = mi.value === "" ? "" : parseInt(mi.value, 10);
+  if (se) draft.sec = se.value === "" ? "" : parseInt(se.value, 10);
+  if (hr) draft.hr  = hr.value === "" ? "" : parseInt(hr.value, 10);
+  if (sp) draft.splits = sp.value;
+  if (nt) draft.note = nt.value;
+}
+function draftSec(){
+  return (parseInt(draft.min, 10) || 0) * 60 + (parseInt(draft.sec, 10) || 0);
+}
+function syncPace(){
+  var el = document.getElementById("pace");
+  if (!el) return;
+  var sec = draftSec();
+  el.innerHTML = (draft.km > 0 && sec > 0) ? "Average pace <b>" + paceStr(draft.km, sec) + "</b>" : "";
+
+  var vel = document.getElementById("vo2");
+  if (vel){
+    var v = vo2for({ done:true, km:draft.km, durSec:sec, hr:parseInt(draft.hr, 10) });
+    vel.innerHTML = v ? "Estimated VO<sub>2</sub> max <b>" + v + "</b>"
+      : (draft.hr ? '<span style="color:var(--dim)">Need distance and time too</span>'
+                  : '<span style="color:var(--dim)">Add heart rate for a VO<sub>2</sub> estimate</span>');
+  }
+
+  var sel = document.getElementById("splitsum");
+  if (sel){
+    var sp = parseSplits(draft.splits);
+    if (!sp){ sel.innerHTML = ""; return; }
+    var fast = Math.min.apply(null, sp), slow = Math.max.apply(null, sp);
+    var tot = sp.reduce(function(a, b){ return a+b; }, 0);
+    sel.innerHTML = sp.length + " split" + (sp.length === 1 ? "" : "s") +
+      " &middot; fastest <b>" + splitStr(fast) + "</b> &middot; slowest <b>" + splitStr(slow) +
+      "</b> &middot; mean <b>" + splitStr(tot / sp.length) + "</b>";
+  }
+}
+
+function saveDraft(){
+  readInputs();
+  var w = draft.w, d = draft.d, p = PLAN[w];
+  var key = slotKey(w, d);
+
+  if (draft.status === "skipped"){
+    state.logs[key] = {
+      done:false, skipped:true, date:toISO(runDate(w, d)), ts:Date.now(),
+      pain: draft.painOn && draft.area ? { area:draft.area, note:draft.note } : null
+    };
+    save(); closeSheet(); render(); return;
+  }
+
+  var km = parseFloat(draft.km);
+  if (!(km > 0)) { alert("Enter a distance greater than zero, or mark the run skipped."); return; }
+  if (draft.painOn && !draft.area) { alert("Pick where the pain was."); return; }
+
+  var sec = (parseInt(draft.min, 10) || 0) * 60 + (parseInt(draft.sec, 10) || 0);
+
+  /* Recovery-week guard: warn before saving a run longer than planned. */
+  if (p.tag === "RECOVERY"){
+    var prev = getLog(w, d);
+    var others = weekActual(w) - (prev && prev.done ? prev.km : 0);
+    var msgs = [];
+    if (km > p.km[d]) msgs.push("This run is " + n1(km) + " km against " + p.km[d] + " km planned.");
+    if (others + km > p.total) msgs.push("The week would reach " + n1(others + km) + " km against " + p.total + " km planned.");
+    if (msgs.length && !confirm(
+        "Week " + (w+1) + " is a recovery week.\n\n" + msgs.join("\n") +
+        "\n\nRecovery weeks are what let the build weeks work. Save anyway?")) return;
+  }
+
+  var hr = parseInt(draft.hr, 10);
+  state.logs[key] = {
+    done:true, skipped:false,
+    km:km, durSec:sec, effort:draft.effort,
+    hr: (hr > 0 ? hr : null),
+    splits: parseSplits(draft.splits),
+    date:toISO(runDate(w, d)), ts:Date.now(),
+    pain: draft.painOn && draft.area ? { area:draft.area, note:draft.note } : null
+  };
+  save(); closeSheet(); render();
+}
+
+/* ============================ DATA I/O ============================ */
+function exportBlob(){
+  return JSON.stringify({
+    app:"run-plan-tracker", version:1, exported:new Date().toISOString(),
+    weekStarts:state.weekStarts, logs:state.logs
+  }, null, 2);
+}
+function doExport(){
+  var txt = exportBlob();
+  var blob = new Blob([txt], { type:"application/json" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url; a.download = "run-plan-" + toISO(today()) + ".json";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+}
+function doCopy(){
+  var txt = exportBlob();
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(
+      function(){ alert("Copied. Paste it somewhere safe."); },
+      function(){ promptFallback(txt); }
+    );
+  } else promptFallback(txt);
+}
+function promptFallback(txt){ window.prompt("Copy your data:", txt); }
+function doImport(){
+  var txt = window.prompt("Paste an exported JSON backup:");
+  if (!txt) return;
+  var data;
+  try { data = JSON.parse(txt); }
+  catch(e){ alert("That is not valid JSON."); return; }
+  if (!data || typeof data !== "object" || !data.logs){ alert("No logs found in that file."); return; }
+  if (!confirm("Replace everything currently stored with this backup?")) return;
+  state.logs = data.logs;
+  if (Array.isArray(data.weekStarts) && data.weekStarts.length === PLAN.length)
+    state.weekStarts = data.weekStarts;
+  save(); render();
+  alert("Restored.");
+}
+function doReset(){
+  if (!confirm("Erase every logged run and reset the plan dates?\n\nThis cannot be undone. Export first if you want a copy.")) return;
+  if (!confirm("Really erase everything?")) return;
+  state.logs = {};
+  state.weekStarts = freshWeekStarts();
+  save(); render();
+}
+
+/* ============================ IMPORT RUNS ============================
+   Reads whatever the phone or watch can produce — TCX, GPX, JSON or CSV —
+   and matches each activity onto a slot in the plan. Nothing leaves the
+   device: parsing happens here, in the page.
+   ==================================================================== */
+var importRows = null;
+
+function xtags(el, name){
+  var r = el.getElementsByTagNameNS ? el.getElementsByTagNameNS("*", name) : el.getElementsByTagName(name);
+  return Array.prototype.slice.call(r);
+}
+function txt(el){ return el ? (el.textContent || "").trim() : ""; }
+function firstTag(el, name){ var a = xtags(el, name); return a.length ? a[0] : null; }
+function localISO(d){ return toISO(new Date(d.getFullYear(), d.getMonth(), d.getDate())); }
+function mean(a){ return a.length ? Math.round(a.reduce(function(x,y){ return x+y; }, 0) / a.length) : null; }
+
+/* Distances arrive as km or metres depending on the source; nobody in this
+   plan runs over 200 km, so anything larger has to be metres. */
+function normKm(v){
+  v = parseFloat(v);
+  if (!isFinite(v) || v <= 0) return 0;
+  return v > 200 ? v / 1000 : v;
+}
+/* Same idea for time: under 600 has to be minutes, above it seconds. */
+function normSec(v){
+  if (typeof v === "string" && v.indexOf(":") >= 0){
+    var p = v.split(":").map(Number);
+    if (p.length === 3) return p[0]*3600 + p[1]*60 + p[2];
+    if (p.length === 2) return p[0]*60 + p[1];
+  }
+  v = parseFloat(v);
+  if (!isFinite(v) || v <= 0) return 0;
+  return v < 600 ? Math.round(v * 60) : Math.round(v);
+}
+
+/* Per-km splits from a distance/time series, interpolating across the point
+   that straddles each kilometre mark rather than snapping to it. */
+function splitsFromPoints(pts, startT){
+  if (pts.length < 2) return null;
+  var out = [], target = 1000, prevT = pts[0].t, i;
+
+  /* Devices do not always emit a point at distance zero. Anchor on the
+     recorded start time when there is one, otherwise extrapolate back across
+     the first segment — without this the opening split is short by however
+     far the watch had already travelled. */
+  if (pts[0].d > 0){
+    if (isFinite(startT) && startT <= pts[0].t){
+      prevT = startT;
+    } else {
+      var dd = pts[1].d - pts[0].d, dt = pts[1].t - pts[0].t;
+      if (dd > 0 && dt > 0) prevT = pts[0].t - (pts[0].d / dd) * dt;
+    }
+  }
+
+  for (i = 1; i < pts.length; i++){
+    var a = pts[i-1], b = pts[i];
+    while (b.d >= target && a.d < target){
+      var span = b.d - a.d;
+      var tAt = a.t + (b.t - a.t) * (span > 0 ? (target - a.d) / span : 0);
+      out.push(Math.round((tAt - prevT) / 1000));
+      prevT = tAt;
+      target += 1000;
+    }
+  }
+  return out.length ? out : null;
+}
+
+function parseTCX(t){
+  var doc = new DOMParser().parseFromString(t, "application/xml");
+  if (firstTag(doc, "parsererror")) throw new Error("That TCX file is malformed.");
+  return xtags(doc, "Activity").map(function(a){
+    var laps = xtags(a, "Lap"), sec = 0, m = 0, hrs = [];
+    laps.forEach(function(l){
+      sec += parseFloat(txt(firstTag(l, "TotalTimeSeconds"))) || 0;
+      m   += parseFloat(txt(firstTag(l, "DistanceMeters"))) || 0;
+      var h = firstTag(l, "AverageHeartRateBpm");
+      if (h){ var v = parseFloat(txt(firstTag(h, "Value"))); if (v) hrs.push(v); }
+    });
+
+    // Trackpoints carry cumulative distance, so splits come straight off them.
+    var pts = [];
+    xtags(a, "Trackpoint").forEach(function(p){
+      var tm = new Date(txt(firstTag(p, "Time")));
+      var dm = parseFloat(txt(firstTag(p, "DistanceMeters")));
+      if (!isNaN(tm) && isFinite(dm)) pts.push({ t:tm.getTime(), d:dm });
+      var hv = firstTag(p, "HeartRateBpm");
+      if (hv){ var v = parseFloat(txt(firstTag(hv, "Value"))); if (v) hrs.push(v); }
+    });
+    var startMs = Date.parse(txt(firstTag(a, "Id")) ||
+                             (laps[0] && laps[0].getAttribute("StartTime")) || "");
+    var splits = splitsFromPoints(pts, startMs);
+
+    // No trackpoints? Fall back to the laps, if they are roughly kilometres.
+    if (!splits && laps.length > 1){
+      var perLap = laps.map(function(l){
+        var ls = parseFloat(txt(firstTag(l, "TotalTimeSeconds"))) || 0;
+        var lm = parseFloat(txt(firstTag(l, "DistanceMeters"))) || 0;
+        return lm > 0 ? { sec: ls / (lm/1000), km: lm/1000 } : null;
+      }).filter(Boolean);
+      if (perLap.length && perLap.every(function(x){ return x.km > 0.8 && x.km < 1.25; }))
+        splits = perLap.map(function(x){ return Math.round(x.sec); });
+    }
+
+    var when = txt(firstTag(a, "Id")) || (laps[0] && laps[0].getAttribute("StartTime")) || "";
+    var d = new Date(when);
+    if (isNaN(d) && pts.length) d = new Date(pts[0].t);
+    return isNaN(d) ? null
+      : { date:localISO(d), km:m/1000, sec:Math.round(sec), hr:mean(hrs), splits:splits };
+  }).filter(function(r){ return r && r.km > 0; });
+}
+
+function haversine(a, b){
+  var R = 6371000, k = Math.PI/180;
+  var dLat = (b[0]-a[0])*k, dLon = (b[1]-a[1])*k;
+  var h = Math.sin(dLat/2)*Math.sin(dLat/2) +
+          Math.cos(a[0]*k)*Math.cos(b[0]*k)*Math.sin(dLon/2)*Math.sin(dLon/2);
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+function parseGPX(t){
+  var doc = new DOMParser().parseFromString(t, "application/xml");
+  if (firstTag(doc, "parsererror")) throw new Error("That GPX file is malformed.");
+  return xtags(doc, "trk").map(function(trk){
+    var m = 0, prev = null, times = [], hrs = [], series = [];
+    xtags(trk, "trkpt").forEach(function(p){
+      var la = parseFloat(p.getAttribute("lat")), lo = parseFloat(p.getAttribute("lon"));
+      if (isFinite(la) && isFinite(lo)){
+        if (prev) m += haversine(prev, [la, lo]);
+        prev = [la, lo];
+      }
+      var tm = txt(firstTag(p, "time"));
+      if (tm){
+        var d = new Date(tm);
+        if (!isNaN(d)){ times.push(d); series.push({ t:d.getTime(), d:m }); }
+      }
+      var h = firstTag(p, "hr");
+      if (h){ var v = parseFloat(txt(h)); if (v) hrs.push(v); }
+    });
+    if (!times.length) return null;
+    return {
+      date: localISO(times[0]), km: m/1000,
+      sec: Math.round((times[times.length-1] - times[0]) / 1000),
+      hr: mean(hrs), splits: splitsFromPoints(series)
+    };
+  }).filter(function(r){ return r && r.km > 0; });
+}
+
+function keyish(s){ return String(s).toLowerCase().replace(/[_\s-]/g, ""); }
+function pick(o, names){
+  var keys = Object.keys(o);
+  for (var i = 0; i < names.length; i++){
+    for (var j = 0; j < keys.length; j++){
+      if (keyish(keys[j]) === names[i] && o[keys[j]] !== null && o[keys[j]] !== "") return o[keys[j]];
+    }
+  }
+  return null;
+}
+var K_DATE = ["date","startdate","start","starttime","datetime","day","enddate"];
+var K_DIST = ["km","distancekm","distance","distancemeters","distancemetres","meters","metres","totaldistance"];
+var K_TIME = ["sec","seconds","duration","durationseconds","time","totaltimeseconds","minutes","elapsedtime","movingtime"];
+var K_HR   = ["hr","heartrate","avghr","averageheartrate","avgheartrate","meanheartrate"];
+
+function parseJSONActs(t){
+  var data = JSON.parse(t);
+  var arr = Array.isArray(data) ? data
+          : (data.activities || data.workouts || data.runs || data.samples || data.data);
+  if (!Array.isArray(arr)) throw new Error("Expected a list of activities.");
+  return arr.map(function(o){
+    if (!o || typeof o !== "object") return null;
+    var dv = pick(o, K_DATE), d = dv ? new Date(dv) : null;
+    if (!d || isNaN(d)) return null;
+    var hr = parseFloat(pick(o, K_HR));
+    var sp = pick(o, ["splits","laps","kmsplits","splitsseconds"]);
+    return {
+      date: localISO(d),
+      km: normKm(pick(o, K_DIST)),
+      sec: normSec(pick(o, K_TIME)),
+      hr: isFinite(hr) && hr > 0 ? Math.round(hr) : null,
+      splits: Array.isArray(sp) ? parseSplits(sp.join(" ")) : parseSplits(sp)
+    };
+  }).filter(function(r){ return r && r.km > 0; });
+}
+
+function parseCSV(t){
+  var lines = t.split(/\r?\n/).filter(function(l){ return l.trim(); });
+  if (!lines.length) throw new Error("Nothing to read.");
+  var head0 = lines[0];
+  var delim = (head0.split(";").length > head0.split(",").length) ? ";"
+            : (head0.indexOf("\t") >= 0 ? "\t" : ",");
+  var head = head0.split(delim).map(keyish);
+  var hasHeader = head.some(function(h){ return /date|dist|km|time|dur|hr/.test(h); })
+                  && isNaN(new Date(head0.split(delim)[0]));
+  var rows = hasHeader ? lines.slice(1) : lines;
+  var at = function(names, dflt){
+    if (!hasHeader) return dflt;
+    for (var i = 0; i < names.length; i++){ var j = head.indexOf(names[i]); if (j >= 0) return j; }
+    return -1;
+  };
+  var iD = at(K_DATE, 0), iK = at(K_DIST, 1), iT = at(K_TIME, 2), iH = at(K_HR, -1);
+  if (iD < 0 || iK < 0) throw new Error("Could not find a date and a distance column.");
+  return rows.map(function(l){
+    var c = l.split(delim).map(function(s){ return s.trim().replace(/^"|"$/g, ""); });
+    var d = new Date(c[iD]);
+    if (isNaN(d)) return null;
+    var hr = iH >= 0 ? parseFloat(c[iH]) : NaN;
+    return {
+      date: localISO(d), km: normKm(c[iK]), sec: iT >= 0 ? normSec(c[iT]) : 0,
+      hr: isFinite(hr) && hr > 0 ? Math.round(hr) : null
+    };
+  }).filter(function(r){ return r && r.km > 0; });
+}
+
+function parseActivities(t){
+  t = String(t || "").trim();
+  if (!t) throw new Error("Nothing to read.");
+  if (t.charAt(0) === "<")
+    return /TrainingCenterDatabase|<Activity/i.test(t) ? parseTCX(t) : parseGPX(t);
+  if (t.charAt(0) === "[" || t.charAt(0) === "{") return parseJSONActs(t);
+  return parseCSV(t);
+}
+
+/* Pair each activity with the nearest free slot within 3 days. */
+function buildImportRows(acts){
+  acts = acts.slice().sort(function(a, b){ return a.date < b.date ? -1 : 1; });
+  var taken = {};
+  return acts.map(function(a){
+    var best = null, bestGap = 999, w, d;
+    for (w = 0; w < PLAN.length; w++){
+      for (d = 0; d < 3; d++){
+        if (taken[slotKey(w, d)]) continue;
+        var gap = Math.abs(dayDiff(parseISO(a.date), runDate(w, d)));
+        if (gap < bestGap){ bestGap = gap; best = { w:w, d:d, gap:gap }; }
+      }
+    }
+    if (!best || best.gap > 3) best = null; else taken[slotKey(best.w, best.d)] = true;
+    var ex = best ? getLog(best.w, best.d) : null;
+    var clash = !!(ex && (ex.done || ex.skipped));
+    return { act:a, slot:best, conflict:clash, on: !!best && !clash };
+  });
+}
+
+function openImport(){
+  importRows = null;
+  drawImport();
+  scrim.classList.add("on"); sheet.classList.add("on");
+}
+
+function drawImport(){
+  var h = '<div class="grab"></div><h2>Import runs</h2>';
+
+  if (!importRows){
+    h += '<div class="sub">Anything your watch or phone can produce: TCX, GPX, JSON or CSV. ' +
+         'It is read here on the device &mdash; nothing is uploaded.</div>' +
+         '<div class="drop" id="drop">Drop a file here<br><span style="font-size:12px">or use the button below</span></div>' +
+         '<button class="btn" data-act="pick-file" style="margin-bottom:14px">Choose a file</button>' +
+         '<div class="field"><span class="label">Or paste it</span>' +
+         '<textarea id="imp-text" placeholder="Paste TCX / GPX / JSON / CSV&hellip;"></textarea></div>' +
+         '<button class="btn primary" data-act="parse-text" style="margin-bottom:10px">Read it</button>' +
+         '<button class="btn ghost" data-act="cancel">Cancel</button>';
+    sheet.innerHTML = h;
+    wireDrop();
+    return;
+  }
+
+  if (!importRows.length){
+    h += '<div class="sub">No runs found in that file.</div>' +
+         '<button class="btn" data-act="import-runs" style="margin-bottom:10px">Try another</button>' +
+         '<button class="btn ghost" data-act="cancel">Close</button>';
+    sheet.innerHTML = h;
+    return;
+  }
+
+  var n = importRows.filter(function(r){ return r.on; }).length;
+  h += '<div class="sub">Found ' + importRows.length + '. Check the pairing before importing &mdash; ' +
+       'distance and time units are guessed from the numbers.</div>';
+
+  importRows.forEach(function(r, i){
+    var a = r.act;
+    var line2, cls = "imp" + (r.on ? " on" : "") + (r.conflict ? " conflict" : "");
+    if (!r.slot){
+      line2 = '<div class="b badt">No plan run within 3 days &mdash; cannot import</div>';
+    } else {
+      var p = PLAN[r.slot.w].km[r.slot.d];
+      line2 = '<div class="b' + (r.conflict ? ' warnt' : '') + '">&rarr; Week ' + (r.slot.w+1) + ' ' +
+              DAY_NAME[r.slot.d] + ' &middot; ' + p + ' km planned' +
+              (r.conflict ? ' &middot; already logged, will overwrite' : '') + '</div>';
+    }
+    h += '<button class="' + cls + '" data-act="imp-row" data-i="' + i + '"' +
+         (r.slot ? '' : ' disabled') + '>' +
+      '<span class="tick">' + (r.on ? "&#10003;" : "") + '</span>' +
+      '<span class="mid"><span class="a">' + a.date + ' &middot; ' + n1(a.km) + ' km' +
+        (a.sec ? ' &middot; ' + durStr(a.sec) : '') +
+        (a.km && a.sec ? ' &middot; ' + paceStr(a.km, a.sec) : '') +
+        (a.hr ? ' &middot; ' + a.hr + ' bpm' : '') +
+        (a.splits && a.splits.length ? ' &middot; ' + a.splits.length + ' splits' : '') +
+      '</span>' + line2 + '</span></button>';
+  });
+
+  h += '<button class="btn primary" data-act="apply-import" style="margin:14px 0 10px"' +
+       (n ? '' : ' disabled') + '>Import ' + n + ' run' + (n === 1 ? '' : 's') + '</button>' +
+       '<button class="btn ghost" data-act="cancel">Cancel</button>';
+  sheet.innerHTML = h;
+}
+
+function wireDrop(){
+  var dz = document.getElementById("drop");
+  if (!dz) return;
+  ["dragenter","dragover"].forEach(function(ev){
+    dz.addEventListener(ev, function(e){ e.preventDefault(); dz.classList.add("over"); });
+  });
+  ["dragleave","drop"].forEach(function(ev){
+    dz.addEventListener(ev, function(e){ e.preventDefault(); dz.classList.remove("over"); });
+  });
+  dz.addEventListener("drop", function(e){
+    var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) readFile(f);
+  });
+}
+
+function readFile(f){
+  var fr = new FileReader();
+  fr.onload = function(){ tryParse(String(fr.result)); };
+  fr.onerror = function(){ alert("Could not read that file."); };
+  fr.readAsText(f);
+}
+
+function tryParse(text){
+  try {
+    importRows = buildImportRows(parseActivities(text));
+  } catch (err){
+    alert(err && err.message ? err.message : "Could not read that.");
+    return;
+  }
+  drawImport();
+}
+
+function applyImport(){
+  var n = 0;
+  importRows.forEach(function(r){
+    if (!r.on || !r.slot) return;
+    var prev = getLog(r.slot.w, r.slot.d) || {};
+    state.logs[slotKey(r.slot.w, r.slot.d)] = {
+      done:true, skipped:false,
+      km: Math.round(r.act.km * 100) / 100,
+      durSec: r.act.sec || 0,
+      hr: r.act.hr || null,
+      splits: r.act.splits || prev.splits || null,
+      effort: prev.effort || null,        // not in the data — left for you to set
+      date: r.act.date, ts: Date.now(),
+      imported: true,
+      pain: prev.pain || null             // pain never comes from a file
+    };
+    n++;
+  });
+  save(); closeSheet(); render();
+  alert("Imported " + n + " run" + (n === 1 ? "" : "s") + ".\n\nEffort and pain are not in the file — tap any run to add them.");
+}
+
+/* ============================ EVENTS ============================ */
+document.addEventListener("click", function(e){
+  var el;
+
+  el = e.target.closest("[data-tab]");
+  if (el){ tab = el.dataset.tab; render(); return; }
+
+  el = e.target.closest("[data-run]");
+  if (el){
+    var pr = el.dataset.run.split(",");
+    openSheet(+pr[0], +pr[1]);
+    return;
+  }
+
+  el = e.target.closest("[data-toggle]");
+  if (el){ el.parentNode.classList.toggle("open"); return; }
+
+  el = e.target.closest("[data-field]");
+  if (el && draft){
+    var f = el.dataset.field, v = el.dataset.v;
+    readInputs();
+    draft[f] = (f === "painOn") ? (v === "1") : v;
+    if (f === "painOn" && !draft.painOn){ draft.area = null; draft.note = ""; }
+    drawSheet();
+    return;
+  }
+
+  el = e.target.closest("[data-act]");
+  if (el){
+    var a = el.dataset.act;
+    if (a === "save")   saveDraft();
+    else if (a === "cancel") closeSheet();
+    else if (a === "clear"){
+      delete state.logs[slotKey(draft.w, draft.d)];
+      save(); closeSheet(); render();
+    }
+    else if (a === "shift") shiftFrom(+el.dataset.w);
+    else if (a === "import-runs") openImport();
+    else if (a === "pick-file") document.getElementById("fileIn").click();
+    else if (a === "parse-text") tryParse(document.getElementById("imp-text").value);
+    else if (a === "imp-row"){
+      var row = importRows[+el.dataset.i];
+      if (row.slot){ row.on = !row.on; drawImport(); }
+    }
+    else if (a === "apply-import") applyImport();
+    else if (a === "save-hr"){
+      var mx = parseInt(document.getElementById("s-hrmax").value, 10);
+      var rs = parseInt(document.getElementById("s-hrrest").value, 10);
+      if (!(mx > 0) || !(rs > 0) || mx <= rs){
+        alert("Max heart rate has to be above resting."); return;
+      }
+      state.settings.hrMax = mx; state.settings.hrRest = rs;
+      save(); render();
+    }
+    else if (a === "export") doExport();
+    else if (a === "copy")   doCopy();
+    else if (a === "import") doImport();
+    else if (a === "reset")  doReset();
+    return;
+  }
+});
+
+scrim.addEventListener("click", closeSheet);
+
+document.getElementById("fileIn").addEventListener("change", function(e){
+  var f = e.target.files && e.target.files[0];
+  if (f) readFile(f);
+  e.target.value = "";        // so the same file can be picked again
+});
+sheet.addEventListener("input", function(e){
+  if (/^f-(km|min|sec|hr|splits)$/.test(e.target.id || "")){
+    readInputs(); syncPace();
+  }
+});
+
+/* Re-render when the app comes back after midnight */
+document.addEventListener("visibilitychange", function(){
+  if (!document.hidden) render();
+});
+
+render();
+
+if ("serviceWorker" in navigator){
+  window.addEventListener("load", function(){
+    navigator.serviceWorker.register("./sw.js").catch(function(){});
+  });
+}
+</script>
+</body>
+</html>
