@@ -109,15 +109,33 @@ Backups written by the previous version — logs keyed `"week-day"`, with a
 separate `weekStarts` array — are migrated on load and on restore, so older
 exports still work.
 
+## The watch half
+
+`samsung-watch-sync/` holds the other end of this: a Wear OS app that records a
+run with GPS and heart rate, derives the splits, writes a TCX and serves it over
+local Wi-Fi on port 8787. Samsung Health has no per-run file export, so a custom
+watch app is the only way to get splits off a Galaxy Watch at all.
+
+The flow is two steps, because a page served over HTTPS cannot fetch `http://`
+from the watch: Safari to `http://<watch-ip>:8787/runs`, save the `.tcx` to
+Files, then **Import from a file** here.
+
+Its TCX output and this app's importer are verified against each other — the
+Kotlin that computes splits has no Android imports, so it runs on a plain JVM
+and its output can be fed straight to the parser in `index.html`. See
+`samsung-watch-sync/README.md`.
+
 ## Files
 
 ```
-index.html     the whole app — markup, styles, logic
-manifest.json  PWA metadata
-sw.js          service worker, offline shell cache
-icon.svg       source icon
-icon-180.png   apple-touch-icon (iOS ignores SVG here)
-icon-512.png   manifest icon
+index.html          the whole app — markup, styles, logic
+manifest.json       PWA metadata
+sw.js               service worker, offline shell cache
+icon.svg            source icon
+icon-180.png        apple-touch-icon (iOS ignores SVG here)
+icon-512.png        manifest icon
+.nojekyll           serve files verbatim, no Jekyll pass
+samsung-watch-sync/ the Wear OS recorder and its iOS/Shortcuts clients
 ```
 
 Vanilla JS, no build step, no dependencies, no CDN.
