@@ -66,6 +66,17 @@ Tapping a column in the weekly chart fills in a readout below it — that week's
 distance against plan, run count, time, pace, heart rate and calories. There is
 no hover on a phone, so the numbers behind a bar need somewhere to land.
 
+**Browse by time** drills down: all time → a year → a month → a week → the runs
+themselves. Every level shows full stats for that period — distance, runs, time,
+pace, heart rate, calories, longest run and best VO<sub>2</sub> — and a
+breadcrumb walks back up. Tapping a run opens it: the log sheet if it belongs to
+the plan, a detail view if it is history.
+
+Its weeks run Monday to Sunday on the calendar, independent of the plan's weeks,
+so runs from before the block still land in one. A week that straddles two
+months is shown whole and flagged, so the row and the week it opens always
+agree.
+
 ## Changing the plan
 
 - **A run you cannot make.** Tap it and pick another day of that week. Moving a

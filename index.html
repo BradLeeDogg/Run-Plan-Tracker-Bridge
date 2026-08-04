@@ -280,6 +280,38 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
 .tbl td.over{color:var(--warn);font-weight:700}
 .tbl .sk{color:var(--danger);font-size:11px}
 .tbl tbody tr:last-child td{border-bottom:none}
+/* ---------- time browser ---------- */
+.crumbs{
+  display:flex;align-items:center;flex-wrap:wrap;gap:2px;
+  margin:10px 0 12px;font-size:13px;
+}
+.crumbs .crumb{
+  padding:5px 9px;border-radius:9px;font-weight:700;color:var(--accent);
+  background:rgba(60,224,140,.09);border:1px solid rgba(60,224,140,.22);
+}
+.crumbs .crumb.on{color:var(--text);background:var(--surface2);border-color:var(--line)}
+.crumbs .sep{color:var(--dim);padding:0 2px}
+.drills{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.drill{
+  display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+  min-height:58px;padding:11px 12px;border-radius:14px;
+  background:var(--surface2);border:1px solid transparent;
+  transition:transform .12s ease,border-color .2s ease;
+}
+.drill:active{transform:scale(.99)}
+.drill .dl{flex:1;min-width:0}
+.drill .dl .t{display:block;font-weight:800;font-size:15px}
+.drill .dl .s{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-top:2px}
+.drill .dv{text-align:right;font-variant-numeric:tabular-nums;flex:0 0 auto}
+.drill .dv .a{display:block;font-size:17px;font-weight:800;line-height:1.1}
+.drill .dv .p{display:block;font-size:11px;color:var(--muted);font-weight:600}
+.drill .chev{color:var(--dim);font-size:22px;line-height:1;flex:0 0 auto;margin-left:2px}
+.drill.day .dl .t{font-size:14px}
+.tagh{
+  display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;
+  font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  background:rgba(94,168,255,.14);color:var(--recovery);border:1px solid rgba(94,168,255,.32);
+}
 .dotm{display:inline-block;width:6px;height:6px;border-radius:50%;vertical-align:middle}
 .dotm.rc{background:var(--recovery)}
 .dotm.pk{background:var(--warn)}
@@ -742,25 +774,179 @@ function monthPlanned(){
     });
   return by;
 }
-function monthRows(){
-  var by = {}, planned = monthPlanned();
-  var push = function(l){
-    if (!l || !l.date) return;
-    var m = String(l.date).slice(0, 7);                  // YYYY-MM
-    (by[m] = by[m] || []).push(l);
-  };
-  Object.keys(state.logs).forEach(function(k){ push(state.logs[k]); });
-  state.extras.forEach(push);                            // history counts here
-  Object.keys(planned).forEach(function(m){ if (!by[m]) by[m] = []; });
-  return Object.keys(by).sort().map(function(m){
-    var s = summarise(by[m]);
-    var p = m.split("-");
-    s.month = m;
-    s.planned = planned[m] || 0;
-    s.label = new Date(+p[0], +p[1]-1, 1)
-      .toLocaleDateString(undefined, { month:"long", year:"numeric" });
-    return s;
+function allEntries(){
+  var out = [];
+  for (var w = 0; w < planLen(); w++)
+    for (var d = 0; d < runsOf(w).length; d++){
+      var l = getLog(w, d);
+      if (l && l.done && l.date) out.push({ log:l, w:w, d:d, extra:false });
+    }
+  state.extras.forEach(function(l, i){
+    if (l && l.done && l.date) out.push({ log:l, idx:i, extra:true });
   });
+  return out.sort(function(a, b){
+    return a.log.date < b.log.date ? -1 : a.log.date > b.log.date ? 1 : 0;
+  });
+}
+/* Weeks run Monday to Sunday here, independent of the plan's own weeks, so a
+   run from before the block still lands in one. */
+function mondayISO(iso){ return toISO(mondayOf(parseISO(iso))); }
+
+function monthLabel(ym){
+  var p = ym.split("-");
+  return new Date(+p[0], +p[1]-1, 1).toLocaleDateString(undefined, { month:"long", year:"numeric" });
+}
+function weekLabel(mon){
+  var a = parseISO(mon);
+  return fmtDate(a) + " \u2013 " + fmtDate(addDays(a, 6));
+}
+function groupBy(entries, keyOf){
+  var keys = [], by = {};
+  entries.forEach(function(e){
+    var k = keyOf(e);
+    if (!by[k]){ by[k] = []; keys.push(k); }
+    by[k].push(e);
+  });
+  return { keys: keys.sort(), by: by };
+}
+
+/* Longest run and best VO2 are period questions, so they live here rather than
+   in summarise(), which is shared with the plan tables. */
+function periodExtras(logs){
+  var longest = 0, vo2 = null;
+  logs.forEach(function(l){
+    if ((l.km || 0) > longest) longest = l.km || 0;
+    var v = vo2for(l);
+    if (v && (vo2 === null || v > vo2)) vo2 = v;
+  });
+  return { longest: longest, vo2: vo2 };
+}
+
+function periodStatsHTML(logs){
+  var r = summarise(logs), x = periodExtras(logs);
+  var bits = [];
+  bits.push('<em>' + n1(r.km) + ' <i>km</i></em>');
+  bits.push('<em>' + r.runs + ' <i>run' + (r.runs === 1 ? '' : 's') + '</i></em>');
+  if (r.sec) bits.push('<em>' + durStr(r.sec) + '</em>');
+  if (r.km && r.sec) bits.push('<em>' + paceStr(r.km, r.sec).replace(" /km", "") + ' <i>/km</i></em>');
+  if (r.hr) bits.push('<em>' + r.hr + ' <i>bpm</i></em>');
+  if (r.kcal) bits.push('<em>' + r.kcal + ' <i>kcal</i></em>');
+  if (x.longest) bits.push('<em>' + n1(x.longest) + ' <i>longest</i></em>');
+  if (x.vo2) bits.push('<em>' + x.vo2 + ' <i>best VO&#8322;</i></em>');
+  if (r.skipped) bits.push('<em class="over">' + r.skipped + ' <i>skipped</i></em>');
+  return '<div class="mets">' + bits.join("") + '</div>';
+}
+
+function drillRow(act, label, sub, logs){
+  var r = summarise(logs);
+  return '<button class="drill" ' + act + '>' +
+    '<span class="dl"><span class="t">' + esc(label) + '</span>' +
+    (sub ? '<span class="s">' + esc(sub) + '</span>' : '') + '</span>' +
+    '<span class="dv"><span class="a">' + n1(r.km) + '</span>' +
+    '<span class="p">km &middot; ' + r.runs + ' run' + (r.runs === 1 ? '' : 's') + '</span></span>' +
+    '<span class="chev">&rsaquo;</span></button>';
+}
+
+var browse = { level:"years", y:null, m:null, wk:null };
+
+function browseHTML(){
+  var ents = allEntries();
+  var h = '<div class="card" style="margin-top:12px"><div class="label">Browse by time</div>';
+
+  if (!ents.length){
+    return h + '<div class="empty" style="padding:20px 8px">Log or import a run and it ' +
+           'appears here, grouped by year, month and week.</div></div>';
+  }
+
+  // Breadcrumb — every level above the current one is a way back.
+  var crumbs = ['<button class="crumb" data-lvl="years">All time</button>'];
+  if (browse.level !== "years")
+    crumbs.push('<button class="crumb" data-lvl="year" data-y="' + browse.y + '">' + browse.y + '</button>');
+  if (browse.level === "month" || browse.level === "week")
+    crumbs.push('<button class="crumb" data-lvl="month" data-m="' + browse.m + '">' +
+                esc(monthLabel(browse.m)) + '</button>');
+  if (browse.level === "week")
+    crumbs.push('<button class="crumb on">' + esc(weekLabel(browse.wk)) + '</button>');
+  h += '<div class="crumbs">' + crumbs.join('<span class="sep">&rsaquo;</span>') + '</div>';
+
+  var sel, g, i;
+
+  if (browse.level === "years"){
+    g = groupBy(ents, function(e){ return e.log.date.slice(0, 4); });
+    h += periodStatsHTML(ents.map(function(e){ return e.log; }));
+    h += '<div class="drills">';
+    for (i = g.keys.length - 1; i >= 0; i--){
+      var yk = g.keys[i], yl = g.by[yk].map(function(e){ return e.log; });
+      var mk = groupBy(g.by[yk], function(e){ return e.log.date.slice(0, 7); }).keys.length;
+      h += drillRow('data-lvl="year" data-y="' + yk + '"', yk,
+                    mk + ' month' + (mk === 1 ? '' : 's'), yl);
+    }
+    h += '</div>';
+
+  } else if (browse.level === "year"){
+    sel = ents.filter(function(e){ return e.log.date.slice(0, 4) === browse.y; });
+    g = groupBy(sel, function(e){ return e.log.date.slice(0, 7); });
+    h += periodStatsHTML(sel.map(function(e){ return e.log; }));
+    var planned = monthPlanned();
+    h += '<div class="drills">';
+    for (i = g.keys.length - 1; i >= 0; i--){
+      var mkey = g.keys[i], ml = g.by[mkey].map(function(e){ return e.log; });
+      var pk = planned[mkey] || 0;
+      h += drillRow('data-lvl="month" data-m="' + mkey + '"',
+                    monthLabel(mkey).replace(" " + browse.y, ""),
+                    pk ? n1(pk) + " km planned" : null, ml);
+    }
+    h += '</div>';
+
+  } else if (browse.level === "month"){
+    sel = ents.filter(function(e){ return e.log.date.slice(0, 7) === browse.m; });
+    h += periodStatsHTML(sel.map(function(e){ return e.log; }));
+    // A week can straddle two months. The row and the week it opens must agree,
+    // so both cover the whole Monday-to-Sunday week, and straddling is flagged.
+    var mons = [], seen = {};
+    sel.forEach(function(e){
+      var mo = mondayISO(e.log.date);
+      if (!seen[mo]){ seen[mo] = true; mons.push(mo); }
+    });
+    mons.sort();
+    h += '<div class="drills">';
+    for (i = mons.length - 1; i >= 0; i--){
+      var mo2 = mons[i];
+      var wl = ents.filter(function(e){ return mondayISO(e.log.date) === mo2; });
+      var spans = wl.some(function(e){ return e.log.date.slice(0, 7) !== browse.m; });
+      h += drillRow('data-lvl="week" data-wk="' + mo2 + '"', weekLabel(mo2),
+                    spans ? "spans two months" : null,
+                    wl.map(function(e){ return e.log; }));
+    }
+    h += '</div>';
+
+  } else {
+    sel = ents.filter(function(e){ return mondayISO(e.log.date) === browse.wk; });
+    h += periodStatsHTML(sel.map(function(e){ return e.log; }));
+    h += '<div class="drills">';
+    sel.forEach(function(e){
+      var l = e.log, dt = parseISO(l.date);
+      var mets = [];
+      if (l.durSec) mets.push('<em>' + durStr(l.durSec) + '</em>');
+      if (l.km && l.durSec) mets.push('<em>' + paceStr(l.km, l.durSec).replace(" /km","") + ' <i>/km</i></em>');
+      if (l.hr) mets.push('<em>' + l.hr + ' <i>bpm</i></em>');
+      if (l.kcal) mets.push('<em>' + l.kcal + ' <i>kcal</i></em>');
+      var v = vo2for(l);
+      if (v) mets.push('<em>' + v + ' <i>VO&#8322;</i></em>');
+      if (l.splits && l.splits.length) mets.push('<em>' + l.splits.length + ' <i>splits</i></em>');
+      h += '<button class="drill day" ' +
+        (e.extra ? 'data-openx="' + e.idx + '"' : 'data-open="' + e.w + ',' + e.d + '"') + '>' +
+        '<span class="dl"><span class="t">' +
+          dt.toLocaleDateString(undefined, { weekday:"long", month:"short", day:"numeric" }) +
+          (e.extra ? ' <span class="tagh">history</span>' : '') + '</span>' +
+        '<span class="mets">' + mets.join("") + '</span></span>' +
+        '<span class="dv"><span class="a">' + n1(l.km) + '</span><span class="p">km</span></span>' +
+        '<span class="chev">&rsaquo;</span></button>';
+    });
+    h += '</div><div class="tiny">Tap a run to open it.</div>';
+  }
+
+  return h + '</div>';
 }
 
 function esc(s){
@@ -1176,29 +1362,8 @@ function viewStats(){
     (anyWeek ? '' : '<div class="tiny">Nothing logged yet, so only the plan column is filled.</div>') +
     '</div>';
 
-  /* ---- month by month ---- */
-  var mr = monthRows();
-  h += '<div class="card" style="margin-top:12px"><div class="label">Month by month</div><div class="tbl"><table>' +
-    '<thead><tr><th>Month</th><th class="n">Plan</th><th class="n">Done</th><th class="n">Runs</th>' +
-    '<th class="n">Time</th><th class="n">Pace</th><th class="n">HR</th>' +
-    '<th class="n">kcal</th></tr></thead><tbody>';
-  if (!mr.length){
-    h += '<tr><td colspan="8" class="dim">Nothing yet.</td></tr>';
-  } else {
-    mr.forEach(function(r){
-      h += '<tr><td>' + esc(r.label) + '</td>' +
-        '<td class="n">' + (r.planned ? n1(r.planned) : "&mdash;") + '</td>' +
-        '<td class="n">' + (r.km ? n1(r.km) : "&mdash;") + '</td>' +
-        '<td class="n">' + (r.runs || "&mdash;") + '</td>' +
-        '<td class="n">' + (r.sec ? durStr(r.sec) : "&mdash;") + '</td>' +
-        '<td class="n">' + (r.km && r.sec ? paceStr(r.km, r.sec).replace(" /km", "") : "&mdash;") + '</td>' +
-        '<td class="n">' + (r.hr || "&mdash;") + '</td>' +
-        '<td class="n">' + (r.kcal ? r.kcal : "&mdash;") + '</td></tr>';
-    });
-  }
-  h += '</tbody></table></div>' +
-    '<div class="tiny">Months are calendar months, taken from the date each run happened, so ' +
-    'a week straddling the turn of a month is split between the two.</div></div>';
+  /* ---- browse by time ---- */
+  h += browseHTML();
 
   /* ---- runs outside the plan ---- */
   if (state.extras.length){
@@ -1535,6 +1700,37 @@ function saveDraft(){
     pain: draft.painOn && draft.area ? { area:draft.area, note:draft.note } : null
   });
   save(); closeSheet(); render();
+}
+
+/* A history run answers to no plan slot, so the log sheet cannot edit it.
+   This shows what was recorded and offers the one action that makes sense. */
+function openExtraSheet(i){
+  var l = state.extras[i];
+  if (!l) return;
+  draft = null; editW = null;
+  var mets = [];
+  if (l.durSec) mets.push("<em>" + durStr(l.durSec) + "</em>");
+  if (l.km && l.durSec) mets.push("<em>" + paceStr(l.km, l.durSec).replace(" /km","") + " <i>/km</i></em>");
+  if (l.hr) mets.push("<em>" + l.hr + " <i>bpm</i></em>");
+  if (l.kcal) mets.push("<em>" + l.kcal + " <i>kcal</i></em>");
+  var v = vo2for(l);
+  if (v) mets.push("<em>" + v + " <i>VO&#8322;</i></em>");
+
+  var h = '<div class="grab"></div><h2>' + n1(l.km) + ' km</h2>' +
+    '<div class="sub">' + fmtLong(parseISO(l.date)) + ' &middot; kept as history</div>' +
+    '<div class="readout" style="margin-top:14px"><div class="mets">' +
+      (mets.length ? mets.join("") : "<em>No detail recorded</em>") + '</div></div>';
+  if (l.splits && l.splits.length){
+    h += '<div class="field" style="margin-top:14px"><span class="label">Splits</span>' +
+         '<div class="pace">' + esc(splitsToText(l.splits)) + '</div></div>';
+  }
+  h += '<div class="tiny" style="margin:14px 0">This run sits outside the plan, so it counts ' +
+       'towards your totals, the monthly figures and the VO<sub>2</sub> trend, but not towards ' +
+       'any plan week.</div>' +
+    '<button class="btn primary" data-act="cancel" style="margin-bottom:10px">Done</button>' +
+    '<button class="btn ghost danger" data-act="del-extra-sheet" data-i="' + i + '">Delete this run</button>';
+  sheet.innerHTML = h;
+  scrim.classList.add("on"); sheet.classList.add("on");
 }
 
 /* ============================ WEEK EDIT SHEET ============================ */
@@ -2316,6 +2512,32 @@ document.addEventListener("click", function(e){
     return;
   }
 
+  el = e.target.closest("[data-lvl]");
+  if (el){
+    browse.level = el.dataset.lvl;
+    if (el.dataset.y) browse.y = el.dataset.y;
+    if (el.dataset.m){ browse.m = el.dataset.m; browse.y = el.dataset.m.slice(0, 4); }
+    if (el.dataset.wk){
+      browse.wk = el.dataset.wk;
+      browse.m = browse.m || el.dataset.wk.slice(0, 7);
+      browse.y = el.dataset.wk.slice(0, 4);
+    }
+    render();
+    var cb = document.querySelector(".crumbs");
+    if (cb) cb.scrollIntoView({ block:"center" });
+    return;
+  }
+
+  el = e.target.closest("[data-open]");
+  if (el){
+    var o = el.dataset.open.split(",");
+    openSheet(+o[0], +o[1]);
+    return;
+  }
+
+  el = e.target.closest("[data-openx]");
+  if (el){ openExtraSheet(+el.dataset.openx); return; }
+
   el = e.target.closest("[data-bar]");
   if (el){
     var ro = document.getElementById("barReadout");
@@ -2377,6 +2599,10 @@ document.addEventListener("click", function(e){
       }
       state.settings.hrMax = mx; state.settings.hrRest = rs;
       save(); render();
+    }
+    else if (a === "del-extra-sheet"){
+      state.extras.splice(+el.dataset.i, 1);
+      save(); closeSheet(); render();
     }
     else if (a === "del-extra"){
       state.extras.splice(+el.dataset.i, 1);
