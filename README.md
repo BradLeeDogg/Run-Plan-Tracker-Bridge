@@ -57,14 +57,24 @@ alongside heart rate.
 Per week: actual against planned with a percentage, rolling 4-week volume, and
 a streak of consecutive completed runs.
 
-Stats also breaks the block down **week by week** and **month by month** —
-planned against done, run count, total time, average pace and average heart
-rate and calories. Months are calendar months taken from the date each run
-happened, so a week straddling the turn of a month is split across both.
+Stats breaks the block down **week by week** — planned against done, run count,
+total time, average pace, heart rate and calories, with the current week
+highlighted.
 
 Tapping a column in the weekly chart fills in a readout below it — that week's
 distance against plan, run count, time, pace, heart rate and calories. There is
 no hover on a phone, so the numbers behind a bar need somewhere to land.
+
+**Browse by time** drills down: all time → a year → a month → a week → the runs
+themselves. Every level shows full stats for that period — distance, runs, time,
+pace, heart rate, calories, longest run and best VO<sub>2</sub> — and a
+breadcrumb walks back up. Tapping a run opens it: the log sheet if it belongs to
+the plan, a detail view if it is history.
+
+Its weeks run Monday to Sunday on the calendar, independent of the plan's weeks,
+so runs from before the block still land in one. A week that straddles two
+months is shown whole and flagged, so the row and the week it opens always
+agree.
 
 ## Changing the plan
 
@@ -130,7 +140,7 @@ the one thing the watch app below exists to provide.
 
 See **[APPLE-HEALTH.md](APPLE-HEALTH.md)** for both recipes. The full export also
 backfills everything you have already run: pre-plan runs are kept as **history**,
-counted in the monthly table, VO<sub>2</sub> trend and average heart rate, but never
+counted in the time browser, VO<sub>2</sub> trend and average heart rate, but never
 against a plan week.
 
 ## The watch half
