@@ -1,6 +1,6 @@
 /* Run Plan Tracker service worker.
    Bump CACHE when any shell file changes so installed copies pick it up. */
-var CACHE = "runplan-v7";
+var CACHE = "runplan-v8";
 
 var SHELL = [
   "./",
