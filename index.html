@@ -312,6 +312,28 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
   font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
   background:rgba(94,168,255,.14);color:var(--recovery);border:1px solid rgba(94,168,255,.32);
 }
+/* ---------- strength ---------- */
+.run.str{background:rgba(94,168,255,.06);border-color:rgba(94,168,255,.16)}
+.run.str .dot{background:var(--recovery);opacity:.45}
+.run.str.done .dot{background:var(--recovery);opacity:1}
+.run.str .day{color:var(--recovery)}
+.strhead{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px}
+.strcount{font-size:13px;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums}
+.stritem{
+  display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+  min-height:60px;padding:11px 12px;border-radius:14px;margin-bottom:8px;
+  background:var(--surface2);border:1.5px solid var(--line);
+}
+.stritem.on{border-color:var(--accent);background:rgba(60,224,140,.07)}
+.stritem .tick{
+  flex:0 0 26px;height:26px;border-radius:8px;border:1.5px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;font-weight:800;color:#06210f;background:transparent;
+}
+.stritem.on .tick{background:var(--accent);border-color:var(--accent)}
+.stritem .mid{flex:1;min-width:0}
+.stritem .t{display:block;font-weight:700;font-size:15px}
+.stritem .p{display:block;font-size:12px;color:var(--muted);margin-top:2px;line-height:1.35}
 .dotm{display:inline-block;width:6px;height:6px;border-radius:50%;vertical-align:middle}
 .dotm.rc{background:var(--recovery)}
 .dotm.pk{background:var(--warn)}
@@ -425,6 +447,24 @@ var OVER_LIMIT = 1.10;                   // flag above 110% of planned week volu
 var PAIN_WINDOW_DAYS = 14;
 var MAX_WEEKS = 52;
 
+/* Strength work: twice a week, 20-25 minutes, after a run. It is the
+   best-evidenced way to get through a volume build uninjured, and more so at
+   51 than at 31 — so it is tracked, not left as a note.
+
+   Tuesday and Thursday by default: after the two shorter runs, leaving the
+   Sunday long run alone. Editable per week like everything else. */
+var STRENGTH = [
+  { k:"calf",   name:"Calf raises",              pres:"3 \u00d7 12 \u00b7 straight-leg and bent-knee",
+    note:"Progress to single-leg, then add load." },
+  { k:"bridge", name:"Single-leg glute bridges", pres:"3 \u00d7 10 per side" },
+  { k:"split",  name:"Split squats or step-ups", pres:"3 \u00d7 8 per side" },
+  { k:"abduct", name:"Side-lying hip abduction", pres:"3 \u00d7 12",
+    note:"Or banded lateral walks." },
+  { k:"plank",  name:"Plank + side plank",       pres:"3 \u00d7 30\u201345 seconds" }
+];
+var STRENGTH_OFFSETS = [1, 3];        // Tue, Thu
+var STRENGTH_MINUTES = 22;            // the middle of 20-25, used as the default
+
 var AREAS = ["Knee","Shin","Calf","Achilles","Ankle","Foot",
              "Hamstring","Quad","Hip","IT band","Groin","Lower back","Other"];
 
@@ -468,7 +508,8 @@ function freshPlan(){
     out.push({
       start: toISO(addDays(base, i*7)),
       tag: p.tag,
-      runs: p.km.map(function(km, d){ return { id:"r" + (++n), km:km, off:DEFAULT_OFFSET[d] }; })
+      runs: p.km.map(function(km, d){ return { id:"r" + (++n), km:km, off:DEFAULT_OFFSET[d] }; }),
+      strength: STRENGTH_OFFSETS.map(function(off){ return { id:"s" + (++n), off:off }; })
     });
   });
   return out;
@@ -485,8 +526,8 @@ function planOK(p){
 function maxSeq(p){
   var m = 0;
   (p || []).forEach(function(w){
-    (w.runs || []).forEach(function(r){
-      var n = parseInt(String(r.id).replace(/^r/, ""), 10);
+    (w.runs || []).concat(w.strength || []).forEach(function(r){
+      var n = parseInt(String(r.id).replace(/^[rs]/, ""), 10);
       if (isFinite(n) && n > m) m = n;
     });
   });
@@ -525,7 +566,15 @@ function load(){
   // began, or anything run outside it. Kept apart from state.logs on purpose:
   // see extraLogs().
   if (!Array.isArray(s.extras)) s.extras = [];
+  // Plans saved before strength existed have no sessions on them.
   s.seq = Math.max(s.seq || 0, maxSeq(s.plan));
+  s.plan.forEach(function(w){
+    if (!Array.isArray(w.strength))
+      w.strength = STRENGTH_OFFSETS.map(function(off){ return { id:"s" + (++s.seq), off:off }; });
+  });
+  // Kept apart from logs: a strength session is not a run and must never reach
+  // the distance maths, the 110% warning or the recovery check.
+  if (!s.strength || typeof s.strength !== "object") s.strength = {};
   s.version = 2;
   delete s.weekStarts;                                     // superseded by plan[].start
   return s;
@@ -557,6 +606,34 @@ function isLong(w, d){
   rs.forEach(function(r, i){ if (r.km >= mx){ mx = r.km; at = i; } });
   return rs.length > 1 && at === d;
 }
+/* ---------- strength ---------- */
+function strengthOf(w){ return wk(w).strength || []; }
+function strengthDate(w, i){ return addDays(weekStart(w), strengthOf(w)[i].off); }
+function getStrength(w, i){
+  var x = strengthOf(w)[i];
+  return x ? (state.strength[x.id] || null) : null;
+}
+function setStrength(w, i, v){ state.strength[strengthOf(w)[i].id] = v; }
+function strengthDayName(w, i){ return WD_SHORT[strengthOf(w)[i].off]; }
+/* How many of the five were ticked. */
+function strengthCount(l){
+  if (!l || !l.items) return 0;
+  var n = 0;
+  STRENGTH.forEach(function(x){ if (l.items[x.k]) n++; });
+  return n;
+}
+function strengthTotals(){
+  var done = 0, planned = 0, mins = 0;
+  for (var w = 0; w < planLen(); w++){
+    strengthOf(w).forEach(function(x, i){
+      planned++;
+      var l = getStrength(w, i);
+      if (l && l.done){ done++; mins += (l.mins || 0); }
+    });
+  }
+  return { done: done, planned: planned, mins: mins };
+}
+
 function lastRunDate(w){
   var rs = runsOf(w), mx = 6;
   if (rs.length) mx = rs.reduce(function(a, r){ return Math.max(a, r.off); }, 0);
@@ -1006,6 +1083,7 @@ function deleteWeek(w){
       (n ? ", including " + n + " logged run" + (n === 1 ? "" : "s") : "") +
       "?\n\nThis cannot be undone.")) return;
   runsOf(w).forEach(function(r){ delete state.logs[r.id]; });
+  strengthOf(w).forEach(function(x){ delete state.strength[x.id]; });
   state.plan.splice(w, 1);
   // pull the later weeks back so the calendar stays tight
   for (var i = w; i < planLen(); i++)
@@ -1132,6 +1210,28 @@ function runRowHTML(w, d, showToday){
     right + '</button>';
 }
 
+function strengthRowHTML(w, i, showToday){
+  var l = getStrength(w, i), dt = strengthDate(w, i), t = today();
+  var isToday = dayDiff(dt, t) === 0;
+  var done = !!(l && l.done), c = strengthCount(l);
+  var cls = "run str" + (done ? " done" : "") + (showToday && isToday ? " is-today" : "");
+  var mets = [];
+  if (done){
+    mets.push('<em>' + c + ' <i>of ' + STRENGTH.length + ' done</i></em>');
+    if (l.mins) mets.push('<em>' + l.mins + ' <i>min</i></em>');
+  }
+  return '<button class="' + cls + '" data-str="' + w + ',' + i + '">' +
+    '<span class="dot"></span>' +
+    '<span class="day">' + strengthDayName(w, i) + '</span>' +
+    '<span class="mid"><span class="date">' + fmtDate(dt) +
+      ' &middot; strength</span>' +
+      (mets.length ? '<span class="mets">' + mets.join("") + '</span>' : '') + '</span>' +
+    '<div class="km" style="' + (done ? '' : 'color:var(--muted)') + '">' +
+      (done ? c + "/" + STRENGTH.length : STRENGTH.length) +
+      '<small>' + (done ? 'done' : 'exercises') + '</small></div>' +
+    '</button>';
+}
+
 function viewToday(){
   var h = bannersHTML();
   var nx = nextRun(), t = today();
@@ -1173,7 +1273,8 @@ function viewToday(){
     '<div class="wk-nums"><div class="a">' + n1(act) + ' / ' + n1(pl) + '</div><div class="p">km &middot; ' + pct + '%</div></div></div>' +
     '<div class="bar"><i class="' + (pl > 0 && act > pl * OVER_LIMIT ? "over" : "") + '" style="width:' +
       (pl > 0 ? Math.min(100, act / pl * 100) : 0) + '%"></i></div>' +
-    '<div class="runs">' + runsOf(c).map(function(r, d){ return runRowHTML(c, d, true); }).join("") + '</div>' +
+    '<div class="runs">' + runsOf(c).map(function(r, d){ return runRowHTML(c, d, true); }).join("") +
+      strengthOf(c).map(function(x, i){ return strengthRowHTML(c, i, true); }).join("") + '</div>' +
   '</div>';
 
   var r4 = rolling4();
@@ -1204,7 +1305,8 @@ function viewPlan(){
       '</button>' +
       '<div class="wk-body"><div class="bar"><i class="' + (tot > 0 && act > tot*OVER_LIMIT ? "over" : "") +
         '" style="width:' + (tot > 0 ? Math.min(100, act/tot*100) : 0) + '%"></i></div>' +
-        '<div class="runs">' + runsOf(w).map(function(r, d){ return runRowHTML(w, d, true); }).join("") + '</div>' +
+        '<div class="runs">' + runsOf(w).map(function(r, d){ return runRowHTML(w, d, true); }).join("") +
+          strengthOf(w).map(function(x, i){ return strengthRowHTML(w, i, true); }).join("") + '</div>' +
         '<button class="btn ghost sm" data-act="edit-week" data-w="' + w + '">Edit this week</button>' +
       '</div></div>';
   }
@@ -1328,6 +1430,15 @@ function viewStats(){
     '<div class="stat"><div class="v">' + doneN + '</div><div class="k">Runs done</div></div>' +
     '<div class="stat"><div class="v">' + skipN + '</div><div class="k">Skipped</div></div>' +
     '</div>';
+  var st = strengthTotals();
+  if (st.planned){
+    h += '<div class="stats-row" style="margin-top:12px">' +
+      '<div class="stat"><div class="v">' + st.done + '<span style="font-size:15px;color:var(--muted)"> / ' +
+        st.planned + '</span></div><div class="k">Strength sessions</div></div>' +
+      '<div class="stat"><div class="v">' + (st.mins ? n1(st.mins / 60) : "&mdash;") +
+        '</div><div class="k">Hours of strength</div></div>' +
+      '</div>';
+  }
   if (allKcal || allSec){
     h += '<div class="stats-row" style="margin-top:12px">' +
       '<div class="stat"><div class="v">' + (allKcal ? fmtK(allKcal) : "&mdash;") +
@@ -1535,7 +1646,7 @@ function openSheet(w, d){
 }
 function closeSheet(){
   scrim.classList.remove("on"); sheet.classList.remove("on");
-  draft = null; editW = null;
+  draft = null; editW = null; strDraft = null;
 }
 /* Position of a run inside its week, by id — indices move when days change. */
 function indexOfRun(w, id){
@@ -1733,6 +1844,70 @@ function openExtraSheet(i){
   scrim.classList.add("on"); sheet.classList.add("on");
 }
 
+/* ============================ STRENGTH SHEET ============================ */
+var strDraft = null;
+
+function openStrengthSheet(w, i){
+  var l = getStrength(w, i) || {};
+  draft = null; editW = null;
+  strDraft = { w:w, i:i, items:{}, mins: l.mins || "", existing: !!l.done };
+  STRENGTH.forEach(function(x){ strDraft.items[x.k] = !!(l.items && l.items[x.k]); });
+  drawStrengthSheet();
+  scrim.classList.add("on"); sheet.classList.add("on");
+}
+
+function drawStrengthSheet(){
+  var w = strDraft.w, i = strDraft.i, dt = strengthDate(w, i);
+  var done = 0;
+  STRENGTH.forEach(function(x){ if (strDraft.items[x.k]) done++; });
+
+  var h = '<div class="grab"></div><h2>Strength</h2>' +
+    '<div class="sub">' + fmtLong(dt) + ' &middot; after the run &middot; 20&ndash;25 min</div>';
+
+  h += '<div class="field"><div class="strhead"><span class="label">Exercises</span>' +
+    '<span class="strcount">' + done + ' / ' + STRENGTH.length + '</span></div>';
+  STRENGTH.forEach(function(x){
+    var on = strDraft.items[x.k];
+    h += '<button class="stritem' + (on ? " on" : "") + '" data-str-item="' + x.k + '">' +
+      '<span class="tick">' + (on ? "&#10003;" : "") + '</span>' +
+      '<span class="mid"><span class="t">' + x.name + '</span>' +
+      '<span class="p">' + x.pres + (x.note ? ' &middot; ' + x.note : '') + '</span></span>' +
+      '</button>';
+  });
+  h += '<button class="btn ghost sm" data-act="str-all" style="margin-top:10px">' +
+    (done === STRENGTH.length ? "Clear all" : "Tick all") + '</button></div>';
+
+  h += '<div class="field"><span class="label">How long</span><div class="inputs">' +
+    '<div class="inp"><input id="f-strmin" type="number" inputmode="numeric" min="0" max="180" placeholder="' +
+      STRENGTH_MINUTES + '" value="' + strDraft.mins + '"><span class="u">min</span></div>' +
+    '</div></div>';
+
+  h += '<button class="btn primary" data-act="str-save" style="margin-bottom:10px">Save</button>';
+  if (strDraft.existing)
+    h += '<button class="btn ghost danger" data-act="str-clear" style="margin-bottom:10px">Clear this session</button>';
+  h += '<button class="btn ghost" data-act="cancel">Cancel</button>';
+  h += '<div class="tiny">Strength never counts towards weekly distance, so it cannot trip the ' +
+       'over-volume warning or argue with a recovery week.</div>';
+  sheet.innerHTML = h;
+}
+
+function saveStrength(){
+  var el = document.getElementById("f-strmin");
+  if (el) strDraft.mins = el.value === "" ? "" : parseInt(el.value, 10);
+  var any = false;
+  STRENGTH.forEach(function(x){ if (strDraft.items[x.k]) any = true; });
+  if (!any){ alert("Tick at least one exercise, or cancel."); return; }
+  var mins = parseInt(strDraft.mins, 10);
+  setStrength(strDraft.w, strDraft.i, {
+    done: true,
+    items: strDraft.items,
+    mins: mins > 0 ? mins : STRENGTH_MINUTES,
+    date: toISO(strengthDate(strDraft.w, strDraft.i)),
+    ts: Date.now()
+  });
+  save(); closeSheet(); render();
+}
+
 /* ============================ WEEK EDIT SHEET ============================ */
 var editW = null;
 
@@ -1797,7 +1972,7 @@ function drawWeekSheet(){
 function exportBlob(){
   return JSON.stringify({
     app:"run-plan-tracker", version:2, exported:new Date().toISOString(),
-    plan:state.plan, logs:state.logs, extras:state.extras,
+    plan:state.plan, logs:state.logs, extras:state.extras, strength:state.strength,
     seq:state.seq, settings:state.settings
   }, null, 2);
 }
@@ -1838,6 +2013,7 @@ function doImport(){
     state.plan = m.plan; state.logs = m.logs; state.seq = maxSeq(m.plan);
   }
   state.extras = Array.isArray(data.extras) ? data.extras : [];
+  state.strength = (data.strength && typeof data.strength === "object") ? data.strength : {};
   if (data.settings && data.settings.hrMax > 0) state.settings = data.settings;
   save(); render();
   alert("Restored.");
@@ -1847,6 +2023,7 @@ function doReset(){
   if (!confirm("Really erase everything?")) return;
   state.logs = {};
   state.extras = [];
+  state.strength = {};
   state.plan = freshPlan();
   state.seq = maxSeq(state.plan);
   save(); render();
@@ -2505,6 +2682,23 @@ document.addEventListener("click", function(e){
   el = e.target.closest("[data-tab]");
   if (el){ tab = el.dataset.tab; render(); return; }
 
+  el = e.target.closest("[data-str]");
+  if (el){
+    var sp = el.dataset.str.split(",");
+    openStrengthSheet(+sp[0], +sp[1]);
+    return;
+  }
+
+  el = e.target.closest("[data-str-item]");
+  if (el && strDraft){
+    var k = el.dataset.strItem;
+    var mel = document.getElementById("f-strmin");
+    if (mel) strDraft.mins = mel.value === "" ? "" : parseInt(mel.value, 10);
+    strDraft.items[k] = !strDraft.items[k];
+    drawStrengthSheet();
+    return;
+  }
+
   el = e.target.closest("[data-run]");
   if (el){
     var pr = el.dataset.run.split(",");
@@ -2565,6 +2759,17 @@ document.addEventListener("click", function(e){
     else if (a === "cancel") closeSheet();
     else if (a === "clear"){
       delete state.logs[runAt(draft.w, draft.d).id];
+      save(); closeSheet(); render();
+    }
+    else if (a === "str-save") saveStrength();
+    else if (a === "str-all"){
+      var all = true;
+      STRENGTH.forEach(function(x){ if (!strDraft.items[x.k]) all = false; });
+      STRENGTH.forEach(function(x){ strDraft.items[x.k] = !all; });
+      drawStrengthSheet();
+    }
+    else if (a === "str-clear"){
+      delete state.strength[strengthOf(strDraft.w)[strDraft.i].id];
       save(); closeSheet(); render();
     }
     else if (a === "shift") shiftFrom(+el.dataset.w);

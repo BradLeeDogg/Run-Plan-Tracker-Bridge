@@ -54,6 +54,22 @@ Calories are read from whatever you import — TCX laps, Apple Health's
 `totalEnergyBurned`, or a calories column in JSON or CSV — and can be typed in
 alongside heart rate.
 
+**Strength sessions** — twice a week, 20–25 minutes, after a run. Tuesday and
+Thursday by default, after the two shorter runs, leaving the Sunday long run
+alone. Five exercises, each tickable:
+
+| | |
+|---|---|
+| Calf raises | 3 × 12, straight-leg and bent-knee — progress to single-leg, then load |
+| Single-leg glute bridges | 3 × 10 per side |
+| Split squats or step-ups | 3 × 8 per side |
+| Side-lying hip abduction | 3 × 12, or banded lateral walks |
+| Plank + side plank | 3 × 30–45 seconds |
+
+Strength never counts towards weekly distance, so it cannot trip the
+over-volume warning or argue with a recovery week. It has its own totals in
+Stats: sessions done against planned, and hours.
+
 Per week: actual against planned with a percentage, rolling 4-week volume, and
 a streak of consecutive completed runs.
 
