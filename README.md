@@ -70,6 +70,15 @@ Strength never counts towards weekly distance, so it cannot trip the
 over-volume warning or argue with a recovery week. It has its own totals in
 Stats: sessions done against planned, and hours.
 
+**Strides** — 4–6 × 20 seconds at the end of the Tuesday run, from week 9.
+Relaxed fast, not a sprint, with a full walking recovery between each.
+
+They are conditional on the first eight weeks having felt genuinely
+comfortable, and that condition is asked rather than assumed. Nothing appears
+until week 9, when the app puts the question and takes either answer. Declining
+is recorded so it stops asking; the decision can be reversed from Stats at any
+time, in either direction.
+
 Per week: actual against planned with a percentage, rolling 4-week volume, and
 a streak of consecutive completed runs.
 

@@ -317,6 +317,9 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
 .run.str .dot{background:var(--recovery);opacity:.45}
 .run.str.done .dot{background:var(--recovery);opacity:1}
 .run.str .day{color:var(--recovery)}
+.strd{color:var(--warn);font-weight:700}
+.mets em.strd{color:var(--warn)}
+.mets em.strd i{color:rgba(255,176,58,.7)}
 .strhead{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px}
 .strcount{font-size:13px;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums}
 .stritem{
@@ -465,6 +468,16 @@ var STRENGTH = [
 var STRENGTH_OFFSETS = [1, 3];        // Tue, Thu
 var STRENGTH_MINUTES = 22;            // the middle of 20-25, used as the default
 
+/* Strides: 4-6 x 20 seconds at the end of the Tuesday run, from week 9.
+   Relaxed fast, not a sprint, with a full walking recovery between each.
+
+   Conditional on the first eight weeks having felt genuinely comfortable. That
+   condition is the point of the exercise, so it is asked rather than assumed:
+   settings.strides stays null until answered, and nothing appears until it is. */
+var STRIDES_FROM_WEEK = 9;            // 1-based, so plan index 8
+var STRIDES_REPS = [4, 5, 6];
+var STRIDES_SECONDS = 20;
+
 var AREAS = ["Knee","Shin","Calf","Achilles","Ankle","Foot",
              "Hamstring","Quad","Hip","IT band","Groin","Lower back","Other"];
 
@@ -508,7 +521,12 @@ function freshPlan(){
     out.push({
       start: toISO(addDays(base, i*7)),
       tag: p.tag,
-      runs: p.km.map(function(km, d){ return { id:"r" + (++n), km:km, off:DEFAULT_OFFSET[d] }; }),
+      runs: p.km.map(function(km, d){
+        var r = { id:"r" + (++n), km:km, off:DEFAULT_OFFSET[d] };
+        // Tuesday, from week 9 on
+        if (i + 1 >= STRIDES_FROM_WEEK && DEFAULT_OFFSET[d] === 1) r.strides = true;
+        return r;
+      }),
       strength: STRENGTH_OFFSETS.map(function(off){ return { id:"s" + (++n), off:off }; })
     });
   });
@@ -568,10 +586,18 @@ function load(){
   if (!Array.isArray(s.extras)) s.extras = [];
   // Plans saved before strength existed have no sessions on them.
   s.seq = Math.max(s.seq || 0, maxSeq(s.plan));
-  s.plan.forEach(function(w){
+  s.plan.forEach(function(w, i){
     if (!Array.isArray(w.strength))
       w.strength = STRENGTH_OFFSETS.map(function(off){ return { id:"s" + (++s.seq), off:off }; });
+    if (!w.stridesInit){
+      w.runs.forEach(function(r){
+        if (i + 1 >= STRIDES_FROM_WEEK && r.off === 1) r.strides = true;
+      });
+      w.stridesInit = true;
+    }
   });
+  // null until asked, so the "only if it felt comfortable" gate is a real gate
+  if (s.settings.strides !== true && s.settings.strides !== false) s.settings.strides = null;
   // Kept apart from logs: a strength session is not a run and must never reach
   // the distance maths, the 110% warning or the recovery check.
   if (!s.strength || typeof s.strength !== "object") s.strength = {};
@@ -607,6 +633,29 @@ function isLong(w, d){
   return rs.length > 1 && at === d;
 }
 /* ---------- strength ---------- */
+/* ---------- strides ---------- */
+function stridesOn(){ return state.settings.strides === true; }
+function runHasStrides(w, d){ return !!(runAt(w, d) && runAt(w, d).strides); }
+/* Is there a strides run this week or earlier that the owner has not answered
+   the gate for yet? */
+function stridesPending(){
+  if (state.settings.strides !== null) return false;
+  var c = currentWeekIndex();
+  for (var w = 0; w <= c && w < planLen(); w++)
+    for (var d = 0; d < runsOf(w).length; d++)
+      if (runHasStrides(w, d)) return true;
+  return false;
+}
+function stridesTotals(){
+  var done = 0, reps = 0;
+  for (var w = 0; w < planLen(); w++)
+    for (var d = 0; d < runsOf(w).length; d++){
+      var l = getLog(w, d);
+      if (l && l.done && l.strideReps > 0){ done++; reps += l.strideReps; }
+    }
+  return { sessions: done, reps: reps };
+}
+
 function strengthOf(w){ return wk(w).strength || []; }
 function strengthDate(w, i){ return addDays(weekStart(w), strengthOf(w)[i].off); }
 function getStrength(w, i){
@@ -1155,6 +1204,18 @@ function bannersHTML(){
          'until it settles.</div></div>';
   });
 
+  if (stridesPending()){
+    h += '<div class="banner info"><div class="ico">&#9889;</div><div>' +
+      '<b>Week ' + STRIDES_FROM_WEEK + ' &mdash; time to decide about strides</b>' +
+      'The plan adds ' + STRIDES_REPS[0] + '&ndash;' + STRIDES_REPS[STRIDES_REPS.length-1] +
+      ' &times; ' + STRIDES_SECONDS + '-second strides to the end of the Tuesday run from here on, ' +
+      'but only if the first ' + (STRIDES_FROM_WEEK - 1) + ' weeks felt genuinely comfortable. ' +
+      'If they did not, skip them &mdash; that is the honest answer, not a failed one.' +
+      '<button class="act" data-act="strides-yes">They felt comfortable &mdash; add strides</button>' +
+      '<button class="act" data-act="strides-no">Not yet &mdash; leave them out</button>' +
+      '</div></div>';
+  }
+
   var mw = missedWeek();
   if (mw !== null){
     h += '<div class="banner info"><div class="ico">&#8635;</div><div>' +
@@ -1198,6 +1259,14 @@ function runRowHTML(w, d, showToday){
     right = '<div class="km" style="color:var(--danger);font-size:14px">Skipped</div>';
   } else {
     right = '<div class="km" style="color:var(--muted)">' + n1(runAt(w,d).km) + '<small>km plan</small></div>';
+  }
+
+  if (stridesOn() && runHasStrides(w, d)){
+    if (l && l.done && l.strideReps > 0)
+      mets = mets.replace('<span class="mets">',
+        '<span class="mets"><em class="strd">' + l.strideReps + ' <i>strides</i></em>');
+    else if (!l || !l.done)
+      sub += ' &middot; <span class="strd">+ strides</span>';
   }
 
   var eff = (l && l.done && l.effort) ? '<span class="eff" style="background:var(--' + l.effort + ')"></span>' : "";
@@ -1568,6 +1637,26 @@ function viewStats(){
   }
 
   /* ---- heart rate limits, needed by the VO2 estimate ---- */
+  var anyStrides = false;
+  for (var sw = 0; sw < planLen() && !anyStrides; sw++)
+    for (var sd = 0; sd < runsOf(sw).length; sd++)
+      if (runHasStrides(sw, sd)){ anyStrides = true; break; }
+  if (anyStrides && state.settings.strides !== null){
+    var stt = stridesTotals();
+    h += '<div class="card"><div class="label" style="margin-bottom:10px">Strides</div>' +
+      '<div class="mets" style="margin-bottom:12px">' +
+        '<em>' + (stridesOn() ? "On" : "Off") + ' <i>from week ' + STRIDES_FROM_WEEK + '</i></em>' +
+        (stt.sessions ? '<em>' + stt.sessions + ' <i>sessions</i></em>' : '') +
+        (stt.reps ? '<em>' + stt.reps + ' <i>strides run</i></em>' : '') +
+      '</div>' +
+      '<button class="btn" data-act="' + (stridesOn() ? "strides-no" : "strides-yes") + '">' +
+        (stridesOn() ? "Turn strides off" : "Turn strides on") + '</button>' +
+      '<div class="tiny">' + STRIDES_REPS[0] + '&ndash;' + STRIDES_REPS[STRIDES_REPS.length-1] +
+      ' &times; ' + STRIDES_SECONDS + ' seconds at the end of the Tuesday run, from week ' +
+      STRIDES_FROM_WEEK + '. Relaxed fast, not a sprint, with a full walking recovery between ' +
+      'each. Turn them off again if the legs stop feeling fresh.</div></div>';
+  }
+
   h += '<div class="card"><div class="label" style="margin-bottom:12px">Heart rate limits</div>' +
     '<div class="inputs">' +
       '<div class="inp"><input id="s-hrmax" type="number" inputmode="numeric" min="120" max="230" value="' + state.settings.hrMax + '"><span class="u">max</span></div>' +
@@ -1634,6 +1723,7 @@ function openSheet(w, d){
     sec: l.durSec ? l.durSec%60 : "",
     hr: l.hr || "",
     kcal: l.kcal || "",
+    strideReps: (typeof l.strideReps === "number") ? String(l.strideReps) : "",
     splits: splitsToText(l.splits),
     effort: l.effort || "moderate",
     painOn: !!(l.pain && l.pain.area),
@@ -1694,6 +1784,19 @@ function drawSheet(){
       '<div class="inp"><input id="f-hr" type="number" inputmode="numeric" min="60" max="230" placeholder="&mdash;" value="' + draft.hr + '"><span class="u">avg bpm</span></div>' +
       '<div class="inp"><input id="f-kcal" type="number" inputmode="numeric" min="0" max="9999" placeholder="&mdash;" value="' + draft.kcal + '"><span class="u">kcal</span></div>' +
       '</div></div><div class="pace" id="vo2"></div>';
+
+    if (stridesOn() && runHasStrides(w, d)){
+      h += '<div class="field"><span class="label">Strides &mdash; ' + STRIDES_SECONDS +
+        ' seconds each, at the end</span><div class="seg">' +
+        STRIDES_REPS.map(function(r){
+          return '<button data-field="strideReps" data-v="' + r + '"' +
+                 (String(draft.strideReps) === String(r) ? ' class="on"' : '') + '>' + r + '</button>';
+        }).join("") +
+        '<button data-field="strideReps" data-v="0"' +
+          (String(draft.strideReps) === "0" ? ' class="on"' : '') + '>None</button>' +
+        '</div><div class="tiny" style="margin-top:6px">Relaxed fast, not a sprint. Full walking ' +
+        'recovery between each. If the run felt hard, leave them out.</div></div>';
+    }
 
     h += '<div class="field"><span class="label">Splits &mdash; one per km</span>' +
       '<textarea id="f-splits" style="min-height:60px" placeholder="5:02 4:58 5:10 5:05&hellip;">' + esc(draft.splits) + '</textarea>' +
@@ -1806,6 +1909,8 @@ function saveDraft(){
     km:km, durSec:sec, effort:draft.effort,
     hr: (hr > 0 ? hr : null),
     kcal: (kc > 0 ? kc : null),
+    strideReps: (stridesOn() && runHasStrides(w, d) && draft.strideReps !== "")
+                  ? (parseInt(draft.strideReps, 10) || 0) : null,
     splits: parseSplits(draft.splits),
     date:toISO(runDate(w, d)), ts:Date.now(),
     pain: draft.painOn && draft.area ? { area:draft.area, note:draft.note } : null
@@ -2761,6 +2866,8 @@ document.addEventListener("click", function(e){
       delete state.logs[runAt(draft.w, draft.d).id];
       save(); closeSheet(); render();
     }
+    else if (a === "strides-yes"){ state.settings.strides = true;  save(); render(); }
+    else if (a === "strides-no"){  state.settings.strides = false; save(); render(); }
     else if (a === "str-save") saveStrength();
     else if (a === "str-all"){
       var all = true;
