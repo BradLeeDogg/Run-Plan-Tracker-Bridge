@@ -101,6 +101,13 @@ so runs from before the block still land in one. A week that straddles two
 months is shown whole and flagged, so the row and the week it opens always
 agree.
 
+Tapping a logged run **opens it to be read** — distance, time, pace, heart
+rate, calories, VO<sub>2</sub>, effort, strides, and every split with the
+fastest and slowest marked. Editing is a second, deliberate step behind an
+**Edit this run** button, so glancing at a run cannot end in an accidental
+overwrite. A run with nothing logged yet goes straight to the form, since there
+is nothing to look at.
+
 ## Changing the plan
 
 - **A run you cannot make.** Tap it and pick another day of that week. Moving a
