@@ -337,6 +337,18 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
 .stritem .mid{flex:1;min-width:0}
 .stritem .t{display:block;font-weight:700;font-size:15px}
 .stritem .p{display:block;font-size:12px;color:var(--muted);margin-top:2px;line-height:1.35}
+.splitlist{display:flex;flex-wrap:wrap;gap:8px}
+.sp{
+  display:flex;flex-direction:column;align-items:center;min-width:62px;
+  padding:8px 6px;border-radius:11px;background:var(--surface2);border:1px solid var(--line);
+}
+.sp b{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
+.sp i{font-style:normal;font-size:10px;color:var(--dim);font-weight:700;margin-top:2px;
+  text-transform:uppercase;letter-spacing:.06em}
+.sp.fast{border-color:rgba(60,224,140,.45)}
+.sp.fast b{color:var(--accent)}
+.sp.slow{border-color:rgba(255,176,58,.4)}
+.sp.slow b{color:var(--warn)}
 .dotm{display:inline-block;width:6px;height:6px;border-radius:50%;vertical-align:middle}
 .dotm.rc{background:var(--recovery)}
 .dotm.pk{background:var(--warn)}
@@ -1729,7 +1741,10 @@ function openSheet(w, d){
     painOn: !!(l.pain && l.pain.area),
     area: l.pain ? l.pain.area : null,
     note: l.pain ? (l.pain.note || "") : "",
-    existing: !!(l.done || l.skipped)
+    existing: !!(l.done || l.skipped),
+    // A logged run opens to be looked at. Editing is a deliberate second step,
+    // so glancing at a run cannot end in an accidental overwrite.
+    mode: (l.done || l.skipped) ? "view" : "edit"
   };
   drawSheet();
   scrim.classList.add("on"); sheet.classList.add("on");
@@ -1745,7 +1760,63 @@ function indexOfRun(w, id){
   return -1;
 }
 
+var EFFORT_LABEL = { easy:"Easy", moderate:"Moderate", hard:"Hard" };
+
+function drawViewSheet(){
+  var w = draft.w, d = draft.d, p = wk(w), r = runAt(w, d), dt = runDate(w, d);
+  var l = getLog(w, d) || {};
+
+  var h = '<div class="grab"></div>' +
+    '<h2>' + (l.skipped ? "Skipped" : n1(l.km) + " km") + '</h2>' +
+    '<div class="sub">' + fmtLong(dt) + ' &middot; Week ' + (w+1) + ' &middot; ' +
+      dayName(w, d) + (isLong(w, d) ? " long run" : "") +
+      ' &middot; ' + n1(r.km) + ' km planned' +
+    (p.tag === "RECOVERY" ? ' &middot; <span style="color:var(--recovery);font-weight:700">recovery week</span>' : '') +
+    '</div>';
+
+  if (!l.skipped){
+    var mets = [];
+    if (l.durSec) mets.push('<em>' + durStr(l.durSec) + '</em>');
+    if (l.km && l.durSec) mets.push('<em>' + paceStr(l.km, l.durSec).replace(" /km","") + ' <i>/km</i></em>');
+    if (l.hr) mets.push('<em>' + l.hr + ' <i>bpm</i></em>');
+    if (l.kcal) mets.push('<em>' + l.kcal + ' <i>kcal</i></em>');
+    var v = vo2for(l);
+    if (v) mets.push('<em>' + v + ' <i>VO&#8322;</i></em>');
+    if (l.effort) mets.push('<em>' + (EFFORT_LABEL[l.effort] || l.effort) + '</em>');
+    if (typeof l.strideReps === "number")
+      mets.push('<em class="strd">' + (l.strideReps || "no") + ' <i>strides</i></em>');
+    h += '<div class="readout" style="margin-top:14px"><div class="mets">' +
+      (mets.length ? mets.join("") : '<em>Distance only</em>') + '</div></div>';
+
+    if (l.splits && l.splits.length){
+      var fast = Math.min.apply(null, l.splits), slow = Math.max.apply(null, l.splits);
+      h += '<div class="field" style="margin-top:14px"><span class="label">Splits</span>' +
+        '<div class="splitlist">' +
+        l.splits.map(function(sp, i){
+          var cls = sp === fast ? " fast" : sp === slow ? " slow" : "";
+          return '<span class="sp' + cls + '"><b>' + splitStr(sp) + '</b><i>km ' + (i+1) + '</i></span>';
+        }).join("") + '</div></div>';
+    }
+  }
+
+  if (l.pain && l.pain.area){
+    h += '<div class="banner danger" style="margin-top:14px"><div class="ico">&#9888;</div><div>' +
+      '<b>' + esc(l.pain.area) + '</b>' + (l.pain.note ? esc(l.pain.note) : "Logged with pain.") +
+      '</div></div>';
+  }
+
+  if (l.imported)
+    h += '<div class="tiny" style="margin-top:12px">Imported from a file. Effort and pain are not in ' +
+         'the data &mdash; edit to add them.</div>';
+
+  h += '<div style="height:16px"></div>' +
+    '<button class="btn primary" data-act="edit-run" style="margin-bottom:10px">Edit this run</button>' +
+    '<button class="btn ghost" data-act="cancel">Close</button>';
+  sheet.innerHTML = h;
+}
+
 function drawSheet(){
+  if (draft.mode === "view"){ drawViewSheet(); return; }
   var w = draft.w, d = draft.d, p = wk(w), r = runAt(w, d), dt = runDate(w, d);
   var seg = function(name, val, label){
     return '<button data-field="' + name + '" data-v="' + val + '"' +
@@ -2860,7 +2931,8 @@ document.addEventListener("click", function(e){
   el = e.target.closest("[data-act]");
   if (el){
     var a = el.dataset.act;
-    if (a === "save")   saveDraft();
+    if (a === "edit-run"){ draft.mode = "edit"; drawSheet(); return; }
+    else if (a === "save")   saveDraft();
     else if (a === "cancel") closeSheet();
     else if (a === "clear"){
       delete state.logs[runAt(draft.w, draft.d).id];
