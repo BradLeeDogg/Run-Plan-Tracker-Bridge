@@ -71,14 +71,16 @@ Strength never counts towards weekly distance, so it cannot trip the
 over-volume warning or argue with a recovery week. It has its own totals in
 Stats: sessions done against planned, and hours.
 
-**Strides** — 4–6 × 20 seconds at the end of the Tuesday run, from week 9.
-Relaxed fast, not a sprint, with a full walking recovery between each.
+**Strides** — 4–6 × 20 seconds at the end of the Tuesday run, from **week 8**,
+where the supplied plan starts them. Relaxed fast, not a sprint, with a full
+walking recovery between each.
 
-They are conditional on the first eight weeks having felt genuinely
+They are conditional on the weeks before them having felt genuinely
 comfortable, and that condition is asked rather than assumed. Nothing appears
-until week 9, when the app puts the question and takes either answer. Declining
-is recorded so it stops asking; the decision can be reversed from Stats at any
-time, in either direction.
+until the first strides week, when the app puts the question and takes either
+answer. Declining is recorded so it stops asking; the decision can be reversed
+from Stats at any time, in either direction. The trigger week is read from the
+plan, so changing the plan moves it.
 
 Per week: actual against planned with a percentage, rolling 4-week volume, and
 a streak of consecutive completed runs.
@@ -118,6 +120,9 @@ is nothing to look at.
   run's distance and day, adds or removes runs, and marks the week normal,
   recovery or peak. Week totals are always summed from the runs, never stored,
   so they cannot drift.
+- **Switching plans.** When the plan in the app is newer than the one on your
+  device, it offers to load it. Accepting moves every run you have already
+  logged into history first, so changing plans never costs you a run you did.
 - **Length of the block.** *Add a week at the end* extends it, copying the shape
   of the final week; *Delete week* shortens it and pulls the later weeks back so
   the calendar stays tight.
