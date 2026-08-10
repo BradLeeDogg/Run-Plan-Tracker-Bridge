@@ -82,6 +82,18 @@ answer. Declining is recorded so it stops asking; the decision can be reversed
 from Stats at any time, in either direction. The trigger week is read from the
 plan, so changing the plan moves it.
 
+**Cross-training** — Wednesday and Friday, between the runs. Optional through
+the base phase and **required from phase 2**, which is the plan's own wording.
+Pick what you did — bike, swim, row, elliptical or other — and how long. Like
+strength, it adds no running distance and cannot trip the volume guards.
+
+**Shoes** — the plan replaces at 700 km. A pair counts every run dated between
+the day it went into service and the day it was retired, on top of whatever it
+had already run when first recorded. A warning appears at 85% and again past
+700. Retiring a pair starts the next one: the retirement day is the old pair's
+last day and the new pair starts the day after, so a run on the changeover day
+counts once, not twice.
+
 Per week: actual against planned with a percentage, rolling 4-week volume, and
 a streak of consecutive completed runs.
 
