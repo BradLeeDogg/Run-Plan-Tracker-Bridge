@@ -4,25 +4,26 @@ A single-file PWA for tracking a run block. Add it to the iPhone home screen and
 it behaves like an app: opens offline, no account, no network calls, no
 analytics. Everything is stored in `localStorage` on the device.
 
-It ships with the 12-week block below, and the plan is editable in the app —
-distances, which day each run falls on, and how many weeks there are.
+It ships with **Marathon Build — May 29, 2027**: 42 weeks, 1,630 km, from
+Monday 10 August 2026 to the race on Saturday 29 May 2027. The plan is editable
+in the app — distances, which day each run falls on, and how many weeks there
+are.
 
-| Week | Starts | Tue / Thu / Sun | Total |
-|-----:|--------|-----------------|------:|
-| 1  | Aug 3, 2026  | 7 / 7 / 8    | 22 km |
-| 2  | Aug 10       | 7 / 8 / 9    | 24 km |
-| 3  | Aug 17       | 8 / 8 / 10   | 26 km |
-| 4  | Aug 24       | 6 / 6 / 7    | 19 km — recovery |
-| 5  | Aug 31       | 8 / 8 / 10   | 26 km |
-| 6  | Sep 7        | 8 / 9 / 11   | 28 km |
-| 7  | Sep 14       | 9 / 10 / 11  | 30 km |
-| 8  | Sep 21       | 7 / 7 / 8    | 22 km — recovery |
-| 9  | Sep 28       | 9 / 10 / 11  | 30 km |
-| 10 | Oct 5        | 10 / 10 / 12 | 32 km |
-| 11 | Oct 12       | 11 / 11 / 12 | 34 km — peak |
-| 12 | Oct 19       | 8 / 8 / 9    | 25 km — recovery |
+| Phase | Weeks | Focus |
+|---|---|---|
+| 1 Base Building | 1–16 | All easy. No speed work. |
+| 2 Winter Base | 17–29 | Cross-training mandatory. One tempo per week. |
+| 3 Marathon Specific | 30–39 | Long runs and marathon-pace work. |
+| 4 Taper | 40–42 | Volume down. Long run moves to Saturday. |
 
-318 km across the block, finishing Sunday Oct 25, 2026.
+Tue / Thu / Sun, Sunday long, weeks start Monday — except the taper, where the
+long run moves to Saturday. Sessions are typed: easy, long, tempo and race.
+Strides begin week 8, the Thursday tempo begins week 22, marathon-pace finishes
+begin week 35. Week 33 is a half-marathon tune-up, week 39 the 30 km peak.
+
+Long runs carry a 3½-hour time cap, and weeks that came with a note keep it —
+*"Do not make up missed distance"*, *"See a doctor before Phase 2"*, *"Taper
+will feel wrong — this is normal"*.
 
 ## Install
 
@@ -70,14 +71,16 @@ Strength never counts towards weekly distance, so it cannot trip the
 over-volume warning or argue with a recovery week. It has its own totals in
 Stats: sessions done against planned, and hours.
 
-**Strides** — 4–6 × 20 seconds at the end of the Tuesday run, from week 9.
-Relaxed fast, not a sprint, with a full walking recovery between each.
+**Strides** — 4–6 × 20 seconds at the end of the Tuesday run, from **week 8**,
+where the supplied plan starts them. Relaxed fast, not a sprint, with a full
+walking recovery between each.
 
-They are conditional on the first eight weeks having felt genuinely
+They are conditional on the weeks before them having felt genuinely
 comfortable, and that condition is asked rather than assumed. Nothing appears
-until week 9, when the app puts the question and takes either answer. Declining
-is recorded so it stops asking; the decision can be reversed from Stats at any
-time, in either direction.
+until the first strides week, when the app puts the question and takes either
+answer. Declining is recorded so it stops asking; the decision can be reversed
+from Stats at any time, in either direction. The trigger week is read from the
+plan, so changing the plan moves it.
 
 Per week: actual against planned with a percentage, rolling 4-week volume, and
 a streak of consecutive completed runs.
@@ -117,6 +120,9 @@ is nothing to look at.
   run's distance and day, adds or removes runs, and marks the week normal,
   recovery or peak. Week totals are always summed from the runs, never stored,
   so they cannot drift.
+- **Switching plans.** When the plan in the app is newer than the one on your
+  device, it offers to load it. Accepting moves every run you have already
+  logged into history first, so changing plans never costs you a run you did.
 - **Length of the block.** *Add a week at the end* extends it, copying the shape
   of the final week; *Delete week* shortens it and pulls the later weeks back so
   the calendar stays tight.
