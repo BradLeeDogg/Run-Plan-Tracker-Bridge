@@ -4,7 +4,7 @@ A single-file PWA for tracking a run block. Add it to the iPhone home screen and
 it behaves like an app: opens offline, no account, no network calls, no
 analytics. Everything is stored in `localStorage` on the device.
 
-It ships with **Marathon Build — May 29, 2027**: 42 weeks, 1,630 km, from
+It ships with **Marathon Build — May 30, 2027**: 42 weeks, 1,630 km, from
 Monday 10 August 2026 to the race on Sunday 30 May 2027. The plan is editable
 in the app — distances, which day each run falls on, and how many weeks there
 are.
