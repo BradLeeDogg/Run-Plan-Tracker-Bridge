@@ -473,9 +473,9 @@ textarea:focus{outline:none;border-color:var(--accent)}
                      strides  4-6 x 20s at the end, full recovery
    Distances and dates are the supplied plan's, unchanged. Totals verified
    against its own plannedTotalKm for every week. */
-var PLAN_ID = "marathon-2027-05-29";
-var PLAN_NAME = "Marathon Build - May 29, 2027";
-var RACE_DATE = "2027-05-29";
+var PLAN_ID = "marathon-2027-05-30";
+var PLAN_NAME = "Marathon Build \u2014 May 30, 2027";
+var RACE_DATE = "2027-05-30";
 var RACE_KM = 42.2;
 var LONG_RUN_CAP_MIN = 210;
 var SHOE_KM = 700;
@@ -485,7 +485,7 @@ var PHASES = [
   { n:1, name:"Base Building", from:1, to:16, focus:"All easy. No speed work." },
   { n:2, name:"Winter Base", from:17, to:29, focus:"Cross-training mandatory. One tempo per week." },
   { n:3, name:"Marathon Specific", from:30, to:39, focus:"Long runs and marathon-pace work." },
-  { n:4, name:"Taper", from:40, to:42, focus:"Volume down. Long run moves to Saturday." }
+  { n:4, name:"Taper", from:40, to:42, focus:"Volume down. Long runs rehearse race day." }
 ];
 
 var DEFAULT_PLAN = [
@@ -567,12 +567,12 @@ var DEFAULT_PLAN = [
     r:[[1,14,"easy",{strides:1}],[3,14,"tempo",{tempo:30}],[6,28,"long",{cap:210,mp:8}]] },
   { s:"2027-05-03", t:"PEAK", p:3, n:"PEAK - longest run of the plan",
     r:[[1,14,"easy",{strides:1}],[3,14,"tempo",{tempo:30}],[6,30,"long",{cap:210,mp:8}]] },
-  { s:"2027-05-10", t:"TAPER", p:4, n:"Long run moves to SATURDAY",
-    r:[[1,13,"easy",{strides:1}],[3,13,"easy"],[5,20,"long",{cap:210,mp:5}]] },
-  { s:"2027-05-17", t:"TAPER", p:4, n:"Long run on SATURDAY. Taper will feel wrong - this is normal",
-    r:[[1,10,"easy",{strides:1}],[3,10,"easy"],[5,14,"long",{cap:210}]] },
-  { s:"2027-05-24", t:"RACE WEEK", p:4, n:"RACE SATURDAY. Friday full rest. Nothing new.",
-    r:[[1,8,"easy",{strides:1}],[3,5,"easy"],[5,42.2,"race"]] }
+  { s:"2027-05-10", t:"TAPER", p:4, n:"Volume comes down. Long run stays on Sunday, as race day is Sunday",
+    r:[[1,13,"easy",{strides:1}],[3,13,"easy"],[6,20,"long",{cap:210,mp:5}]] },
+  { s:"2027-05-17", t:"TAPER", p:4, n:"Taper will feel wrong - this is normal",
+    r:[[1,10,"easy",{strides:1}],[3,10,"easy"],[6,14,"long",{cap:210}]] },
+  { s:"2027-05-24", t:"RACE WEEK", p:4, n:"RACE SUNDAY. Saturday full rest. Nothing new.",
+    r:[[1,8,"easy",{strides:1}],[3,5,"easy"],[6,42.2,"race"]] }
 ];
 
 var WEEK1_MONDAY = DEFAULT_PLAN[0].s;   // 2026-08-10

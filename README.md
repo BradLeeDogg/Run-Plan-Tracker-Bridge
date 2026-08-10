@@ -4,8 +4,8 @@ A single-file PWA for tracking a run block. Add it to the iPhone home screen and
 it behaves like an app: opens offline, no account, no network calls, no
 analytics. Everything is stored in `localStorage` on the device.
 
-It ships with **Marathon Build — May 29, 2027**: 42 weeks, 1,630 km, from
-Monday 10 August 2026 to the race on Saturday 29 May 2027. The plan is editable
+It ships with **Marathon Build — May 30, 2027**: 42 weeks, 1,630 km, from
+Monday 10 August 2026 to the race on Sunday 30 May 2027. The plan is editable
 in the app — distances, which day each run falls on, and how many weeks there
 are.
 
@@ -14,10 +14,10 @@ are.
 | 1 Base Building | 1–16 | All easy. No speed work. |
 | 2 Winter Base | 17–29 | Cross-training mandatory. One tempo per week. |
 | 3 Marathon Specific | 30–39 | Long runs and marathon-pace work. |
-| 4 Taper | 40–42 | Volume down. Long run moves to Saturday. |
+| 4 Taper | 40–42 | Volume down. Long runs rehearse race day. |
 
-Tue / Thu / Sun, Sunday long, weeks start Monday — except the taper, where the
-long run moves to Saturday. Sessions are typed: easy, long, tempo and race.
+Tue / Thu / Sun, Sunday long, weeks start Monday. Sessions are typed: easy,
+long, tempo and race.
 Strides begin week 8, the Thursday tempo begins week 22, marathon-pace finishes
 begin week 35. Week 33 is a half-marathon tune-up, week 39 the 30 km peak.
 
