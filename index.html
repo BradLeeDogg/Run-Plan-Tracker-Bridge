@@ -317,6 +317,15 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
 .run.str .dot{background:var(--recovery);opacity:.45}
 .run.str.done .dot{background:var(--recovery);opacity:1}
 .run.str .day{color:var(--recovery)}
+.run.xt{background:rgba(255,176,58,.05);border-color:rgba(255,176,58,.14)}
+.run.xt .dot{background:var(--warn);opacity:.4}
+.run.xt.done .dot{background:var(--warn);opacity:1}
+.run.xt .day{color:var(--warn)}
+.req{
+  display:inline-block;margin-left:5px;padding:1px 6px;border-radius:999px;
+  font-size:9.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  background:rgba(255,176,58,.16);color:var(--warn);border:1px solid rgba(255,176,58,.34);
+}
 .strd{color:var(--warn);font-weight:700}
 .mets em.strd{color:var(--warn)}
 .mets em.strd i{color:rgba(255,176,58,.7)}
@@ -597,6 +606,21 @@ var STRENGTH = [
   { k:"plank",  name:"Plank + side plank",       pres:"3 \u00d7 30\u201345 seconds" }
 ];
 var STRENGTH_OFFSETS = [1, 3];        // Tue, Thu
+
+/* Cross-training: Wednesday and Friday, between the runs. Optional through the
+   base phase, mandatory from phase 2 — which is the plan's own wording, and the
+   reason it is tracked rather than left to memory over a long winter. */
+var XT_OFFSETS = [2, 4];              // Wed, Fri
+var XT_TYPES = ["Bike", "Swim", "Row", "Elliptical", "Other"];
+var XT_MANDATORY_PHASE = 2;
+var XT_DEFAULT_MIN = 40;
+
+/* Shoes. The plan sets 700 km as the replacement point; SHOE_KM carries it.
+   A pair accrues every run dated between the day it went into service and the
+   day it was retired, on top of whatever it had already done when first
+   recorded — which is why startKm exists rather than assuming a pair is new. */
+var SHOE_WARN_AT = 0.85;              // start warning at 85% of the way there
+var SHOE_START_KM = 200;              // what the first pair had already run
 var STRENGTH_MINUTES = 22;            // the middle of 20-25, used as the default
 
 /* Strides: 4-6 x 20 seconds at the end of the Tuesday run, from week 9.
@@ -668,7 +692,8 @@ function freshPlan(){
         if (o.strides) r.strides = true;
         return r;
       }),
-      strength: STRENGTH_OFFSETS.map(function(off){ return { id:"s" + (++n), off:off }; })
+      strength: STRENGTH_OFFSETS.map(function(off){ return { id:"s" + (++n), off:off }; }),
+      cross: XT_OFFSETS.map(function(off){ return { id:"x" + (++n), off:off }; })
     });
   });
   return out;
@@ -685,8 +710,8 @@ function planOK(p){
 function maxSeq(p){
   var m = 0;
   (p || []).forEach(function(w){
-    (w.runs || []).concat(w.strength || []).forEach(function(r){
-      var n = parseInt(String(r.id).replace(/^[rs]/, ""), 10);
+    (w.runs || []).concat(w.strength || []).concat(w.cross || []).forEach(function(r){
+      var n = parseInt(String(r.id).replace(/^[rsx]/, ""), 10);
       if (isFinite(n) && n > m) m = n;
     });
   });
@@ -732,12 +757,19 @@ function load(){
     if (!Array.isArray(w.strength))
       w.strength = STRENGTH_OFFSETS.map(function(off){ return { id:"s" + (++s.seq), off:off }; });
     if (typeof w.phase !== "number") w.phase = 1;
+    if (!Array.isArray(w.cross))
+      w.cross = XT_OFFSETS.map(function(off){ return { id:"x" + (++s.seq), off:off }; });
   });
   // null until asked, so the "only if it felt comfortable" gate is a real gate
   if (s.settings.strides !== true && s.settings.strides !== false) s.settings.strides = null;
-  // Kept apart from logs: a strength session is not a run and must never reach
-  // the distance maths, the 110% warning or the recovery check.
+  // Kept apart from logs: neither a strength session nor a cross-training one
+  // is a run, and neither must reach the distance maths, the 110% warning or
+  // the recovery check.
   if (!s.strength || typeof s.strength !== "object") s.strength = {};
+  if (!s.cross || typeof s.cross !== "object") s.cross = {};
+  if (!Array.isArray(s.shoes) || !s.shoes.length)
+    s.shoes = [{ id:"sh1", name:"Current shoes", since:WEEK1_MONDAY,
+                 startKm:SHOE_START_KM, retired:null }];
   s.version = 2;
   delete s.weekStarts;                                     // superseded by plan[].start
   return s;
@@ -837,6 +869,71 @@ function strengthTotals(){
     });
   }
   return { done: done, planned: planned, mins: mins };
+}
+
+/* ---------- cross-training ---------- */
+/* ---------- shoes ---------- */
+function activeShoe(){
+  for (var i = state.shoes.length - 1; i >= 0; i--)
+    if (!state.shoes[i].retired) return state.shoes[i];
+  return null;
+}
+/* Every run in the pair's service window, plan or history alike. */
+function shoeKm(sh){
+  if (!sh) return 0;
+  var km = sh.startKm || 0;
+  allLogs().forEach(function(l){
+    if (!l.date || !(l.km > 0)) return;
+    if (l.date < sh.since) return;
+    if (sh.retired && l.date > sh.retired) return;
+    km += l.km;
+  });
+  return Math.round(km * 10) / 10;
+}
+function shoeState(sh){
+  var km = shoeKm(sh);
+  if (km >= SHOE_KM) return { km:km, level:"over" };
+  if (km >= SHOE_KM * SHOE_WARN_AT) return { km:km, level:"near" };
+  return { km:km, level:"ok" };
+}
+/* The day a pair is retired is its last day in service, and the next pair
+   starts the day after. Sharing the boundary would let a run logged on the
+   changeover day count towards both pairs, which is how a shoe silently reads
+   200 km further on than it has actually run. */
+function retireShoe(name){
+  var cur = activeShoe(), from = today();
+  if (cur){
+    cur.retired = toISO(from);
+    from = addDays(from, 1);
+  }
+  state.shoes.push({
+    id: "sh" + (state.shoes.length + 1),
+    name: name || ("Pair " + (state.shoes.length + 1)),
+    since: toISO(from), startKm: 0, retired: null
+  });
+  save(); render();
+}
+
+function crossOf(w){ return wk(w).cross || []; }
+function crossDate(w, i){ return addDays(weekStart(w), crossOf(w)[i].off); }
+function getCross(w, i){
+  var x = crossOf(w)[i];
+  return x ? (state.cross[x.id] || null) : null;
+}
+function setCross(w, i, v){ state.cross[crossOf(w)[i].id] = v; }
+function crossDayName(w, i){ return WD_SHORT[crossOf(w)[i].off]; }
+function crossRequired(w){ return (wk(w).phase || 1) >= XT_MANDATORY_PHASE; }
+function crossTotals(){
+  var done = 0, required = 0, mins = 0;
+  for (var w = 0; w < planLen(); w++){
+    var req = crossRequired(w);
+    crossOf(w).forEach(function(x, i){
+      if (req) required++;
+      var l = getCross(w, i);
+      if (l && l.done){ done++; mins += (l.mins || 0); }
+    });
+  }
+  return { done: done, required: required, mins: mins };
 }
 
 function lastRunDate(w){
@@ -1282,6 +1379,7 @@ function adoptNewPlan(){
   state.extras.sort(function(a, b){ return (a.date || "") < (b.date || "") ? -1 : 1; });
   state.logs = {};
   state.strength = {};
+  state.cross = {};
   state.plan = freshPlan();
   state.seq = Math.max(state.seq || 0, maxSeq(state.plan));
   state.planId = PLAN_ID;
@@ -1332,6 +1430,7 @@ function deleteWeek(w){
       "?\n\nThis cannot be undone.")) return;
   runsOf(w).forEach(function(r){ delete state.logs[r.id]; });
   strengthOf(w).forEach(function(x){ delete state.strength[x.id]; });
+  crossOf(w).forEach(function(x){ delete state.cross[x.id]; });
   state.plan.splice(w, 1);
   // pull the later weeks back so the calendar stays tight
   for (var i = w; i < planLen(); i++)
@@ -1402,6 +1501,24 @@ function bannersHTML(){
          'That is a pattern, not a one-off. Consider cutting volume back to the last recovery week ' +
          'until it settles.</div></div>';
   });
+
+  var sh = activeShoe();
+  if (sh){
+    var st2 = shoeState(sh);
+    if (st2.level !== "ok"){
+      h += '<div class="banner ' + (st2.level === "over" ? "warn" : "info") + '">' +
+        '<div class="ico">&#128095;</div><div>' +
+        '<b>' + esc(sh.name) + ': ' + n1(st2.km) + ' km' +
+          (st2.level === "over" ? '' : ' of ' + SHOE_KM) + '</b>' +
+        (st2.level === "over"
+          ? 'Past the ' + SHOE_KM + ' km replacement point. Worn midsole is a quiet way into a ' +
+            'calf or knee problem, and this is a long build.'
+          : 'Getting close to the ' + SHOE_KM + ' km replacement point. Worth breaking in the next ' +
+            'pair alongside these rather than switching cold.') +
+        '<button class="act" data-act="new-shoes">Start a new pair</button>' +
+        '</div></div>';
+    }
+  }
 
   if (!planIsCurrent()){
     h += '<div class="banner info"><div class="ico">&#128197;</div><div>' +
@@ -1514,6 +1631,29 @@ function strengthRowHTML(w, i, showToday){
     '</button>';
 }
 
+function crossRowHTML(w, i, showToday){
+  var l = getCross(w, i), dt = crossDate(w, i), t = today();
+  var isToday = dayDiff(dt, t) === 0;
+  var done = !!(l && l.done);
+  var req = crossRequired(w);
+  var cls = "run xt" + (done ? " done" : "") + (showToday && isToday ? " is-today" : "");
+  var mets = [];
+  if (done){
+    if (l.kind) mets.push('<em>' + esc(l.kind) + '</em>');
+    if (l.mins) mets.push('<em>' + l.mins + ' <i>min</i></em>');
+  }
+  return '<button class="' + cls + '" data-xt="' + w + ',' + i + '">' +
+    '<span class="dot"></span>' +
+    '<span class="day">' + crossDayName(w, i) + '</span>' +
+    '<span class="mid"><span class="date">' + fmtDate(dt) + ' &middot; cross-training' +
+      (req ? ' <span class="req">required</span>' : '') + '</span>' +
+      (mets.length ? '<span class="mets">' + mets.join("") + '</span>' : '') + '</span>' +
+    '<div class="km" style="' + (done ? '' : 'color:var(--muted)') + '">' +
+      (done ? (l.mins || "&#10003;") : (req ? "req" : "opt")) +
+      '<small>' + (done ? 'min' : 'cross') + '</small></div>' +
+    '</button>';
+}
+
 function viewToday(){
   var h = bannersHTML();
   var nx = nextRun(), t = today();
@@ -1560,7 +1700,8 @@ function viewToday(){
       (pl > 0 ? Math.min(100, act / pl * 100) : 0) + '%"></i></div>' +
     (wk(c).note ? '<div class="wknote">' + esc(wk(c).note) + '</div>' : '') +
     '<div class="runs">' + runsOf(c).map(function(r, d){ return runRowHTML(c, d, true); }).join("") +
-      strengthOf(c).map(function(x, i){ return strengthRowHTML(c, i, true); }).join("") + '</div>' +
+      strengthOf(c).map(function(x, i){ return strengthRowHTML(c, i, true); }).join("") +
+      crossOf(c).map(function(x, i){ return crossRowHTML(c, i, true); }).join("") + '</div>' +
   '</div>';
 
   var r4 = rolling4();
@@ -1600,7 +1741,8 @@ function viewPlan(){
         '" style="width:' + (tot > 0 ? Math.min(100, act/tot*100) : 0) + '%"></i></div>' +
         (wk(w).note ? '<div class="wknote">' + esc(wk(w).note) + '</div>' : '') +
         '<div class="runs">' + runsOf(w).map(function(r, d){ return runRowHTML(w, d, true); }).join("") +
-          strengthOf(w).map(function(x, i){ return strengthRowHTML(w, i, true); }).join("") + '</div>' +
+          strengthOf(w).map(function(x, i){ return strengthRowHTML(w, i, true); }).join("") +
+          crossOf(w).map(function(x, i){ return crossRowHTML(w, i, true); }).join("") + '</div>' +
         '<button class="btn ghost sm" data-act="edit-week" data-w="' + w + '">Edit this week</button>' +
       '</div></div>';
   }
@@ -1882,6 +2024,29 @@ function viewStats(){
       'each. Turn them off again if the legs stop feeling fresh.</div></div>';
   }
 
+  var ash = activeShoe();
+  if (ash){
+    var ss = shoeState(ash), pct = Math.min(100, Math.round(ss.km / SHOE_KM * 100));
+    h += '<div class="card"><div class="label" style="margin-bottom:10px">Shoes</div>' +
+      '<div class="wk-head" style="padding:0"><div><div class="t">' + esc(ash.name) + '</div>' +
+      '<div class="d">In service since ' + fmtDate(parseISO(ash.since)) +
+        (ash.startKm ? ' &middot; started at ' + n1(ash.startKm) + ' km' : '') + '</div></div>' +
+      '<div class="wk-nums"><div class="a">' + n1(ss.km) + '</div>' +
+      '<div class="p">of ' + SHOE_KM + ' km</div></div></div>' +
+      '<div class="bar"><i class="' + (ss.level === "over" ? "over" : "") +
+        '" style="width:' + pct + '%"></i></div>' +
+      '<div class="mets" style="margin-top:12px">' +
+        '<em>' + Math.max(0, Math.round(SHOE_KM - ss.km)) + ' <i>km left</i></em>' +
+        '<em>' + pct + ' <i>% worn</i></em>' +
+      '</div>' +
+      '<button class="btn" data-act="new-shoes" style="margin-top:12px">Retire these, start a new pair</button>' +
+      '<button class="btn ghost sm" data-act="edit-shoe" style="margin-top:8px">Edit name or starting km</button>' +
+      (state.shoes.length > 1 ? '<div class="tiny">' + (state.shoes.length - 1) +
+        ' earlier pair' + (state.shoes.length === 2 ? '' : 's') + ' retired.</div>' : '') +
+      '<div class="tiny">A pair counts every run dated from the day it went into service. ' +
+      'Replacement at ' + SHOE_KM + ' km comes from the plan.</div></div>';
+  }
+
   h += '<div class="card"><div class="label" style="margin-bottom:12px">Heart rate limits</div>' +
     '<div class="inputs">' +
       '<div class="inp"><input id="s-hrmax" type="number" inputmode="numeric" min="120" max="230" value="' + state.settings.hrMax + '"><span class="u">max</span></div>' +
@@ -1964,7 +2129,7 @@ function openSheet(w, d){
 }
 function closeSheet(){
   scrim.classList.remove("on"); sheet.classList.remove("on");
-  draft = null; editW = null; strDraft = null;
+  draft = null; editW = null; strDraft = null; xtDraft = null;
 }
 /* Position of a run inside its week, by id — indices move when days change. */
 function indexOfRun(w, id){
@@ -2303,6 +2468,56 @@ function saveStrength(){
   save(); closeSheet(); render();
 }
 
+/* ============================ CROSS-TRAINING SHEET ============================ */
+var xtDraft = null;
+
+function openCrossSheet(w, i){
+  var l = getCross(w, i) || {};
+  draft = null; editW = null; strDraft = null;
+  xtDraft = { w:w, i:i, kind: l.kind || XT_TYPES[0], mins: l.mins || "", existing: !!l.done };
+  drawCrossSheet();
+  scrim.classList.add("on"); sheet.classList.add("on");
+}
+
+function drawCrossSheet(){
+  var w = xtDraft.w, i = xtDraft.i, dt = crossDate(w, i), req = crossRequired(w);
+  var h = '<div class="grab"></div><h2>Cross-training</h2>' +
+    '<div class="sub">' + fmtLong(dt) + ' &middot; ' +
+      (req ? 'required this phase' : 'optional in the base phase') + '</div>';
+
+  h += '<div class="field"><span class="label">What did you do</span><div class="chips">' +
+    XT_TYPES.map(function(k){
+      return '<button data-xt-kind="' + esc(k) + '"' +
+             (xtDraft.kind === k ? ' class="on"' : '') + '>' + esc(k) + '</button>';
+    }).join("") + '</div></div>';
+
+  h += '<div class="field"><span class="label">How long</span><div class="inputs">' +
+    '<div class="inp"><input id="f-xtmin" type="number" inputmode="numeric" min="0" max="360" placeholder="' +
+      XT_DEFAULT_MIN + '" value="' + xtDraft.mins + '"><span class="u">min</span></div>' +
+    '</div></div>';
+
+  h += '<button class="btn primary" data-act="xt-save" style="margin-bottom:10px">Save</button>';
+  if (xtDraft.existing)
+    h += '<button class="btn ghost danger" data-act="xt-clear" style="margin-bottom:10px">Clear this session</button>';
+  h += '<button class="btn ghost" data-act="cancel">Cancel</button>';
+  h += '<div class="tiny">Cross-training adds no running distance, so it cannot trip the ' +
+       'over-volume warning or argue with a recovery week. It is aerobic work that spares the legs ' +
+       '&mdash; which is the point of it through the winter.</div>';
+  sheet.innerHTML = h;
+}
+
+function saveCross(){
+  var el = document.getElementById("f-xtmin");
+  if (el) xtDraft.mins = el.value === "" ? "" : parseInt(el.value, 10);
+  var mins = parseInt(xtDraft.mins, 10);
+  setCross(xtDraft.w, xtDraft.i, {
+    done: true, kind: xtDraft.kind,
+    mins: mins > 0 ? mins : XT_DEFAULT_MIN,
+    date: toISO(crossDate(xtDraft.w, xtDraft.i)), ts: Date.now()
+  });
+  save(); closeSheet(); render();
+}
+
 /* ============================ WEEK EDIT SHEET ============================ */
 var editW = null;
 
@@ -2367,7 +2582,8 @@ function drawWeekSheet(){
 function exportBlob(){
   return JSON.stringify({
     app:"run-plan-tracker", version:2, exported:new Date().toISOString(),
-    plan:state.plan, logs:state.logs, extras:state.extras, strength:state.strength,
+    plan:state.plan, logs:state.logs, extras:state.extras,
+    strength:state.strength, cross:state.cross, shoes:state.shoes,
     seq:state.seq, settings:state.settings
   }, null, 2);
 }
@@ -2409,6 +2625,8 @@ function doImport(){
   }
   state.extras = Array.isArray(data.extras) ? data.extras : [];
   state.strength = (data.strength && typeof data.strength === "object") ? data.strength : {};
+  state.cross = (data.cross && typeof data.cross === "object") ? data.cross : {};
+  if (Array.isArray(data.shoes) && data.shoes.length) state.shoes = data.shoes;
   if (data.settings && data.settings.hrMax > 0) state.settings = data.settings;
   save(); render();
   alert("Restored.");
@@ -2419,6 +2637,7 @@ function doReset(){
   state.logs = {};
   state.extras = [];
   state.strength = {};
+  state.cross = {};
   state.plan = freshPlan();
   state.seq = maxSeq(state.plan);
   save(); render();
@@ -3077,6 +3296,22 @@ document.addEventListener("click", function(e){
   el = e.target.closest("[data-tab]");
   if (el){ tab = el.dataset.tab; render(); return; }
 
+  el = e.target.closest("[data-xt]");
+  if (el){
+    var xp = el.dataset.xt.split(",");
+    openCrossSheet(+xp[0], +xp[1]);
+    return;
+  }
+
+  el = e.target.closest("[data-xt-kind]");
+  if (el && xtDraft){
+    var mel2 = document.getElementById("f-xtmin");
+    if (mel2) xtDraft.mins = mel2.value === "" ? "" : parseInt(mel2.value, 10);
+    xtDraft.kind = el.dataset.xtKind;
+    drawCrossSheet();
+    return;
+  }
+
   el = e.target.closest("[data-str]");
   if (el){
     var sp = el.dataset.str.split(",");
@@ -3160,6 +3395,32 @@ document.addEventListener("click", function(e){
     else if (a === "adopt-plan") adoptNewPlan();
     else if (a === "strides-yes"){ state.settings.strides = true;  save(); render(); }
     else if (a === "strides-no"){  state.settings.strides = false; save(); render(); }
+    else if (a === "new-shoes"){
+      var cur2 = activeShoe();
+      if (!confirm("Retire " + (cur2 ? cur2.name : "these shoes") +
+          " at " + n1(shoeKm(cur2)) + " km and start a new pair?\n\n" +
+          "Runs from today onward count towards the new pair.")) return;
+      var nm = window.prompt("Name for the new pair:", "Pair " + (state.shoes.length + 1));
+      if (nm === null) return;
+      retireShoe(nm.trim());
+    }
+    else if (a === "edit-shoe"){
+      var sh2 = activeShoe();
+      if (!sh2) return;
+      var nm2 = window.prompt("Name for this pair:", sh2.name);
+      if (nm2 === null) return;
+      var km2 = window.prompt("Kilometres already on them when first recorded:", String(sh2.startKm || 0));
+      if (km2 === null) return;
+      var v2 = parseFloat(km2);
+      sh2.name = nm2.trim() || sh2.name;
+      if (isFinite(v2) && v2 >= 0) sh2.startKm = Math.round(v2 * 10) / 10;
+      save(); render();
+    }
+    else if (a === "xt-save") saveCross();
+    else if (a === "xt-clear"){
+      delete state.cross[crossOf(xtDraft.w)[xtDraft.i].id];
+      save(); closeSheet(); render();
+    }
     else if (a === "str-save") saveStrength();
     else if (a === "str-all"){
       var all = true;
