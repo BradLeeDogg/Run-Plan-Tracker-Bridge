@@ -151,14 +151,32 @@ effort behind it actually went.
 [riegel]: https://en.wikipedia.org/wiki/Peter_Riegel
 [dan]: https://en.wikipedia.org/wiki/Jack_Daniels_(coach)
 
-**Personal bests** builds a ladder — 1 km, 5 km, 10 km, half, marathon — from
-two kinds of evidence: a whole run at about that distance, and the fastest run
-of consecutive kilometres *inside* a longer one, so a quick 5 km buried in a
-Sunday long run still counts. Candidates are ranked on pace rather than elapsed
-time, since their distances are not identical and ranking on time would hand the
+**Personal bests** builds a ladder — 1 km, 1 mile, 2 miles, 5 km, 10 km, half,
+marathon — from two kinds of evidence: a whole run at about that distance, and
+the fastest stretch *inside* a longer one, so a quick 5 km buried in a Sunday
+long run still counts. Candidates are ranked on pace rather than elapsed time,
+since their distances are not identical and ranking on time would hand the
 record to whichever was shortest. Every row says the exact distance its time
 covers and opens the run behind it. Below the ladder: longest run, biggest week
 and month, most runs in a week, best VO<sub>2</sub>.
+
+The ladder is in real race distances — a mile is 1.609 km, the half 21.0975,
+the marathon 42.195 — none of which land on a kilometre mark. For those, the
+pace inside each kilometre is taken as even, which makes cumulative time a
+straight line between marks and the window time a piecewise-linear function of
+where the window starts. Such a function takes its minimum at a corner, and the
+corners are the kilometre marks plus the points one window-width before them, so
+checking those two families finds the true best rather than sampling along the
+run and hoping to land near it. On a whole number of kilometres it reduces to
+the exact sum of consecutive splits, which is checked against a brute-force
+slide over randomised runs.
+
+Whole-run candidates get half a percent of slack underneath the distance. That
+is for GPS, not generosity: a measured half marathon comes back from a watch as
+21.05 or 21.08 km as often as not, and refusing to count a real race because the
+satellites cut the tangents would be precision in the wrong direction. Nothing
+is overstated by it — the row reports the distance the watch recorded, and
+ranking is on pace, so a slightly short run gains nothing.
 
 **Browse by time** drills down: all time → a year → a month → a week → the runs
 themselves. A **search box** sits above it: type anything and it matches across

@@ -1273,28 +1273,57 @@ function avgHR(){
 }
 
 /* ---------- personal bests ----------
-   Distances are whole kilometres because that is what the split list holds, so
-   the fastest 5 km inside a long run can be found exactly rather than guessed
-   at. The half and the marathon are read as 21 and 42 km for the same reason,
-   and a real 21.1 or 42.2 km run still qualifies as a whole-run candidate. */
+   The ladder is in real race distances, not in whole splits: a mile is 1.609
+   km and the half is 21.0975, and rounding those to the nearest kilometre
+   would mean measuring 21 km and calling it a half marathon. Reading across
+   the splits (see bestWindowKm) is what makes the true distances available. */
+var MILE_KM = 1.609344;
 var PB_DISTANCES = [
-  { km:1,  label:"1 km" },
-  { km:5,  label:"5 km" },
-  { km:10, label:"10 km" },
-  { km:21, label:"Half marathon" },
-  { km:42, label:"Marathon" }
+  { km:1,            label:"1 km" },
+  { km:MILE_KM,      label:"1 mile" },
+  { km:MILE_KM * 2,  label:"2 miles" },
+  { km:5,            label:"5 km" },
+  { km:10,           label:"10 km" },
+  { km:21.0975,      label:"Half marathon" },
+  { km:42.195,       label:"Marathon" }
 ];
 
-/* Fastest n consecutive kilometres in a run, from its splits. */
-function bestWindow(splits, n){
-  if (!splits || splits.length < n || n < 1) return null;
-  var sum = 0, i;
-  for (i = 0; i < n; i++) sum += splits[i];
-  var best = sum;
-  for (i = n; i < splits.length; i++){
-    sum += splits[i] - splits[i-n];
-    if (sum < best) best = sum;
-  }
+/* Fastest continuous stretch of W kilometres inside a run, read from its
+   splits.
+
+   For a whole number of kilometres this is simply the best run of consecutive
+   splits, and exact. For a distance that lands between kilometre marks — every
+   mile distance, and the true half and full marathon — the pace inside each
+   kilometre is taken as even, which makes cumulative time a straight line
+   between marks and the window time a piecewise-linear function of where the
+   window starts.
+
+   Such a function always takes its minimum at one of its corners, and the
+   corners are exactly the kilometre marks plus the points one window-width
+   before them. So checking those two families finds the true best of the
+   model, rather than sampling along the run and hoping to land near it. */
+function bestWindowKm(splits, W){
+  if (!splits || !splits.length || !(W > 0)) return null;
+  var n = splits.length, EPS = 1e-9;
+  if (W > n + EPS) return null;                    // the run never went that far
+
+  var cum = [0], i;
+  for (i = 0; i < n; i++) cum.push(cum[i] + splits[i]);
+  var timeAt = function(x){                        // elapsed time at x km
+    if (x <= 0) return 0;
+    if (x >= n) return cum[n];
+    var k = Math.floor(x);
+    return cum[k] + splits[k] * (x - k);
+  };
+
+  var best = null, starts = [], j;
+  for (j = 0; j <= n; j++){ starts.push(j); starts.push(j - W); }
+  starts.forEach(function(x){
+    if (x < -EPS || x + W > n + EPS) return;       // window falls off the run
+    x = Math.max(0, x);
+    var t = timeAt(x + W) - timeAt(x);
+    if (best === null || t < best) best = t;
+  });
   return best;
 }
 
@@ -1307,7 +1336,7 @@ function bestWindow(splits, n){
    was shortest rather than whichever was fastest. Every row reports the exact
    distance its time covers, so nothing is quietly rounded into a claim. */
 function pbAt(km, ents){
-  var n = Math.round(km), best = null;
+  var best = null;
   var take = function(c){
     if (!c || !(c.km > 0) || !(c.sec > 0)) return;
     c.pace = c.sec / c.km;
@@ -1315,11 +1344,18 @@ function pbAt(km, ents){
   };
   ents.forEach(function(e){
     var l = e.log;
-    var w = bestWindow(l.splits, n);
-    if (w) take({ sec:w, km:n, e:e, from:"splits" });
-    // A run barely past the distance is that distance run; 15% past is a
-    // different session, and its pace would not be a record of anything.
-    if (l.km >= km && l.km < km * 1.15 && l.durSec > 0)
+    var w = bestWindowKm(l.splits, km);
+    if (w) take({ sec:Math.round(w), km:km, e:e, from:"splits" });
+    /* A run barely past the distance is that distance run; 15% past is a
+       different session, and its pace would not be a record of anything.
+
+       The half-percent of slack underneath is for GPS rather than generosity:
+       a measured half marathon comes back from a watch as 21.05 or 21.08 km
+       often as not, and refusing to count an actual race because the satellites
+       cut the tangents would be precision in the wrong direction. Nothing is
+       overstated by it — the row reports the distance the watch recorded, and
+       ranking is on pace, so a slightly short run gets no advantage. */
+    if (l.km >= km * 0.995 && l.km < km * 1.15 && l.durSec > 0)
       take({ sec:l.durSec, km:Math.round(l.km * 100) / 100, e:e, from:"run" });
   });
   return best;
@@ -2754,9 +2790,12 @@ function personalBestsHTML(){
         '. Calendar weeks, Monday to Sunday, so runs from before the block count too.</div>' : '') +
       '</div>';
 
-  h += '<div class="tiny">Read from whole runs and from the fastest run of consecutive ' +
-    'kilometres inside longer ones, so a fast 5 km buried in a long run still counts. ' +
-    'Each row says the exact distance its time covers and opens the run behind it.' +
+  h += '<div class="tiny">Read from whole runs and from the fastest stretch inside longer ' +
+    'ones, so a quick 5 km buried in a Sunday long run still counts. Each row says the ' +
+    'exact distance its time covers and opens the run behind it. ' +
+    'The mile distances, and the true half and full marathon, fall between kilometre ' +
+    'marks, so they are measured across the splits at the pace each kilometre was run \u2014 ' +
+    'as precise as the splits themselves, and no more.' +
     (any ? '' : ' Nothing qualifies yet.') + '</div></div>';
   return h;
 }
