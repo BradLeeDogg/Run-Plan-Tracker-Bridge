@@ -51,9 +51,24 @@ Per run: completed or skipped, actual distance and duration, average heart rate,
 calories, effort (easy / moderate / hard), and any pain with a body-area tag and
 a note. Pace and the VO<sub>2</sub> estimate are derived and shown as you type.
 
+Duration is entered as **hours, minutes and seconds** — a three-hour long run is
+3 h 12, not 192 minutes. The hours box is left blank for anything under an hour.
+Everything is stored as seconds, so old logs read back into the three boxes
+unchanged.
+
 Calories are read from whatever you import — TCX laps, Apple Health's
 `totalEnergyBurned`, or a calories column in JSON or CSV — and can be typed in
 alongside heart rate.
+
+**Notes and conditions** — weather, temperature, surface and route on each run,
+plus a free-text note. None of it reaches the plan maths; it is there so a slow
+week still has an explanation attached to it a year from now. The note field
+stays available on a skipped run, since why it did not happen is exactly the
+kind of thing worth a sentence. Conditions and the first line of the note show
+on the run row, and everything is searchable — see **Browse by time** below.
+
+Both survive an import: a TCX carries none of it, so what was written by hand is
+kept rather than overwritten.
 
 **Strength sessions** — twice a week, 20–25 minutes, after a run. Tuesday and
 Thursday by default, after the two shorter runs, leaving the Sunday long run
@@ -105,8 +120,68 @@ Tapping a column in the weekly chart fills in a readout below it — that week's
 distance against plan, run count, time, pace, heart rate and calories. There is
 no hover on a phone, so the numbers behind a bar need somewhere to land.
 
+**Race day** gets three panels of its own.
+
+A **countdown** sits at the top of Today: days and weeks to the race, the race
+distance, and how much of the block is behind you. Race day is read from the
+plan — the last run typed `race`, not the constant at the top of the file — so
+editing the plan moves it.
+
+**Readiness** answers whether the block is actually being run. It measures only
+against runs that have already come due, so weeks still ahead do not count
+against you, and it leads on volume rather than run count: three half-length
+runs are three ticks and not the week that was planned. The verdict runs from
+*On plan* through *Behind* to *Well behind*, with *Ahead of plan* treated as the
+warning it is. Underneath, a check specific to the phase you are in — no hard
+runs during base building, cross-training done during phase 2, long runs done
+during phase 3.
+
+**Race day prediction** projects a finish time two independent ways. The
+headline is [Riegel][riegel] — `T₂ = T₁ × (D₂/D₁)^1.06` — from your longest
+genuine effort, because a marathon extrapolated from a single fast kilometre is
+arithmetic rather than evidence. Beside it, the same target worked out from the
+VO<sub>2</sub> estimate: the app's own oxygen-cost equation run backwards, at
+the fraction of maximum that is holdable for a race that long ([Daniels'][dan]
+curve — about 81% for three and a half hours). Every distance you have a best
+for gets its own row, and the spread between the fastest and slowest read is
+shown rather than hidden, because where two methods disagree the spread is the
+honest answer. A confidence badge grades the projection on how far the longest
+effort behind it actually went.
+
+[riegel]: https://en.wikipedia.org/wiki/Peter_Riegel
+[dan]: https://en.wikipedia.org/wiki/Jack_Daniels_(coach)
+
+**Personal bests** builds a ladder — 1 km, 1 mile, 2 miles, 5 km, 10 km, half,
+marathon — from two kinds of evidence: a whole run at about that distance, and
+the fastest stretch *inside* a longer one, so a quick 5 km buried in a Sunday
+long run still counts. Candidates are ranked on pace rather than elapsed time,
+since their distances are not identical and ranking on time would hand the
+record to whichever was shortest. Every row says the exact distance its time
+covers and opens the run behind it. Below the ladder: longest run, biggest week
+and month, most runs in a week, best VO<sub>2</sub>.
+
+The ladder is in real race distances — a mile is 1.609 km, the half 21.0975,
+the marathon 42.195 — none of which land on a kilometre mark. For those, the
+pace inside each kilometre is taken as even, which makes cumulative time a
+straight line between marks and the window time a piecewise-linear function of
+where the window starts. Such a function takes its minimum at a corner, and the
+corners are the kilometre marks plus the points one window-width before them, so
+checking those two families finds the true best rather than sampling along the
+run and hoping to land near it. On a whole number of kilometres it reduces to
+the exact sum of consecutive splits, which is checked against a brute-force
+slide over randomised runs.
+
+Whole-run candidates get half a percent of slack underneath the distance. That
+is for GPS, not generosity: a measured half marathon comes back from a watch as
+21.05 or 21.08 km as often as not, and refusing to count a real race because the
+satellites cut the tangents would be precision in the wrong direction. Nothing
+is overstated by it — the row reports the distance the watch recorded, and
+ranking is on pace, so a slightly short run gains nothing.
+
 **Browse by time** drills down: all time → a year → a month → a week → the runs
-themselves. Every level shows full stats for that period — distance, runs, time,
+themselves. A **search box** sits above it: type anything and it matches across
+notes, route, weather, surface, effort, where it hurt and the date, all terms
+having to match. Only the results redraw, so the keyboard stays put mid-word. Every level shows full stats for that period — distance, runs, time,
 pace, heart rate, calories, longest run and best VO<sub>2</sub> — and a
 breadcrumb walks back up. Tapping a run opens it: the log sheet if it belongs to
 the plan, a detail view if it is history.
@@ -117,11 +192,20 @@ months is shown whole and flagged, so the row and the week it opens always
 agree.
 
 Tapping a logged run **opens it to be read** — distance, time, pace, heart
-rate, calories, VO<sub>2</sub>, effort, strides, and every split with the
-fastest and slowest marked. Editing is a second, deliberate step behind an
-**Edit this run** button, so glancing at a run cannot end in an accidental
-overwrite. A run with nothing logged yet goes straight to the form, since there
-is nothing to look at.
+rate, calories, VO<sub>2</sub>, effort, strides, conditions, your note, and
+every split with the fastest and slowest marked. Editing is a second,
+deliberate step behind an **Edit this run** button, so glancing at a run cannot
+end in an accidental overwrite. A run with nothing logged yet goes straight to
+the form, since there is nothing to look at.
+
+**The last part-kilometre** is shown too. A 5.4 km run has five splits and then
+400 m, and that tail used to vanish: the watch reports it as a trailing lap, and
+this app's split list is whole kilometres. It is now worked out from the
+distance, the duration and the splits — so it needs nothing stored and works for
+splits typed by hand as well as imported ones — and drawn dashed, apart from the
+splits. Kept out of the list on purpose: a 400 m split is not comparable with a
+1 km one, and letting it in would hand "fastest split" to whatever fraction the
+run happened to finish on.
 
 ## Changing the plan
 
