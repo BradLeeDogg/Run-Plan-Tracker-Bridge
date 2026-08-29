@@ -81,6 +81,13 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
 .badge.rec{background:rgba(94,168,255,.16);color:var(--recovery);border:1px solid rgba(94,168,255,.4)}
 .badge.today{background:rgba(60,224,140,.16);color:var(--accent);border:1px solid rgba(60,224,140,.4)}
 .badge.peak{background:rgba(255,95,95,.14);color:var(--danger);border:1px solid rgba(255,95,95,.4)}
+/* How much the projection rests on. Green only once the evidence earns it. */
+.badge.conf.good{background:rgba(60,224,140,.16);color:var(--accent);border:1px solid rgba(60,224,140,.4)}
+.badge.conf.fair{background:rgba(94,168,255,.16);color:var(--recovery);border:1px solid rgba(94,168,255,.4)}
+.badge.conf.early{background:rgba(255,176,58,.14);color:var(--warn);border:1px solid rgba(255,176,58,.38)}
+.badge.conf.raw{background:var(--surface2);color:var(--muted);border:1px solid var(--line)}
+.hero.pred .dist{font-size:52px}
+.hero.pred::after{display:none}
 
 /* ---------- buttons ---------- */
 .btn{
@@ -307,6 +314,10 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
 .drill .dv .p{display:block;font-size:11px;color:var(--muted);font-weight:600}
 .drill .chev{color:var(--dim);font-size:22px;line-height:1;flex:0 0 auto;margin-left:2px}
 .drill.day .dl .t{font-size:14px}
+/* A distance nothing reaches yet: the row still holds its place in the list,
+   so the ladder reads as a ladder rather than a list that stops early. */
+.drill.pb-none{opacity:.5}
+.drill.pb-none .dv .a{font-size:17px;color:var(--dim)}
 .tagh{
   display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;
   font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
@@ -362,6 +373,47 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
   padding:5px 10px;border-radius:9px;font-size:12.5px;font-weight:700;
   background:var(--surface2);border:1px solid var(--line);color:var(--muted);
 }
+/* The countdown strip. Deliberately quiet: it sits above the hero every day
+   for 42 weeks, so it has to survive being looked at that often. */
+.cd{
+  background:var(--surface);border:1px solid var(--line);border-radius:16px;
+  padding:12px 14px;margin-bottom:12px;
+}
+.cdh{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.cdn{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+  font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cdd{font-size:11.5px;font-weight:700;color:var(--dim);font-variant-numeric:tabular-nums;flex:0 0 auto}
+.cdl{margin-top:7px;font-size:15px;color:var(--muted);font-variant-numeric:tabular-nums}
+.cdl b{color:var(--text);font-size:17px;font-weight:800}
+.cdbar{height:4px;border-radius:3px;background:var(--planned);overflow:hidden;margin-top:9px}
+.cdbar>i{display:block;height:100%;border-radius:3px;
+  background:linear-gradient(90deg,var(--accent-dim),var(--accent))}
+.cdf{margin-top:7px;font-size:11.5px;color:var(--dim);font-weight:600}
+
+/* The readiness verdict. Colour carries the reading, so it is legible before
+   the sentence is. */
+.verdict{
+  margin-top:12px;padding:12px 14px;border-radius:13px;font-size:13.5px;line-height:1.45;
+  background:var(--surface2);border:1px solid var(--line);border-left:3px solid var(--dim);
+  color:var(--muted);
+}
+.verdict b{display:block;margin-bottom:3px;font-size:16px;color:var(--text)}
+.verdict.on{border-left-color:var(--accent)}
+.verdict.on b{color:var(--accent)}
+.verdict.near{border-left-color:var(--recovery)}
+.verdict.over,.verdict.behind{border-left-color:var(--warn)}
+.verdict.over b,.verdict.behind b{color:var(--warn)}
+.verdict.well-behind{border-left-color:var(--danger)}
+.verdict.well-behind b{color:var(--danger)}
+.phasebox{margin-top:12px;padding:12px 14px;border-radius:13px;
+  background:rgba(94,168,255,.06);border:1px solid rgba(94,168,255,.18)}
+.phasebox .pn{font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--recovery)}
+.phasebox .pf{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.4}
+.pchk{margin-top:9px;font-size:13px;line-height:1.45;font-weight:600}
+.pchk.ok{color:var(--accent)}
+.pchk.warn{color:var(--warn)}
+
 .phase{margin:18px 0 10px;padding:0 2px}
 .phase:first-child{margin-top:2px}
 .phase .pn{font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
@@ -378,6 +430,10 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
 .sp.fast b{color:var(--accent)}
 .sp.slow{border-color:rgba(255,176,58,.4)}
 .sp.slow b{color:var(--warn)}
+/* The part-kilometre a run finished on. Dashed, because it is not a split —
+   it is a fraction, and must not be read against the whole ones beside it. */
+.sp.tail{border-style:dashed;border-color:var(--line)}
+.sp.tail b{color:var(--muted)}
 .dotm{display:inline-block;width:6px;height:6px;border-radius:50%;vertical-align:middle}
 .dotm.rc{background:var(--recovery)}
 .dotm.pk{background:var(--warn)}
@@ -397,6 +453,31 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
   border:1.5px solid var(--line);background:var(--surface2);font-weight:600;font-size:15px;
 }
 .chips button.on{background:var(--danger);color:#2a0000;border-color:var(--danger);font-weight:800}
+/* Conditions are not pain, so they must not borrow its red. */
+.chips.cond button.on{background:rgba(60,224,140,.13);color:var(--accent);
+  border-color:rgba(60,224,140,.5);font-weight:800}
+.inp input.txt{text-align:left;font-size:15px;font-weight:600}
+.cond-line{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.cond-line span{
+  background:var(--surface2);border:1px solid var(--line);border-radius:999px;
+  padding:5px 11px;font-size:12.5px;font-weight:700;color:var(--muted);
+}
+.notebox{
+  margin-top:12px;padding:12px 14px;border-radius:13px;background:var(--surface2);
+  border:1px solid var(--line);border-left:3px solid var(--dim);
+  font-size:14.5px;line-height:1.45;white-space:pre-wrap;
+}
+.run .nt{color:var(--dim);font-size:11px;font-weight:700;margin-top:3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srch{margin:12px 0 4px}
+.srch input{
+  width:100%;min-height:46px;padding:0 14px;border-radius:12px;font-size:15px;font-weight:600;
+  border:1.5px solid var(--line);background:var(--surface2);color:var(--text);
+  -webkit-appearance:none;appearance:none;
+}
+.srch input:focus{outline:none;border-color:var(--accent)}
+.srch input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;
+  height:18px;width:18px;border-radius:50%;background:var(--line)}
 textarea{
   width:100%;min-height:88px;border-radius:13px;border:1.5px solid var(--line);
   background:var(--surface2);padding:12px 14px;font-size:16px;resize:vertical;
@@ -641,6 +722,14 @@ var STRIDES_SECONDS = 20;
 var AREAS = ["Knee","Shin","Calf","Achilles","Ankle","Foot",
              "Hamstring","Quad","Hip","IT band","Groin","Lower back","Other"];
 
+/* Conditions. A run is not just a distance and a time — 14 km into a headwind
+   on a January trail is not the 14 km the same pace suggests, and a year from
+   now the only thing that will explain a slow week is what was written down at
+   the time. None of it reaches the plan maths: conditions and notes are
+   record, not measurement. */
+var WEATHER = ["Clear","Cloud","Rain","Wind","Snow","Hot","Cold","Humid"];
+var SURFACES = ["Road","Trail","Track","Treadmill","Mixed"];
+
 /* ============================ DATES ============================ */
 function parseISO(s){ var p = s.split("-"); return new Date(+p[0], +p[1]-1, +p[2]); }
 function toISO(d){
@@ -812,7 +901,15 @@ function runPrescription(w, d){
   if (r.mp) out.push("last " + n1(r.mp) + " km at marathon pace");
   if (r.strides && stridesOn()) out.push(STRIDES_REPS[0] + "\u2013" +
     STRIDES_REPS[STRIDES_REPS.length-1] + " \u00d7 " + STRIDES_SECONDS + "s strides");
-  if (r.cap) out.push("cap " + Math.round(r.cap / 60) + " h");
+  // Half hours matter here: the plan's cap is 210 minutes, and rounding it to
+  // the nearest hour showed "cap 4 h" — half an hour more than the plan allows,
+  // on the one session where the cap is the point.
+  if (r.cap){
+    var hh = r.cap / 60;
+    out.push("cap " + (hh === Math.round(hh) ? hh + " h"
+      : Math.abs(hh * 2 - Math.round(hh * 2)) < 1e-9 ? Math.floor(hh) + "\u00bd h"
+      : Math.round(r.cap) + " min"));
+  }
   return out;
 }
 function phaseOf(w){
@@ -1060,6 +1157,68 @@ function splitStr(sec){
 function splitsToText(a){
   return a ? a.map(splitStr).join(" ") : "";
 }
+/* ---------- the kilometre the run ended part-way through ----------
+   The watch reports a trailing partial lap — 5.4 km comes back as six laps,
+   the last one 400 m. This app's split list is whole kilometres, so that tail
+   was dropped on the way in and the last 400 m of the run had nowhere to show.
+
+   It needs no storing. Distance, duration and the whole-km splits already
+   imply it exactly, which also means it works for splits typed by hand, not
+   only for imports. Kept out of the splits array on purpose: a 400 m split is
+   not comparable with a 1 km one, and letting it into the list would hand
+   "fastest split" to whatever fraction the run happened to finish on. */
+function tailOf(l){
+  if (!l || !l.done || !l.splits || !l.splits.length) return null;
+  var n = l.splits.length, km = (l.km || 0) - n;
+  km = Math.round(km * 100) / 100;
+  // Under a full kilometre, or the splits are simply incomplete rather than
+  // whole-km — an 8 km run with three splits typed has no tail, it has a gap.
+  if (!(km >= 0.05 && km < 1)) return null;
+  var sec = (l.durSec || 0) - l.splits.reduce(function(a, b){ return a + b; }, 0);
+  if (!(sec > 0)) return null;                    // the two disagree; say nothing
+  var pace = sec / km;
+  if (!(pace > 60) || pace > 1800) return null;   // same sanity band as parseSplits
+  return { km:km, sec:Math.round(sec), pace:pace };
+}
+/* ---------- conditions ---------- */
+/* Built from the draft, and null when nothing was filled in, so an untouched
+   run does not carry an empty object around forever. */
+function draftCond(){
+  var t = parseFloat(draft.temp);
+  var c = {};
+  if (draft.weather) c.weather = draft.weather;
+  if (draft.surface) c.surface = draft.surface;
+  if (isFinite(t) && t > -60 && t < 60) c.tempC = Math.round(t * 10) / 10;
+  if (draft.route && String(draft.route).trim()) c.route = String(draft.route).trim();
+  return Object.keys(c).length ? c : null;
+}
+/* The parts of a run's conditions worth showing, in reading order. */
+function condBits(l){
+  var c = l && l.cond, out = [];
+  if (!c) return out;
+  if (c.weather) out.push(c.weather);
+  if (typeof c.tempC === "number") out.push(n1(c.tempC) + "\u00b0C");
+  if (c.surface) out.push(c.surface);
+  if (c.route) out.push(c.route);
+  return out;
+}
+/* Everything about a run that is words rather than numbers, lowercased for
+   matching. Fed by the search box in the time browser. */
+function searchText(l){
+  var parts = [l.note || "", l.date || ""];
+  var c = l.cond;
+  if (c) parts.push(c.weather || "", c.surface || "", c.route || "",
+                    typeof c.tempC === "number" ? c.tempC + "c" : "");
+  if (l.pain && l.pain.area) parts.push(l.pain.area, l.pain.note || "");
+  if (l.effort) parts.push(l.effort);
+  return parts.join(" ").toLowerCase();
+}
+
+/* The tail as a chip, matching the split chips but marked apart from them. */
+function tailChipHTML(t){
+  return '<span class="sp tail"><b>' + splitStr(t.sec) + '</b><i>last ' +
+    n1(t.km) + ' km</i></span>';
+}
 
 /* ---------- VO2 max estimate ----------
    Pace -> oxygen cost (ACSM/Daniels running equation), then scaled by heart
@@ -1111,6 +1270,294 @@ function avgHR(){
   var hrs = [];
   allLogs().forEach(function(l){ if (l.hr > 0) hrs.push(l.hr); });
   return hrs.length ? Math.round(hrs.reduce(function(a, b){ return a+b; }, 0) / hrs.length) : null;
+}
+
+/* ---------- personal bests ----------
+   Distances are whole kilometres because that is what the split list holds, so
+   the fastest 5 km inside a long run can be found exactly rather than guessed
+   at. The half and the marathon are read as 21 and 42 km for the same reason,
+   and a real 21.1 or 42.2 km run still qualifies as a whole-run candidate. */
+var PB_DISTANCES = [
+  { km:1,  label:"1 km" },
+  { km:5,  label:"5 km" },
+  { km:10, label:"10 km" },
+  { km:21, label:"Half marathon" },
+  { km:42, label:"Marathon" }
+];
+
+/* Fastest n consecutive kilometres in a run, from its splits. */
+function bestWindow(splits, n){
+  if (!splits || splits.length < n || n < 1) return null;
+  var sum = 0, i;
+  for (i = 0; i < n; i++) sum += splits[i];
+  var best = sum;
+  for (i = n; i < splits.length; i++){
+    sum += splits[i] - splits[i-n];
+    if (sum < best) best = sum;
+  }
+  return best;
+}
+
+/* The best effort over a distance, from two kinds of evidence: a window of
+   consecutive splits, and a whole run that happens to be about that far.
+
+   Candidates are ranked on pace, not on elapsed time. Their distances are not
+   identical — a 42.2 km race and the best 42 km inside it are different
+   lengths — and ranking on time would hand the record to whichever candidate
+   was shortest rather than whichever was fastest. Every row reports the exact
+   distance its time covers, so nothing is quietly rounded into a claim. */
+function pbAt(km, ents){
+  var n = Math.round(km), best = null;
+  var take = function(c){
+    if (!c || !(c.km > 0) || !(c.sec > 0)) return;
+    c.pace = c.sec / c.km;
+    if (!best || c.pace < best.pace) best = c;
+  };
+  ents.forEach(function(e){
+    var l = e.log;
+    var w = bestWindow(l.splits, n);
+    if (w) take({ sec:w, km:n, e:e, from:"splits" });
+    // A run barely past the distance is that distance run; 15% past is a
+    // different session, and its pace would not be a record of anything.
+    if (l.km >= km && l.km < km * 1.15 && l.durSec > 0)
+      take({ sec:l.durSec, km:Math.round(l.km * 100) / 100, e:e, from:"run" });
+  });
+  return best;
+}
+function pbSourceText(c){
+  var runKm = c.e.log.km || 0;
+  if (c.from === "splits" && runKm > c.km + 0.15)
+    return "inside a " + n1(runKm) + " km run";
+  if (c.from === "run" && Math.abs(runKm - c.km) < 0.01 && runKm !== Math.round(runKm))
+    return "whole run, " + n1(runKm) + " km";
+  return "whole run";
+}
+
+/* Bests that are not a single run: volume over a calendar week or month, and
+   the best VO2 estimate. Calendar weeks, not plan weeks, so history counts. */
+function volumeBests(ents){
+  var byW = {}, byM = {}, longest = null, vo2 = null;
+  ents.forEach(function(e){
+    var l = e.log;
+    var wk2 = mondayISO(l.date), mo = l.date.slice(0, 7);
+    (byW[wk2] = byW[wk2] || { km:0, runs:0 }); byW[wk2].km += l.km || 0; byW[wk2].runs++;
+    (byM[mo] = byM[mo] || { km:0, runs:0 }); byM[mo].km += l.km || 0; byM[mo].runs++;
+    if (!longest || (l.km || 0) > longest.log.km) longest = e;
+    var v = vo2for(l);
+    if (v && (!vo2 || v > vo2.v)) vo2 = { v:v, e:e };
+  });
+  var top = function(by, key){
+    var bk = null;
+    Object.keys(by).forEach(function(k){ if (!bk || by[k][key] > by[bk][key]) bk = k; });
+    return bk ? { key:bk, km:by[bk].km, runs:by[bk].runs } : null;
+  };
+  return {
+    week: top(byW, "km"), month: top(byM, "km"),
+    busiest: top(byW, "runs"), longest: longest, vo2: vo2
+  };
+}
+
+/* ---------- readiness ----------
+   Whether the block is actually being run, measured only against what has
+   already come due. Counting unrun future weeks as failures would say nothing
+   except that the plan is long. */
+function readiness(){
+  var t = today(), r = {
+    due:0, done:0, skipped:0, plannedKm:0, actualKm:0,
+    longDue:0, longDone:0, hardInBase:0
+  };
+  for (var w = 0; w < planLen(); w++){
+    var basePhase = (wk(w).phase || 1) === 1;
+    for (var d = 0; d < runsOf(w).length; d++){
+      if (dayDiff(t, runDate(w, d)) > 0) continue;       // not due yet
+      var l = getLog(w, d), long = isLong(w, d);
+      r.due++; r.plannedKm += runAt(w, d).km || 0;
+      if (long) r.longDue++;
+      if (l && l.done){
+        r.done++; r.actualKm += l.km || 0;
+        if (long) r.longDone++;
+        if (basePhase && l.effort === "hard") r.hardInBase++;
+      } else if (l && l.skipped) r.skipped++;
+    }
+  }
+  r.completion = r.due ? r.done / r.due : null;
+  r.adherence  = r.plannedKm > 0 ? r.actualKm / r.plannedKm : null;
+  r.r4 = rolling4();
+  r.phase = phaseOf(currentWeekIndex());
+  r.crossDue = 0; r.crossDone = 0;
+  for (var w2 = 0; w2 < planLen(); w2++){
+    if (!crossRequired(w2)) continue;                    // optional through the base phase
+    for (var i = 0; i < crossOf(w2).length; i++){
+      if (dayDiff(t, crossDate(w2, i)) > 0) continue;
+      r.crossDue++;
+      var c = getCross(w2, i);
+      if (c && c.done) r.crossDone++;
+    }
+  }
+  return r;
+}
+/* One verdict, from adherence first and completion second. Volume is what the
+   plan is actually built on; a week of three half-length runs is three ticks
+   and not the week that was planned. */
+function readinessVerdict(r){
+  if (!r.due) return { k:"none", t:"Not started", s:"Nothing has come due yet." };
+  var a = r.adherence, c = r.completion;
+  if (a > 1.10)
+    return { k:"over", t:"Ahead of plan",
+             s:"You are running " + Math.round(a*100) + "% of what was planned. " +
+               "That is the fastest way to lose a block this long." };
+  if (a >= 0.95 && c >= 0.9)
+    return { k:"on", t:"On plan", s:"Volume and run count are both where they should be." };
+  if (a >= 0.85)
+    return { k:"near", t:"Just under plan",
+             s:Math.round(a*100) + "% of the planned volume so far. Close enough to hold." };
+  if (a >= 0.7)
+    return { k:"behind", t:"Behind plan",
+             s:Math.round(a*100) + "% of the planned volume, " + r.done + " of " + r.due +
+               " runs done. Worth rebuilding from where you are rather than catching up." };
+  return { k:"well-behind", t:"Well behind plan",
+           s:Math.round(a*100) + "% of the planned volume. Shifting the remaining weeks " +
+             "back beats trying to rejoin at a volume you have not built to." };
+}
+/* What this phase asks that the volume numbers do not. */
+function phaseCheck(r){
+  if (!r.phase) return null;
+  if (r.phase.n === 1)
+    return r.hardInBase
+      ? { k:"warn", t:r.hardInBase + " run" + (r.hardInBase === 1 ? "" : "s") +
+            " logged hard in the base phase. This phase is all easy \u2014 no speed work." }
+      : { k:"ok", t:"Nothing logged hard yet, which is what the base phase asks for." };
+  if (r.phase.n === 2){
+    if (!r.crossDue) return { k:"ok", t:"Cross-training becomes mandatory this phase." };
+    var f = r.crossDone / r.crossDue;
+    return f >= 0.8
+      ? { k:"ok", t:"Cross-training " + r.crossDone + " of " + r.crossDue + " done, as required." }
+      : { k:"warn", t:"Cross-training is mandatory this phase and " + r.crossDone +
+            " of " + r.crossDue + " sessions are done." };
+  }
+  if (r.phase.n === 3){
+    if (!r.longDue) return null;
+    var lf = r.longDone / r.longDue;
+    return lf >= 0.85
+      ? { k:"ok", t:"Long runs " + r.longDone + " of " + r.longDue +
+            " done. They are what this phase turns on." }
+      : { k:"warn", t:"Only " + r.longDone + " of " + r.longDue + " long runs done. " +
+            "Everything else in this phase matters less than these." };
+  }
+  return { k:"ok", t:"Volume comes down now. The taper is meant to feel wrong." };
+}
+
+/* ---------- race day ----------
+   Where the block is heading, rather than where it has been.
+
+   Read from the plan, not from RACE_DATE, so that editing the plan moves race
+   day with it. The last run typed "race" is the target; the half-marathon
+   tune-up in week 33 is also a race, which is why this walks backwards. */
+function raceTarget(){
+  var w, d;
+  for (w = planLen() - 1; w >= 0; w--)
+    for (d = runsOf(w).length - 1; d >= 0; d--)
+      if (runAt(w, d).type === "race")
+        return { w:w, d:d, km:runAt(w, d).km, date:runDate(w, d) };
+  // No race typed in the plan: the last run of the last week is the finish line.
+  w = planLen() - 1; d = runsOf(w).length - 1;
+  return d >= 0 ? { w:w, d:d, km:runAt(w, d).km, date:runDate(w, d) } : null;
+}
+
+/* Riegel: T2 = T1 x (D2/D1)^1.06. The standard endurance projection, and the
+   one every race-time calculator is built on. */
+var RIEGEL_EXP = 1.06;
+function riegel(sec, fromKm, toKm){
+  return sec * Math.pow(toKm / fromKm, RIEGEL_EXP);
+}
+
+/* Daniels' curve for the fraction of VO2 max that is sustainable for a given
+   number of minutes. Racing an hour sits near 0.97 of it; a marathon, some
+   three and a half hours, near 0.81. */
+function sustainableFraction(min){
+  return 0.8 + 0.1894393 * Math.exp(-0.012778 * min)
+             + 0.2989558 * Math.exp(-0.1932605 * min);
+}
+/* The app's own VO2 equation, run backwards: given an oxygen cost, the speed
+   that produces it. Solving 0.000104v^2 + 0.182258v - 4.60 = cost for v. */
+function velocityForCost(cost){
+  var a = 0.000104, b = 0.182258, c = -4.60 - cost;
+  var disc = b*b - 4*a*c;
+  if (disc <= 0) return null;
+  return (-b + Math.sqrt(disc)) / (2*a);            // metres per minute
+}
+/* Finish time from a VO2 max estimate. The sustainable fraction depends on how
+   long the race lasts, which depends on the fraction, so it is iterated —
+   from a marathon-ish starting guess it settles within a few rounds. */
+function predictFromVO2(vo2, km){
+  if (!(vo2 > 20) || !(km > 0)) return null;
+  var t = 210, i, v, nt;
+  for (i = 0; i < 12; i++){
+    v = velocityForCost(sustainableFraction(t) * vo2);
+    if (!v || v < 60 || v > 500) return null;
+    nt = (km * 1000) / v;
+    if (Math.abs(nt - t) < 0.02){ t = nt; break; }
+    t = nt;
+  }
+  return Math.round(t * 60);
+}
+/* The VO2 estimate to predict from: the best of the recent ones, since a
+   figure from eight months ago describes a different runner. */
+function currentVO2(){
+  var vs = vo2Series(), t = today(), recent = [], all = [];
+  vs.forEach(function(x){
+    all.push(x.vo2);
+    if (dayDiff(parseISO(x.date), t) <= 56) recent.push(x.vo2);
+  });
+  var pool = recent.length ? recent : all;
+  return pool.length ? Math.max.apply(null, pool) : null;
+}
+
+/* One projection per distance there is a best for. Keeping them all rather
+   than collapsing to a single number is the point: a wide spread means the
+   evidence disagrees, and that is worth seeing before trusting any of it. */
+function racePredictions(){
+  var target = raceTarget();
+  if (!target || !(target.km > 0)) return null;
+  var ents = allEntries().filter(function(e){ return e.log.durSec > 0; });
+
+  var from = [];
+  PB_DISTANCES.forEach(function(D){
+    var c = pbAt(D.km, ents);
+    if (c) from.push({ km:c.km, sec:c.sec, e:c.e, label:D.label,
+                       proj:Math.round(riegel(c.sec, c.km, target.km)) });
+  });
+
+  var vo2 = currentVO2();
+  var vProj = vo2 ? predictFromVO2(vo2, target.km) : null;
+
+  // The longest distance with a record is the one to lead with. Projecting a
+  // marathon from a single fast kilometre is arithmetic, not evidence.
+  var best = null;
+  from.forEach(function(f){ if (!best || f.km > best.km) best = f; });
+
+  var all = from.map(function(f){ return f.proj; });
+  if (vProj) all.push(vProj);
+  if (!all.length) return null;
+
+  return {
+    target: target, from: from, vo2: vo2, vo2Proj: vProj,
+    lead: best ? best.proj : vProj,
+    leadFrom: best,
+    lo: Math.min.apply(null, all), hi: Math.max.apply(null, all),
+    // Confidence is a question about the evidence, not about the runner: how
+    // far the longest genuine effort actually went.
+    evidenceKm: best ? best.km : 0
+  };
+}
+/* Thresholds sit clear of the landmarks rather than on them: a half marathon
+   is exactly half a marathon, and a cut at 0.5 would grade it by rounding. */
+function predictionConfidence(km, targetKm){
+  var f = targetKm > 0 ? km / targetKm : 0;
+  if (f >= 0.65) return { k:"good",  t:"well evidenced" };   // 30 km into a marathon
+  if (f >= 0.45) return { k:"fair",  t:"reasonably evidenced" };   // a half
+  if (f >= 0.20) return { k:"early", t:"early days" };        // a 10 km
+  return { k:"raw", t:"very early \u2014 treat as a placeholder" };
 }
 
 /* ---------- period breakdowns ----------
@@ -1226,8 +1673,10 @@ function drillRow(act, label, sub, logs){
     '<span class="chev">&rsaquo;</span></button>';
 }
 
-var browse = { level:"years", y:null, m:null, wk:null };
+var browse = { level:"years", y:null, m:null, wk:null, q:"" };
 
+/* The card is the shell; everything inside it is redrawn on its own so typing
+   in the search box does not re-render the page and take the keyboard with it. */
 function browseHTML(){
   var ents = allEntries();
   var h = '<div class="card" style="margin-top:12px"><div class="label">Browse by time</div>';
@@ -1236,6 +1685,15 @@ function browseHTML(){
     return h + '<div class="empty" style="padding:20px 8px">Log or import a run and it ' +
            'appears here, grouped by year, month and week.</div></div>';
   }
+  return h +
+    '<div class="srch"><input id="run-search" type="search" autocomplete="off" ' +
+      'placeholder="Search notes, route, weather, pain\u2026" value="' + esc(browse.q || "") + '"></div>' +
+    '<div id="browse-body">' + browseBodyHTML(ents) + '</div></div>';
+}
+
+function browseBodyHTML(ents){
+  var h = "";
+  if (browse.q && browse.q.trim()) return searchResultsHTML(ents, browse.q.trim());
 
   // Breadcrumb — every level above the current one is a way back.
   var crumbs = ['<button class="crumb" data-lvl="years">All time</button>'];
@@ -1302,30 +1760,60 @@ function browseHTML(){
   } else {
     sel = ents.filter(function(e){ return mondayISO(e.log.date) === browse.wk; });
     h += periodStatsHTML(sel.map(function(e){ return e.log; }));
-    h += '<div class="drills">';
-    sel.forEach(function(e){
-      var l = e.log, dt = parseISO(l.date);
-      var mets = [];
-      if (l.durSec) mets.push('<em>' + durStr(l.durSec) + '</em>');
-      if (l.km && l.durSec) mets.push('<em>' + paceStr(l.km, l.durSec).replace(" /km","") + ' <i>/km</i></em>');
-      if (l.hr) mets.push('<em>' + l.hr + ' <i>bpm</i></em>');
-      if (l.kcal) mets.push('<em>' + l.kcal + ' <i>kcal</i></em>');
-      var v = vo2for(l);
-      if (v) mets.push('<em>' + v + ' <i>VO&#8322;</i></em>');
-      if (l.splits && l.splits.length) mets.push('<em>' + l.splits.length + ' <i>splits</i></em>');
-      h += '<button class="drill day" ' +
-        (e.extra ? 'data-openx="' + e.idx + '"' : 'data-open="' + e.w + ',' + e.d + '"') + '>' +
-        '<span class="dl"><span class="t">' +
-          dt.toLocaleDateString(undefined, { weekday:"long", month:"short", day:"numeric" }) +
-          (e.extra ? ' <span class="tagh">history</span>' : '') + '</span>' +
-        '<span class="mets">' + mets.join("") + '</span></span>' +
-        '<span class="dv"><span class="a">' + n1(l.km) + '</span><span class="p">km</span></span>' +
-        '<span class="chev">&rsaquo;</span></button>';
-    });
-    h += '</div><div class="tiny">Tap a run to open it.</div>';
+    h += '<div class="drills">' + sel.map(runDrillHTML).join("") +
+         '</div><div class="tiny">Tap a run to open it.</div>';
   }
 
-  return h + '</div>';
+  return h;
+}
+
+/* One run as a row. Shared by the week level and by search, so the two cannot
+   drift apart in what they show. */
+function runDrillHTML(e, withDate){
+  var l = e.log, dt = parseISO(l.date);
+  var mets = [];
+  if (l.durSec) mets.push('<em>' + durStr(l.durSec) + '</em>');
+  if (l.km && l.durSec) mets.push('<em>' + paceStr(l.km, l.durSec).replace(" /km","") + ' <i>/km</i></em>');
+  if (l.hr) mets.push('<em>' + l.hr + ' <i>bpm</i></em>');
+  if (l.kcal) mets.push('<em>' + l.kcal + ' <i>kcal</i></em>');
+  var v = vo2for(l);
+  if (v) mets.push('<em>' + v + ' <i>VO&#8322;</i></em>');
+  if (l.splits && l.splits.length) mets.push('<em>' + l.splits.length + ' <i>splits</i></em>');
+  var cb = condBits(l);
+  var label = dt.toLocaleDateString(undefined,
+    withDate ? { weekday:"short", year:"numeric", month:"short", day:"numeric" }
+             : { weekday:"long", month:"short", day:"numeric" });
+  return '<button class="drill day" ' +
+    (e.extra ? 'data-openx="' + e.idx + '"' : 'data-open="' + e.w + ',' + e.d + '"') + '>' +
+    '<span class="dl"><span class="t">' + label +
+      (e.extra ? ' <span class="tagh">history</span>' : '') + '</span>' +
+    '<span class="mets">' + mets.join("") + '</span>' +
+    ((cb.length || l.note)
+      ? '<span class="s">' + esc(cb.concat(l.note ? [l.note] : []).join(" \u00b7 ")) + '</span>'
+      : '') + '</span>' +
+    '<span class="dv"><span class="a">' + n1(l.km) + '</span><span class="p">km</span></span>' +
+    '<span class="chev">&rsaquo;</span></button>';
+}
+
+/* Search across everything a run carries in words — the note, the route, the
+   weather, the surface, where it hurt, the date. Runs are the only thing worth
+   searching: a week has no words of its own. */
+function searchResultsHTML(ents, q){
+  var terms = q.toLowerCase().split(/\s+/).filter(Boolean);
+  var hits = ents.filter(function(e){
+    var hay = searchText(e.log);
+    return terms.every(function(t){ return hay.indexOf(t) >= 0; });
+  }).reverse();                                  // newest first, unlike the drill-down
+
+  if (!hits.length)
+    return '<div class="empty" style="padding:26px 8px">Nothing matches ' +
+           '&ldquo;' + esc(q) + '&rdquo;.</div>';
+
+  return periodStatsHTML(hits.map(function(e){ return e.log; })) +
+    '<div class="drills">' +
+      hits.map(function(e){ return runDrillHTML(e, true); }).join("") +
+    '</div><div class="tiny">' + hits.length + ' run' + (hits.length === 1 ? '' : 's') +
+    ' matching &ldquo;' + esc(q) + '&rdquo;. Clear the box to go back to browsing.</div>';
 }
 
 function esc(s){
@@ -1597,6 +2085,12 @@ function runRowHTML(w, d, showToday){
 
   var eff = (l && l.done && l.effort) ? '<span class="eff" style="background:var(--' + l.effort + ')"></span>' : "";
   var pain = (l && l.pain && l.pain.area) ? '<div class="pain">&#9888; ' + esc(l.pain.area) + '</div>' : "";
+  // A note nobody can see from the list is a note nobody reads again. One line,
+  // clipped by the row, enough to know it is worth opening.
+  var cbits = l ? condBits(l) : [];
+  var nline = (l && (l.note || cbits.length))
+    ? '<div class="nt">' + esc(cbits.concat(l.note ? [l.note] : []).join(" \u00b7 ")) + '</div>'
+    : "";
 
   var rr = runAt(w, d);
   if (rr && rr.type && rr.type !== "easy")
@@ -1605,7 +2099,7 @@ function runRowHTML(w, d, showToday){
   return '<button class="' + cls + '" data-run="' + w + ',' + d + '">' +
     '<span class="dot"></span>' +
     '<span class="day">' + dayName(w, d) + '</span>' +
-    '<span class="mid"><span class="date">' + sub + eff + '</span>' + mets + pain + '</span>' +
+    '<span class="mid"><span class="date">' + sub + eff + '</span>' + mets + pain + nline + '</span>' +
     right + '</button>';
 }
 
@@ -1655,7 +2149,7 @@ function crossRowHTML(w, i, showToday){
 }
 
 function viewToday(){
-  var h = bannersHTML();
+  var h = countdownHTML() + bannersHTML();
   var nx = nextRun(), t = today();
 
   if (!nx){
@@ -1824,9 +2318,13 @@ function viewStats(){
            '" height="' + Math.max(ph, 2) + '" rx="4" fill="' + (isRec ? "#2a3f5c" : "#333e4e") + '"/>';
     if (a > 0){
       var over = tot > 0 && a > tot * OVER_LIMIT;
-      // 2px of surface either side, so planned and actual read as two marks
-      svg += '<rect x="' + (cx - bw/2 + 3) + '" y="' + (base - ah) + '" width="' + (bw-6) +
-             '" height="' + Math.max(ah, 2) + '" rx="3" fill="' + (over ? "#ffb03a" : "#3ce08c") + '"/>';
+      // Surface either side, so planned and actual read as two marks. The inset
+      // has to scale: a 42-week plan gives bars under 5px, and a fixed 3px each
+      // side made the actual bar negative-width, so it drew nothing at all.
+      var inset = Math.min(3, Math.max(0, (bw - 2.5) / 2));
+      svg += '<rect x="' + (cx - bw/2 + inset) + '" y="' + (base - ah) + '" width="' + (bw - inset*2) +
+             '" height="' + Math.max(ah, 2) + '" rx="' + Math.min(3, (bw - inset*2)/2) +
+             '" fill="' + (over ? "#ffb03a" : "#3ce08c") + '"/>';
     }
     if (i % labelEvery === 0 || i === planLen()-1 || i === cur)
       svg += '<text x="' + cx + '" y="' + (H-8) + '" fill="' +
@@ -1883,6 +2381,10 @@ function viewStats(){
         '</div><div class="k">hours running</div></div>' +
       '</div>';
   }
+
+  h += readinessHTML();
+  h += racePredictionHTML();
+  h += personalBestsHTML();
 
   /* ---- week by week ---- */
   var wr = weekRows(), anyWeek = wr.some(function(r){ return r.runs || r.skipped; });
@@ -2071,6 +2573,194 @@ function viewStats(){
   return h;
 }
 
+/* The countdown, as a strip above everything on Today. Race day is the one
+   fact the whole plan is arranged around, so it goes at the top and stays
+   small: a number that large does not need to be shouted. */
+function countdownHTML(){
+  var tg = raceTarget();
+  if (!tg) return "";
+  var t = today(), days = dayDiff(t, tg.date);
+  var first = weekStart(0), span = dayDiff(first, tg.date);
+  var gone = Math.max(0, Math.min(span, dayDiff(first, t)));
+  var pct = span > 0 ? Math.round(gone / span * 100) : 0;
+
+  var line;
+  if (days === 0)      line = '<b>Race day.</b> ' + n1(tg.km) + ' km.';
+  else if (days < 0)   line = 'Race day was ' + fmtDate(tg.date) + '. ' +
+                              Math.abs(days) + ' day' + (Math.abs(days) === 1 ? '' : 's') + ' ago.';
+  else if (days === 1) line = '<b>Tomorrow.</b> ' + n1(tg.km) + ' km.';
+  else {
+    var wks = Math.floor(days / 7);
+    line = '<b>' + days + ' days</b>' +
+           (wks >= 2 ? ' &middot; ' + wks + ' weeks' : '') +
+           ' &middot; ' + n1(tg.km) + ' km';
+  }
+
+  return '<div class="cd">' +
+    '<div class="cdh"><span class="cdn">' + esc(PLAN_NAME) + '</span>' +
+      '<span class="cdd">' + fmtDate(tg.date) + ' ' + tg.date.getFullYear() + '</span></div>' +
+    '<div class="cdl">' + line + '</div>' +
+    '<div class="cdbar"><i style="width:' + pct + '%"></i></div>' +
+    '<div class="cdf">' + (days > 0 ? pct + '% of the block behind you' : 'Block complete') +
+      ' &middot; week ' + (currentWeekIndex()+1) + ' of ' + planLen() + '</div>' +
+  '</div>';
+}
+
+/* Whether the block is being run as written, and what this phase in particular
+   is asking for. Volume adherence leads, because that is what the plan is. */
+function readinessHTML(){
+  var r = readiness(), v = readinessVerdict(r), pc = phaseCheck(r);
+  var h = '<div class="card" style="margin-top:12px"><div class="label">Readiness</div>';
+
+  h += '<div class="verdict ' + v.k + '"><b>' + v.t + '</b>' + esc(v.s) + '</div>';
+
+  if (r.due){
+    h += '<div class="stats-row" style="margin-top:12px">' +
+      '<div class="stat"><div class="v">' + Math.round(r.adherence * 100) +
+        '<span style="font-size:15px;color:var(--muted)">%</span></div>' +
+        '<div class="k">Of planned volume</div></div>' +
+      '<div class="stat"><div class="v">' + r.done +
+        '<span style="font-size:15px;color:var(--muted)"> / ' + r.due + '</span></div>' +
+        '<div class="k">Runs due, done</div></div>' +
+      '</div>';
+    h += '<div class="mets" style="margin-top:12px">' +
+      '<em>' + n1(r.actualKm) + ' <i>km run of ' + n1(r.plannedKm) + ' due</i></em>' +
+      '<em>' + n1(r.r4.actual) + ' <i>of ' + n1(r.r4.planned) + ' km, last 4 weeks</i></em>' +
+      (r.skipped ? '<em class="over">' + r.skipped + ' <i>skipped</i></em>' : '') +
+      '</div>';
+  }
+
+  if (r.phase){
+    h += '<div class="phasebox"><div class="pn">Phase ' + r.phase.n + ' &middot; ' +
+      esc(r.phase.name) + '</div><div class="pf">' + esc(r.phase.focus) + '</div>' +
+      (pc ? '<div class="pchk ' + pc.k + '">' + pc.t + '</div>' : '') + '</div>';
+  }
+
+  h += '<div class="tiny">Measured only against runs that have already come due, so ' +
+    'weeks still ahead do not count against you. Volume leads the verdict rather than ' +
+    'run count: three half-length runs are three ticks and not the week that was planned.' +
+    '</div></div>';
+  return h;
+}
+
+/* What the block is heading towards. Two independent readings, because one
+   number with nothing to check it against invites more trust than it earns. */
+function racePredictionHTML(){
+  var h = '<div class="card" style="margin-top:12px"><div class="label">Race day prediction</div>';
+  var P = racePredictions();
+  var tgt = raceTarget();
+
+  if (!P || !P.lead){
+    return h + '<div class="empty" style="padding:22px 8px">Log a run with a time and a ' +
+      'projected finish for ' + (tgt ? n1(tgt.km) + ' km' : 'race day') +
+      ' appears here.</div></div>';
+  }
+
+  var conf = predictionConfidence(P.evidenceKm, P.target.km);
+  var pace = P.lead / P.target.km;
+
+  h += '<div class="hero pred"><div class="when">' + n1(P.target.km) + ' km &middot; ' +
+    fmtLong(P.target.date) + ' ' + P.target.date.getFullYear() + '</div>' +
+    '<div class="dist">' + durStr(P.lead) + '</div>' +
+    '<div class="countdown">' + splitStr(pace) + ' /km &middot; halfway ' +
+      durStr(Math.round(P.lead / 2)) +
+      ' &nbsp;<span class="badge conf ' + conf.k + '">' + conf.t + '</span></div></div>';
+
+  // "Basis" rather than "Best": the distance rows carry a best time, the VO2 row
+  // carries an intensity, and one header has to be honest about both.
+  h += '<div class="tbl" style="margin-top:14px"><table>' +
+    '<thead><tr><th>Read from</th><th class="n">Basis</th><th class="n">Projects</th></tr></thead><tbody>';
+  P.from.forEach(function(f){
+    var lead = P.leadFrom && f.km === P.leadFrom.km;
+    h += '<tr' + (lead ? ' class="cur"' : '') + '>' +
+      '<td>' + esc(f.label) + (lead ? ' <span class="dotm pk"></span>' : '') + '</td>' +
+      '<td class="n dim">' + durStr(f.sec) + '</td>' +
+      '<td class="n' + (lead ? ' good' : '') + '">' + durStr(f.proj) + '</td></tr>';
+  });
+  if (P.vo2Proj)
+    h += '<tr><td>VO<sub>2</sub> estimate</td>' +
+      '<td class="n dim">' + Math.round(sustainableFraction(P.vo2Proj / 60) * 100) +
+        '% of ' + P.vo2 + '</td>' +
+      '<td class="n">' + durStr(P.vo2Proj) + '</td></tr>';
+  h += '</tbody></table></div>';
+
+  if (P.lo !== P.hi)
+    h += '<div class="readout" style="margin-top:12px"><div class="mets">' +
+      '<em>' + durStr(P.lo) + ' <i>fastest read</i></em>' +
+      '<em>' + durStr(P.hi) + ' <i>slowest read</i></em>' +
+      '<em>' + durStr(P.hi - P.lo) + ' <i>spread</i></em>' +
+      '</div></div>';
+
+  h += '<div class="tiny">The headline comes from your best ' + n1(P.evidenceKm) +
+    ' km, projected with Riegel &mdash; the longest real effort is the one worth ' +
+    'leading with, since a marathon extrapolated from a single fast kilometre is ' +
+    'arithmetic rather than evidence. The VO<sub>2</sub> row is worked out a different ' +
+    'way: the app\u2019s own oxygen-cost equation run backwards, at the fraction of ' +
+    'maximum that is holdable for a race that long. They are independent, so where ' +
+    'they agree there is something to it, and where they disagree the spread above ' +
+    'is the honest answer.' +
+    (conf.k === "raw" || conf.k === "early"
+      ? ' Right now the longest effort behind this is ' + n1(P.evidenceKm) + ' km against ' +
+        n1(P.target.km) + ' on the day, so the number will move a long way yet.'
+      : '') +
+    '</div></div>';
+  return h;
+}
+
+/* Records rather than progress: what the legs have actually done, at every
+   distance the data can speak to. Each row opens the run it came from. */
+function personalBestsHTML(){
+  var ents = allEntries().filter(function(e){ return e.log.durSec > 0; });
+  var h = '<div class="card" style="margin-top:12px"><div class="label">Personal bests</div>';
+
+  if (!ents.length)
+    return h + '<div class="empty" style="padding:22px 8px">Log a run with a time and your ' +
+           'bests start filling in.</div></div>';
+
+  var rows = PB_DISTANCES.map(function(D){ return { D:D, c:pbAt(D.km, ents) }; });
+  var any = rows.some(function(r){ return r.c; });
+
+  h += '<div class="drills" style="margin-top:12px">';
+  rows.forEach(function(r){
+    if (!r.c){
+      h += '<div class="drill pb-none"><span class="dl"><span class="t">' + r.D.label +
+        '</span><span class="s">nothing this far yet</span></span>' +
+        '<span class="dv"><span class="a">&mdash;</span></span></div>';
+      return;
+    }
+    var c = r.c, e = c.e;
+    h += '<button class="drill" ' +
+      (e.extra ? 'data-openx="' + e.idx + '"' : 'data-open="' + e.w + ',' + e.d + '"') + '>' +
+      '<span class="dl"><span class="t">' + r.D.label + '</span>' +
+      '<span class="s">' + esc(pbSourceText(c)) + ' &middot; ' +
+        parseISO(e.log.date).toLocaleDateString(undefined,
+          { month:"short", day:"numeric", year:"numeric" }) + '</span></span>' +
+      '<span class="dv"><span class="a">' + durStr(c.sec) + '</span>' +
+      '<span class="p">' + splitStr(c.pace) + ' /km</span></span>' +
+      '<span class="chev">&rsaquo;</span></button>';
+  });
+  h += '</div>';
+
+  var v = volumeBests(ents), bits = [];
+  if (v.longest) bits.push('<em>' + n1(v.longest.log.km) + ' <i>longest run</i></em>');
+  if (v.week) bits.push('<em>' + n1(v.week.km) + ' <i>biggest week</i></em>');
+  if (v.month) bits.push('<em>' + n1(v.month.km) + ' <i>biggest month</i></em>');
+  if (v.busiest && v.busiest.runs > 1) bits.push('<em>' + v.busiest.runs + ' <i>runs in a week</i></em>');
+  if (v.vo2) bits.push('<em>' + v.vo2.v + ' <i>best VO&#8322;</i></em>');
+  if (bits.length)
+    h += '<div class="readout" style="margin-top:12px"><div class="mets">' + bits.join("") + '</div>' +
+      (v.week ? '<div class="tiny" style="margin-top:8px">Biggest week is ' +
+        esc(weekLabel(v.week.key)) + '; biggest month ' + esc(monthLabel(v.month.key)) +
+        '. Calendar weeks, Monday to Sunday, so runs from before the block count too.</div>' : '') +
+      '</div>';
+
+  h += '<div class="tiny">Read from whole runs and from the fastest run of consecutive ' +
+    'kilometres inside longer ones, so a fast 5 km buried in a long run still counts. ' +
+    'Each row says the exact distance its time covers and opens the run behind it.' +
+    (any ? '' : ' Nothing qualifies yet.') + '</div></div>';
+  return h;
+}
+
 var lastTab = null;
 function render(){
   var t = today();
@@ -2109,7 +2799,9 @@ function openSheet(w, d){
     w:w, d:d,
     status: l.done ? "done" : l.skipped ? "skipped" : "done",
     km: (typeof l.km === "number") ? l.km : runAt(w, d).km,
-    min: l.durSec ? Math.floor(l.durSec/60) : "",
+    // Split across three boxes: a long run is entered as 3 h 12, not 192 min.
+    hours: l.durSec >= 3600 ? Math.floor(l.durSec/3600) : "",
+    min: l.durSec ? Math.floor((l.durSec%3600)/60) : "",
     sec: l.durSec ? l.durSec%60 : "",
     hr: l.hr || "",
     kcal: l.kcal || "",
@@ -2118,7 +2810,12 @@ function openSheet(w, d){
     effort: l.effort || "moderate",
     painOn: !!(l.pain && l.pain.area),
     area: l.pain ? l.pain.area : null,
-    note: l.pain ? (l.pain.note || "") : "",
+    painNote: l.pain ? (l.pain.note || "") : "",
+    note: l.note || "",
+    weather: (l.cond && l.cond.weather) || null,
+    temp: (l.cond && typeof l.cond.tempC === "number") ? l.cond.tempC : "",
+    surface: (l.cond && l.cond.surface) || null,
+    route: (l.cond && l.cond.route) || "",
     existing: !!(l.done || l.skipped),
     // A logged run opens to be looked at. Editing is a deliberate second step,
     // so glancing at a run cannot end in an accidental overwrite.
@@ -2170,14 +2867,26 @@ function drawViewSheet(){
 
     if (l.splits && l.splits.length){
       var fast = Math.min.apply(null, l.splits), slow = Math.max.apply(null, l.splits);
+      var tail = tailOf(l);
       h += '<div class="field" style="margin-top:14px"><span class="label">Splits</span>' +
         '<div class="splitlist">' +
         l.splits.map(function(sp, i){
           var cls = sp === fast ? " fast" : sp === slow ? " slow" : "";
           return '<span class="sp' + cls + '"><b>' + splitStr(sp) + '</b><i>km ' + (i+1) + '</i></span>';
-        }).join("") + '</div></div>';
+        }).join("") + (tail ? tailChipHTML(tail) : "") + '</div>' +
+        (tail ? '<div class="tiny" style="margin-top:8px">The run finished ' + n1(tail.km) +
+          ' km into its ' + (l.splits.length + 1) + 'th kilometre, at ' +
+          splitStr(tail.pace) + ' /km. Shown apart from the splits because it is ' +
+          'a fraction of one, not a full kilometre to be judged against them.</div>' : '') +
+        '</div>';
     }
   }
+
+  var cb = condBits(l);
+  if (cb.length)
+    h += '<div class="cond-line">' +
+      cb.map(function(x){ return '<span>' + esc(x) + '</span>'; }).join("") + '</div>';
+  if (l.note) h += '<div class="notebox">' + esc(l.note) + '</div>';
 
   if (l.pain && l.pain.area){
     h += '<div class="banner danger" style="margin-top:14px"><div class="ico">&#9888;</div><div>' +
@@ -2231,7 +2940,8 @@ function drawSheet(){
   if (draft.status === "done"){
     h += '<div class="field"><span class="label">Distance &amp; time</span><div class="inputs">' +
       '<div class="inp"><input id="f-km" type="number" inputmode="decimal" step="0.1" min="0" value="' + draft.km + '"><span class="u">km</span></div>' +
-      '<div class="inp"><input id="f-min" type="number" inputmode="numeric" min="0" placeholder="0" value="' + draft.min + '"><span class="u">min</span></div>' +
+      '<div class="inp" style="flex:.72"><input id="f-hours" type="number" inputmode="numeric" min="0" max="23" placeholder="0" value="' + draft.hours + '"><span class="u">h</span></div>' +
+      '<div class="inp"><input id="f-min" type="number" inputmode="numeric" min="0" max="59" placeholder="0" value="' + draft.min + '"><span class="u">min</span></div>' +
       '<div class="inp"><input id="f-sec" type="number" inputmode="numeric" min="0" max="59" placeholder="00" value="' + draft.sec + '"><span class="u">sec</span></div>' +
       '</div></div><div class="pace" id="pace"></div>';
 
@@ -2260,6 +2970,28 @@ function drawSheet(){
     h += '<div class="field"><span class="label">Effort</span><div class="seg">' +
       seg("effort","easy","Easy") + seg("effort","moderate","Moderate") + seg("effort","hard","Hard") +
       '</div></div>';
+
+    /* Conditions. Tapping a chip that is already on clears it, so "I did not
+       record the weather" stays different from "it was clear". */
+    var chip = function(field, val){
+      return '<button data-field="' + field + '" data-v="' + esc(val) + '" data-toggleable="1"' +
+             (draft[field] === val ? ' class="on"' : '') + '>' + esc(val) + '</button>';
+    };
+    h += '<div class="field"><span class="label">Conditions</span>' +
+      '<div class="chips cond">' +
+        WEATHER.map(function(v){ return chip("weather", v); }).join("") + '</div>' +
+      '<div class="chips cond" style="margin-top:8px">' +
+        SURFACES.map(function(v){ return chip("surface", v); }).join("") + '</div>' +
+      '<div class="inputs" style="margin-top:10px">' +
+        '<div class="inp"><input id="f-temp" type="number" inputmode="decimal" step="0.5" ' +
+          'min="-60" max="60" placeholder="&mdash;" value="' + draft.temp + '">' +
+          '<span class="u">&deg;C</span></div>' +
+        '<div class="inp" style="flex:2"><input id="f-route" type="text" class="txt" ' +
+          'placeholder="Where you ran" value="' + esc(draft.route) + '">' +
+          '<span class="u">route</span></div>' +
+      '</div>' +
+      '<div class="tiny" style="margin-top:8px">None of this touches the plan maths. It is ' +
+      'here so a slow week has an explanation attached to it a year from now.</div></div>';
   }
 
   h += '<div class="field"><span class="label">Pain</span><div class="seg">' +
@@ -2274,8 +3006,16 @@ function drawSheet(){
         return '<button data-field="area" data-v="' + a + '"' + (draft.area === a ? ' class="on"' : '') + '>' + a + '</button>';
       }).join("") + '</div></div>' +
       '<div class="field"><span class="label">Note</span>' +
-      '<textarea id="f-note" placeholder="Sharp on downhills, eased after 2 km&hellip;">' + esc(draft.note) + '</textarea></div>';
+      '<textarea id="f-painnote" placeholder="Sharp on downhills, eased after 2 km&hellip;">' + esc(draft.painNote) + '</textarea></div>';
   }
+
+  /* Outside the completed block on purpose: why a run was skipped is exactly
+     the kind of thing worth a sentence. */
+  h += '<div class="field"><span class="label">Note</span>' +
+    '<textarea id="f-runnote" style="min-height:70px" placeholder="' +
+    (draft.status === "skipped" ? "Why it did not happen&hellip;"
+                                : "Legs heavy from Thursday. Held back on the hills&hellip;") +
+    '">' + esc(draft.note) + '</textarea></div>';
 
   h += '<button class="btn primary" data-act="save" style="margin-bottom:10px">Save</button>';
   if (draft.existing)
@@ -2288,18 +3028,27 @@ function drawSheet(){
 
 function readInputs(){
   var km = document.getElementById("f-km"), mi = document.getElementById("f-min"), se = document.getElementById("f-sec"),
+      ho = document.getElementById("f-hours"),
       hr = document.getElementById("f-hr"), sp = document.getElementById("f-splits"),
-      kc = document.getElementById("f-kcal"), nt = document.getElementById("f-note");
+      kc = document.getElementById("f-kcal"), nt = document.getElementById("f-painnote"),
+      rn = document.getElementById("f-runnote"), tp = document.getElementById("f-temp"),
+      rt = document.getElementById("f-route");
   if (km) draft.km  = km.value === "" ? 0 : parseFloat(km.value);
+  if (ho) draft.hours = ho.value === "" ? "" : parseInt(ho.value, 10);
   if (mi) draft.min = mi.value === "" ? "" : parseInt(mi.value, 10);
   if (se) draft.sec = se.value === "" ? "" : parseInt(se.value, 10);
   if (hr) draft.hr  = hr.value === "" ? "" : parseInt(hr.value, 10);
   if (kc) draft.kcal = kc.value === "" ? "" : parseInt(kc.value, 10);
   if (sp) draft.splits = sp.value;
-  if (nt) draft.note = nt.value;
+  if (nt) draft.painNote = nt.value;
+  if (rn) draft.note = rn.value;
+  if (rt) draft.route = rt.value;
+  if (tp) draft.temp = tp.value === "" ? "" : parseFloat(tp.value);
 }
 function draftSec(){
-  return (parseInt(draft.min, 10) || 0) * 60 + (parseInt(draft.sec, 10) || 0);
+  return (parseInt(draft.hours, 10) || 0) * 3600 +
+         (parseInt(draft.min, 10) || 0) * 60 +
+         (parseInt(draft.sec, 10) || 0);
 }
 function syncPace(){
   var el = document.getElementById("pace");
@@ -2321,9 +3070,13 @@ function syncPace(){
     if (!sp){ sel.innerHTML = ""; return; }
     var fast = Math.min.apply(null, sp), slow = Math.max.apply(null, sp);
     var tot = sp.reduce(function(a, b){ return a+b; }, 0);
+    // The part-kilometre the run ended on, worked out from what is typed so far.
+    var tl = tailOf({ done:true, km:draft.km, durSec:sec, splits:sp });
     sel.innerHTML = sp.length + " split" + (sp.length === 1 ? "" : "s") +
       " &middot; fastest <b>" + splitStr(fast) + "</b> &middot; slowest <b>" + splitStr(slow) +
-      "</b> &middot; mean <b>" + splitStr(tot / sp.length) + "</b>";
+      "</b> &middot; mean <b>" + splitStr(tot / sp.length) + "</b>" +
+      (tl ? '<br><span style="color:var(--dim)">plus ' + splitStr(tl.sec) + " for the last " +
+            n1(tl.km) + " km, at " + splitStr(tl.pace) + " /km</span>" : "");
   }
 }
 
@@ -2334,7 +3087,8 @@ function saveDraft(){
   if (draft.status === "skipped"){
     setLog(w, d, {
       done:false, skipped:true, date:toISO(runDate(w, d)), ts:Date.now(),
-      pain: draft.painOn && draft.area ? { area:draft.area, note:draft.note } : null
+      pain: draft.painOn && draft.area ? { area:draft.area, note:draft.painNote } : null,
+      note: draft.note ? String(draft.note).trim() : null
     });
     save(); closeSheet(); render(); return;
   }
@@ -2343,7 +3097,7 @@ function saveDraft(){
   if (!(km > 0)) { alert("Enter a distance greater than zero, or mark the run skipped."); return; }
   if (draft.painOn && !draft.area) { alert("Pick where the pain was."); return; }
 
-  var sec = (parseInt(draft.min, 10) || 0) * 60 + (parseInt(draft.sec, 10) || 0);
+  var sec = draftSec();
 
   /* Recovery-week guard: warn before saving a run longer than planned. */
   if (p.tag === "RECOVERY"){
@@ -2368,7 +3122,9 @@ function saveDraft(){
                   ? (parseInt(draft.strideReps, 10) || 0) : null,
     splits: parseSplits(draft.splits),
     date:toISO(runDate(w, d)), ts:Date.now(),
-    pain: draft.painOn && draft.area ? { area:draft.area, note:draft.note } : null
+    pain: draft.painOn && draft.area ? { area:draft.area, note:draft.painNote } : null,
+    note: draft.note ? String(draft.note).trim() : null,
+    cond: draftCond()
   });
   save(); closeSheet(); render();
 }
@@ -2392,9 +3148,18 @@ function openExtraSheet(i){
     '<div class="readout" style="margin-top:14px"><div class="mets">' +
       (mets.length ? mets.join("") : "<em>No detail recorded</em>") + '</div></div>';
   if (l.splits && l.splits.length){
+    var xtail = tailOf(l);
     h += '<div class="field" style="margin-top:14px"><span class="label">Splits</span>' +
-         '<div class="pace">' + esc(splitsToText(l.splits)) + '</div></div>';
+         '<div class="pace">' + esc(splitsToText(l.splits)) +
+         (xtail ? ' <span style="color:var(--muted)">+ ' + splitStr(xtail.sec) +
+                  ' for the last ' + n1(xtail.km) + ' km</span>' : '') +
+         '</div></div>';
   }
+  var xcb = condBits(l);
+  if (xcb.length)
+    h += '<div class="cond-line">' +
+      xcb.map(function(x){ return '<span>' + esc(x) + '</span>'; }).join("") + '</div>';
+  if (l.note) h += '<div class="notebox">' + esc(l.note) + '</div>';
   h += '<div class="tiny" style="margin:14px 0">This run sits outside the plan, so it counts ' +
        'towards your totals, the monthly figures and the VO<sub>2</sub> trend, but not towards ' +
        'any plan week.</div>' +
@@ -3274,7 +4039,10 @@ function applyImport(){
       effort: prev.effort || null,        // not in the data — left for you to set
       date: r.act.date, ts: Date.now(),
       imported: true,
-      pain: prev.pain || null             // pain never comes from a file
+      // A file carries none of these, so what was written by hand survives it.
+      pain: prev.pain || null,
+      note: prev.note || null,
+      cond: prev.cond || null
     });
     n++;
   });
@@ -3338,6 +4106,7 @@ document.addEventListener("click", function(e){
 
   el = e.target.closest("[data-lvl]");
   if (el){
+    browse.q = "";                      // drilling in means you are done searching
     browse.level = el.dataset.lvl;
     if (el.dataset.y) browse.y = el.dataset.y;
     if (el.dataset.m){ browse.m = el.dataset.m; browse.y = el.dataset.m.slice(0, 4); }
@@ -3376,8 +4145,10 @@ document.addEventListener("click", function(e){
   if (el && draft){
     var f = el.dataset.field, v = el.dataset.v;
     readInputs();
-    draft[f] = (f === "painOn") ? (v === "1") : v;
-    if (f === "painOn" && !draft.painOn){ draft.area = null; draft.note = ""; }
+    draft[f] = (f === "painOn") ? (v === "1")
+             : (el.dataset.toggleable && draft[f] === v) ? null      // tap again to unset
+             : v;
+    if (f === "painOn" && !draft.painOn){ draft.area = null; draft.painNote = ""; }
     drawSheet();
     return;
   }
@@ -3494,8 +4265,17 @@ document.getElementById("fileIn").addEventListener("change", function(e){
   if (f) readFile(f);
   e.target.value = "";        // so the same file can be picked again
 });
+/* Search redraws only the browse body. A full render would rebuild the input
+   and hand the keyboard back to the page mid-word. */
+document.getElementById("view").addEventListener("input", function(e){
+  if (e.target.id !== "run-search") return;
+  browse.q = e.target.value;
+  var body = document.getElementById("browse-body");
+  if (body) body.innerHTML = browseBodyHTML(allEntries());
+});
+
 sheet.addEventListener("input", function(e){
-  if (/^f-(km|min|sec|hr|kcal|splits)$/.test(e.target.id || "")){
+  if (/^f-(km|hours|min|sec|hr|kcal|splits|temp)$/.test(e.target.id || "")){
     readInputs(); syncPace();
     return;
   }
