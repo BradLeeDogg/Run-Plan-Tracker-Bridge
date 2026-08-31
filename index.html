@@ -201,6 +201,19 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
 .readout .mets em.over{color:var(--warn)}
 
 /* ---------- tab bar ---------- */
+/* Sections within Stats. Scrolls sideways rather than wrapping, so four chips
+   stay on one line on the narrowest phone and a fifth would not break it. */
+.subnav{
+  display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+  padding-bottom:2px;
+}
+.subnav::-webkit-scrollbar{display:none}
+.subnav button{
+  flex:1 0 auto;min-height:40px;padding:0 15px;border-radius:11px;font-size:14px;font-weight:800;
+  border:1.5px solid var(--line);background:var(--surface);color:var(--muted);white-space:nowrap;
+}
+.subnav button.on{background:var(--surface2);color:var(--text);border-color:var(--accent)}
+
 .tabbar{
   position:fixed;left:0;right:0;bottom:0;z-index:40;
   display:flex;background:rgba(10,12,16,.93);
@@ -215,6 +228,36 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
 }
 .tabbar button.on{color:var(--accent)}
 .tabbar svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- dialogs ----------
+   Above the sheet, because several of them are raised from inside one. */
+.dscrim{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:70;
+  opacity:0;pointer-events:none;transition:opacity .16s}
+.dscrim.on{opacity:1;pointer-events:auto}
+.dlg{
+  position:fixed;left:50%;top:50%;z-index:80;
+  width:min(360px, calc(100vw - 32px));max-height:82vh;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  background:var(--surface);border:1px solid var(--line);border-radius:20px;
+  padding:20px 18px 18px;
+  transform:translate(-50%,-46%) scale(.96);opacity:0;pointer-events:none;
+  transition:opacity .16s, transform .16s cubic-bezier(.32,.72,0,1);
+}
+.dlg.on{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto}
+.dlg h3{font-size:18px;font-weight:800;letter-spacing:-.02em;margin:0 0 8px}
+.dlg .dbody{font-size:14.5px;line-height:1.5;color:var(--muted);white-space:pre-wrap}
+.dlg .dfield{margin-top:14px}
+.dlg .dfield label{display:block;font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);font-weight:800;margin-bottom:6px}
+.dlg .dfield input,.dlg .dfield textarea{
+  width:100%;min-height:48px;padding:0 14px;border-radius:12px;font-size:16px;font-weight:600;
+  border:1.5px solid var(--line);background:var(--surface2);color:var(--text);
+}
+.dlg .dfield textarea{padding:12px 14px;min-height:84px;resize:vertical;font-weight:500}
+.dlg .dfield input:focus,.dlg .dfield textarea:focus{outline:none;border-color:var(--accent)}
+.dlg .derr{margin-top:10px;font-size:13px;font-weight:700;color:var(--danger)}
+.dlg .dacts{display:flex;flex-direction:column;gap:8px;margin-top:18px}
+.dlg .dacts .btn{min-height:50px;font-size:16px}
 
 /* ---------- sheet ---------- */
 .scrim{position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:50;opacity:0;pointer-events:none;transition:opacity .2s}
@@ -562,6 +605,28 @@ textarea:focus{outline:none;border-color:var(--accent)}
   font-variant-numeric:tabular-nums;min-height:20px;
 }
 .pace b{color:var(--accent);font-size:16px}
+/* The fold. A row rather than a link, because it is the thing you tap when the
+   run was more than a distance and a time. */
+.disc{
+  display:flex;align-items:center;gap:10px;width:100%;margin:2px 0 16px;
+  min-height:52px;padding:0 14px;border-radius:13px;
+  border:1.5px dashed var(--line);background:transparent;color:var(--text);
+  font-size:15px;font-weight:700;text-align:left;
+}
+.disc.on{border-style:solid;background:var(--surface2)}
+.disc .ds{flex:1;min-width:0;font-size:12.5px;font-weight:600;color:var(--dim);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.disc .dc{flex:0 0 auto;font-size:20px;font-weight:800;color:var(--muted);line-height:1}
+
+/* Save stays reachable however long the sheet gets. */
+.sheet-actions{
+  position:sticky;bottom:0;z-index:2;
+  margin:18px -14px calc(-20px - env(safe-area-inset-bottom));
+  padding:12px 14px calc(14px + env(safe-area-inset-bottom));
+  background:var(--surface);border-top:1px solid var(--line);
+}
+.sheet-actions .btn-row .btn{min-height:48px;font-size:15px}
+
 .hidden{display:none!important}
 .empty{text-align:center;color:var(--muted);padding:40px 20px;font-size:15px}
 
@@ -615,6 +680,8 @@ textarea:focus{outline:none;border-color:var(--accent)}
 
 <div class="scrim" id="scrim"></div>
 <div class="sheet" id="sheet"></div>
+<div class="dscrim" id="dscrim"></div>
+<div class="dlg" id="dlg" role="dialog" aria-modal="true"></div>
 <input type="file" id="fileIn" class="hidden" accept=".tcx,.gpx,.xml,.json,.csv,.txt,text/xml,application/xml,application/json,text/csv,text/plain">
 
 <script>
@@ -1044,7 +1111,7 @@ function save(){
     try { localStorage.setItem(KEY, JSON.stringify(state)); return; }
     catch(e2){ state.undo = keep; }
   }
-  alert("Could not save — device storage may be full or private browsing is on.");
+  say({ title:"Could not save", body:"Device storage may be full, or private browsing is on. Nothing was written." });
 }
 
 /* ---------- one step back ----------
@@ -1063,14 +1130,17 @@ function undoLabel(){
 }
 function doUndo(){
   if (!state.undo || !state.undo.state) return;
-  if (!confirm("Undo \u201c" + state.undo.label + "\u201d?\n\n" +
-      "Everything goes back to how it was immediately before that. Anything " +
-      "logged since will be lost.")) return;
-  var back = state.undo.state;
-  Object.keys(state).forEach(function(k){ delete state[k]; });
-  Object.keys(back).forEach(function(k){ state[k] = back[k]; });
-  state.undo = null;
-  save(); render();
+  var label = state.undo.label;
+  ask({ title:"Undo \u201c" + label + "\u201d?", danger:true, yes:"Undo it",
+        body:"Everything goes back to how it was immediately before that. " +
+             "Anything logged since will be lost." }, function(){
+    if (!state.undo || !state.undo.state) return;
+    var back = state.undo.state;
+    Object.keys(state).forEach(function(k){ delete state[k]; });
+    Object.keys(back).forEach(function(k){ state[k] = back[k]; });
+    state.undo = null;
+    save(); render();
+  });
 }
 
 /* ---------- plan accessors ---------- */
@@ -2494,23 +2564,23 @@ function adoptNewPlan(){
   if (!t.matched && !t.toHistory) lines.push("Nothing is logged against the current plan.");
   lines.push("", "This can be undone afterwards.");
 
-  if (!confirm("Load this plan?\n\n" + lines.join("\n"))) return;
-
-  snapshot("Load " + PLAN_NAME);
-  state.logs = t.logs;
-  state.strength = t.strength;
-  state.cross = t.cross;
-  state.extras = t.extras;
-  state.plan = newPlan;
-  state.seq = Math.max(state.seq || 0, maxSeq(state.plan));
-  state.planId = PLAN_ID;
-  state.settings.strides = null;          // the gate is about this plan, ask again
-  save(); render();
-  alert("Loaded " + PLAN_NAME + ".\n\n" +
-    (t.matched ? t.matched + " run" + (t.matched === 1 ? " is" : "s are") +
-                 " attached to the new plan." : "") +
-    (t.toHistory ? "\n" + t.toHistory + " kept as history." : "") +
-    "\n\nStats has an undo if this is not what you wanted.");
+  ask({ title:"Load this plan?", body:lines.join("\n"), yes:"Load it" }, function(){
+    snapshot("Load " + PLAN_NAME);
+    state.logs = t.logs;
+    state.strength = t.strength;
+    state.cross = t.cross;
+    state.extras = t.extras;
+    state.plan = newPlan;
+    state.seq = Math.max(state.seq || 0, maxSeq(state.plan));
+    state.planId = PLAN_ID;
+    state.settings.strides = null;        // the gate is about this plan, ask again
+    save(); render();
+    say({ title:"Loaded " + PLAN_NAME,
+          body:(t.matched ? t.matched + " run" + (t.matched === 1 ? " is" : "s are") +
+                            " attached to the new plan.\n" : "") +
+               (t.toHistory ? t.toHistory + " kept as history.\n" : "") +
+               "\nStats has an undo if this is not what you wanted." });
+  });
 }
 
 /* Runs stranded in history by an earlier plan change, brought back onto the
@@ -2518,20 +2588,23 @@ function adoptNewPlan(){
 function rescueHistory(){
   var t = planTransfer(state.plan, { rescueHistory:true });
   if (!t.rescued){
-    alert("Nothing in your history lines up with a free day on this plan.");
+    say({ title:"Nothing to re-attach", body:"No run in your history falls on a day this plan has a free run for." });
     return;
   }
-  if (!confirm(t.rescued + " run" + (t.rescued === 1 ? "" : "s") +
-      " in your history fall on days this plan has runs for, and can be attached " +
-      "to it.\n\nThey will count towards their weeks again \u2014 adherence, the " +
-      "week table and the streak. This can be undone afterwards.")) return;
-  snapshot("Re-attach " + t.rescued + " run" + (t.rescued === 1 ? "" : "s") + " to the plan");
-  state.logs = t.logs;
-  state.strength = t.strength;
-  state.cross = t.cross;
-  state.extras = t.extras;
-  save(); render();
-  alert(t.rescued + " run" + (t.rescued === 1 ? " is" : "s are") + " back on the plan.");
+  ask({ title:"Re-attach " + t.rescued + " run" + (t.rescued === 1 ? "" : "s") + "?",
+        yes:"Attach " + (t.rescued === 1 ? "it" : "them"),
+        body:t.rescued + " run" + (t.rescued === 1 ? "" : "s") + " in your history fall on " +
+             "days this plan has runs for.\n\nThey will count towards their weeks again " +
+             "\u2014 adherence, the week table and the streak. This can be undone afterwards." },
+    function(){
+      snapshot("Re-attach " + t.rescued + " run" + (t.rescued === 1 ? "" : "s") + " to the plan");
+      state.logs = t.logs;
+      state.strength = t.strength;
+      state.cross = t.cross;
+      state.extras = t.extras;
+      save(); render();
+      say({ body:t.rescued + " run" + (t.rescued === 1 ? " is" : "s are") + " back on the plan." });
+    });
 }
 /* How many could be rescued, for the offer to be worth making. */
 function rescuableCount(){
@@ -2560,7 +2633,7 @@ function nudgeWeek(w, weeks){
 }
 
 function addWeek(){
-  if (planLen() >= MAX_WEEKS){ alert("That is as long as the plan goes."); return; }
+  if (planLen() >= MAX_WEEKS){ say({ title:"That is as long as it goes", body:"A plan can run to " + MAX_WEEKS + " weeks." }); return; }
   var last = state.plan[planLen()-1];
   state.plan.push({
     start: toISO(addDays(parseISO(last.start), 7)),
@@ -2572,20 +2645,24 @@ function addWeek(){
 }
 
 function deleteWeek(w){
-  if (planLen() <= 1){ alert("The plan needs at least one week."); return; }
+  if (planLen() <= 1){ say({ body:"The plan needs at least one week." }); return; }
   var n = 0;
   runsOf(w).forEach(function(r){ if (state.logs[r.id]) n++; });
-  if (!confirm("Delete week " + (w+1) +
-      (n ? ", including " + n + " logged run" + (n === 1 ? "" : "s") : "") +
-      "?\n\nThis cannot be undone.")) return;
-  runsOf(w).forEach(function(r){ delete state.logs[r.id]; });
-  strengthOf(w).forEach(function(x){ delete state.strength[x.id]; });
-  crossOf(w).forEach(function(x){ delete state.cross[x.id]; });
-  state.plan.splice(w, 1);
-  // pull the later weeks back so the calendar stays tight
-  for (var i = w; i < planLen(); i++)
-    state.plan[i].start = toISO(addDays(weekStart(i), -7));
-  save(); render();
+  ask({ title:"Delete week " + (w+1) + "?", danger:true, yes:"Delete the week",
+        body:(n ? "This week has " + n + " logged run" + (n === 1 ? "" : "s") +
+                  " on it, which will go with it.\n\n" : "") +
+             "Later weeks move back a week so the calendar stays tight. " +
+             "Stats has an undo afterwards." }, function(){
+    snapshot("Delete week " + (w+1));
+    runsOf(w).forEach(function(r){ delete state.logs[r.id]; });
+    strengthOf(w).forEach(function(x){ delete state.strength[x.id]; });
+    crossOf(w).forEach(function(x){ delete state.cross[x.id]; });
+    state.plan.splice(w, 1);
+    // pull the later weeks back so the calendar stays tight
+    for (var i = w; i < planLen(); i++)
+      state.plan[i].start = toISO(addDays(weekStart(i), -7));
+    save(); render();
+  });
 }
 
 function setWeekTag(w, tag){
@@ -2606,7 +2683,7 @@ function setRunDay(w, d, off){
   var r = runAt(w, d);
   if (off < 0 || off > 6) return;
   if (runsOf(w).some(function(o){ return o !== r && o.off === off; })){
-    alert("There is already a run on that day this week.");
+    say({ body:"There is already a run on that day this week." });
     return false;
   }
   r.off = off;
@@ -2620,7 +2697,7 @@ function setRunDay(w, d, off){
 
 function addRun(w){
   var used = {}, rs = runsOf(w);
-  if (rs.length >= 7){ alert("That week already has a run every day."); return; }
+  if (rs.length >= 7){ say({ body:"That week already has a run every day." }); return; }
   rs.forEach(function(r){ used[r.off] = true; });
   var off = 0;
   for (var i = 0; i < 7; i++) if (!used[i]){ off = i; break; }
@@ -2632,11 +2709,17 @@ function addRun(w){
 
 function deleteRun(w, d){
   var r = runAt(w, d);
-  if (runsOf(w).length <= 1){ alert("A week needs at least one run. Delete the week instead."); return; }
-  if (state.logs[r.id] && !confirm("That run is logged. Delete it and its log?")) return;
-  delete state.logs[r.id];
-  runsOf(w).splice(d, 1);
-  save(); render();
+  if (runsOf(w).length <= 1){ say({ body:"A week needs at least one run. Delete the week instead." }); return; }
+  var drop = function(){
+    delete state.logs[r.id];
+    runsOf(w).splice(d, 1);
+    save(); render();
+    if (editW !== null) drawWeekSheet();
+  };
+  if (state.logs[r.id])
+    ask({ title:"That run is logged", danger:true, yes:"Delete it and its log",
+          body:"Deleting the run from the plan takes what you logged against it too." }, drop);
+  else drop();
 }
 
 /* ============================ VIEWS ============================ */
@@ -2961,7 +3044,9 @@ function barReadoutHTML(i){
     '<div class="mets">' + bits.join("") + '</div></div>';
 }
 
-function viewStats(){
+/* Planned against actual, and the totals underneath it. The first thing on
+   Stats, and the reason the tab exists. */
+function statsOverviewHTML(){
   var maxKm = 0, i;
   for (i = 0; i < planLen(); i++) maxKm = Math.max(maxKm, weekTotal(i), weekActual(i));
   maxKm = Math.ceil((maxKm + 2) / 5) * 5 || 5;
@@ -2979,7 +3064,7 @@ function viewStats(){
            '<text x="' + (padL-5) + '" y="' + (y+3.5) + '" fill="#6b7688" font-size="9" text-anchor="end">' +
            Math.round(maxKm*f) + '</text>';
   });
-  var cur = currentWeekIndex();
+  var cur = currentWeekIndex(), lastLab = -99, lastLabelSVG = "";
   for (i = 0; i < planLen(); i++){
     var cx = padL + step * i + step/2;
     var tot = weekTotal(i);
@@ -3011,11 +3096,24 @@ function viewStats(){
              '" height="' + Math.max(ah, 2) + '" rx="' + Math.min(3, (bw - inset*2)/2) +
              '" fill="' + (over ? "#ffb03a" : "#3ce08c") + '"/>';
     }
-    if (i % labelEvery === 0 || i === planLen()-1 || i === cur)
-      svg += '<text x="' + cx + '" y="' + (H-8) + '" fill="' +
+    /* Three things want a label — the regular interval, the last week, and the
+       current one — and on a 42-week plan they land on top of each other. The
+       current week wins, the others give way to it. */
+    var wantLabel = (i % labelEvery === 0 || i === planLen()-1 || i === cur);
+    if (wantLabel && i !== cur && Math.abs(i - cur) < 2) wantLabel = false;
+    if (wantLabel && i !== planLen()-1 && lastLab >= 0 && i - lastLab < 2) wantLabel = false;
+    if (wantLabel && i === planLen()-1 && lastLab >= 0 && i - lastLab < 2){
+      // The final week is worth more than the tick before it, so drop that one.
+      svg = svg.replace(lastLabelSVG, "");
+    }
+    if (wantLabel){
+      lastLab = i;
+      lastLabelSVG = '<text x="' + cx + '" y="' + (H-8) + '" fill="' +
              (i === cur ? "#f3f6fa" : isRec ? "#5ea8ff" : "#6b7688") +
              '" font-size="9" font-weight="' + (i === cur ? "700" : "400") +
              '" text-anchor="middle">' + (i+1) + '</text>';
+      svg += lastLabelSVG;
+    }
   }
   svg += '</svg>';
 
@@ -3065,15 +3163,13 @@ function viewStats(){
       '<div class="stat"><div class="v">' + (allSec ? n1(allSec / 3600) : "&mdash;") +
         '</div><div class="k">hours running</div></div>' +
       '</div>';
-  }
+  };
+  return h;
+}
 
-  h += readinessHTML();
-  h += fuellingHTML();
-  h += trainingLoadHTML();
-  h += morningStatsHTML();
-  h += racePredictionHTML();
-  h += personalBestsHTML();
-
+/* Every week of the block as a row. */
+function weekTableHTML(){
+  var h = "";
   /* ---- week by week ---- */
   var wr = weekRows(), anyWeek = wr.some(function(r){ return r.runs || r.skipped; });
   h += '<div class="card" style="margin-top:12px"><div class="label">Week by week</div><div class="tbl"><table>' +
@@ -3098,10 +3194,12 @@ function viewStats(){
   h += '</tbody></table></div>' +
     (anyWeek ? '' : '<div class="tiny">Nothing logged yet, so only the plan column is filled.</div>') +
     '</div>';
+  return h;
+}
 
-  /* ---- browse by time ---- */
-  h += browseHTML();
-
+/* Runs that answer to no plan week. */
+function historyHTML(){
+  var h = "";
   /* ---- runs outside the plan ---- */
   if (state.extras.length){
     var ex = extraLogs();
@@ -3131,8 +3229,13 @@ function viewStats(){
       'over-volume or recovery warnings. Total time ' + (exSec ? durStr(exSec) : "&mdash;") + '.' +
       '<br><button class="btn ghost danger sm" data-act="clear-extras" style="margin-top:10px">' +
       'Remove all history</button></div></div>';
-  }
+  };
+  return h;
+}
 
+/* The VO2 trend, and the average heart rate behind it. */
+function vo2HTML(){
+  var h = "";
   /* ---- VO2 max trend ---- */
   var vs = vo2Series(), hrAvg = avgHR();
   h += '<div class="card" style="margin-top:12px"><div class="label">Estimated VO<sub>2</sub> max</div>';
@@ -3191,8 +3294,13 @@ function viewStats(){
       '<div class="stat"><div class="v">' + hrAvg + '</div><div class="k">Avg HR (bpm)</div></div>' +
       '<div class="stat"><div class="v">' + (vs.length ? vs[vs.length-1].vo2 : "&mdash;") + '</div><div class="k">Latest VO&#8322;</div></div>' +
       '</div>';
-  }
+  };
+  return h;
+}
 
+/* Strides, once the plan has asked the question. */
+function stridesHTML(){
+  var h = "";
   /* ---- heart rate limits, needed by the VO2 estimate ---- */
   var anyStrides = false;
   for (var sw = 0; sw < planLen() && !anyStrides; sw++)
@@ -3212,9 +3320,14 @@ function viewStats(){
       ' &times; ' + STRIDES_SECONDS + ' seconds at the end of the Tuesday run, from week ' +
       stridesFromWeek() + '. Relaxed fast, not a sprint, with a full walking recovery between ' +
       'each. Turn them off again if the legs stop feeling fresh.</div></div>';
-  }
+  };
+  return h;
+}
 
-  h += shoesHTML();
+/* The two figures every VO2 estimate is scaled by. */
+function hrLimitsHTML(){
+  var h = "";
+
 
   h += '<div class="card"><div class="label" style="margin-bottom:12px">Heart rate limits</div>' +
     '<div class="inputs">' +
@@ -3225,7 +3338,12 @@ function viewStats(){
     '<div class="tiny">Every VO<sub>2</sub> estimate is scaled by these. If you do not know your max, ' +
     '220 minus your age is the usual starting point; the highest figure you have actually seen on a hard ' +
     'effort is better.</div></div>';
+  return h;
+}
 
+/* Undo, and history that could rejoin the plan. */
+function putBackHTML(){
+  var h = "";
   var undoL = undoLabel();
   var resc = rescuableCount();
   if (undoL || resc){
@@ -3244,8 +3362,13 @@ function viewStats(){
         '<button class="btn" data-act="rescue-history" style="margin-top:10px">' +
         'Re-attach ' + resc + ' run' + (resc === 1 ? '' : 's') + '</button>';
     h += '</div>';
-  }
+  };
+  return h;
+}
 
+/* Export, restore, reset. Everything that leaves or replaces the device. */
+function yourDataHTML(){
+  var h = "";
   h += '<div class="card"><div class="label" style="margin-bottom:12px">Your data</div>' +
     '<button class="btn primary" data-act="import-runs" style="margin-bottom:10px">Import runs from a file</button>' +
     '<div class="btn-row" style="margin-bottom:10px">' +
@@ -3256,6 +3379,35 @@ function viewStats(){
     '<button class="btn ghost danger" data-act="reset">Erase logs and reset the plan</button>' +
     '<div class="tiny">Everything lives in this browser only &mdash; no account, no server, no network calls. ' +
     'Clearing Safari website data will wipe it, so export now and again.</div></div>';
+  return h;
+}
+
+/* Stats had grown to fourteen cards on one scroll, which is no longer a page
+   anybody reads to the end. Four sections, each a tab's worth: how the block is
+   going, what the body is doing, what has been achieved, and what is stored. */
+var STATS_SECTIONS = [
+  { k:"training", t:"Training" },
+  { k:"body",     t:"Body" },
+  { k:"records",  t:"Records" },
+  { k:"history",  t:"History" }
+];
+var statsSection = "training";
+
+function viewStats(){
+  var h = '<div class="subnav">' + STATS_SECTIONS.map(function(x){
+    return '<button data-stats="' + x.k + '"' +
+           (statsSection === x.k ? ' class="on"' : '') + '>' + x.t + '</button>';
+  }).join("") + '</div>';
+
+  if (statsSection === "body")
+    h += morningStatsHTML() + vo2HTML() + shoesHTML() + hrLimitsHTML();
+  else if (statsSection === "records")
+    h += racePredictionHTML() + personalBestsHTML();
+  else if (statsSection === "history")
+    h += browseHTML() + historyHTML() + putBackHTML() + yourDataHTML();
+  else
+    h += statsOverviewHTML() + readinessHTML() + trainingLoadHTML() +
+         fuellingHTML() + weekTableHTML() + stridesHTML();
 
   return h;
 }
@@ -3805,7 +3957,8 @@ function render(){
      every save means losing your place — on Stats, which is a long page, that
      is most of the page. Arriving at a tab should start at the top; staying on
      one and saving something should not move at all. */
-  var sameTab = (tab === lastTab);
+  var here = tab + (tab === "stats" ? ":" + statsSection : "");
+  var sameTab = (here === lastTab);
   var keepY = sameTab ? (window.pageYOffset || document.documentElement.scrollTop || 0) : 0;
 
   view.innerHTML =
@@ -3813,8 +3966,8 @@ function render(){
 
   // Entrance is for arriving at a tab. Replaying it every time a run is saved
   // turns a nicety into a stutter.
-  view.classList.toggle("anim", tab !== lastTab);
-  lastTab = tab;
+  view.classList.toggle("anim", !sameTab);
+  lastTab = here;
 
   Array.prototype.forEach.call(document.querySelectorAll(".tabbar button"), function(b){
     b.classList.toggle("on", b.dataset.tab === tab);
@@ -3833,6 +3986,88 @@ function render(){
 
 /* ============================ LOG SHEET ============================ */
 var scrim = document.getElementById("scrim"), sheet = document.getElementById("sheet");
+var dlg = document.getElementById("dlg"), dscrim = document.getElementById("dscrim");
+
+/* ---------- dialogs ----------
+   The browser's own confirm(), prompt() and alert() are modal, unstyleable and,
+   in a home-screen web app, visibly not part of it — prompt() worst of all. The
+   app already knows how to put a panel on the screen, so it puts its own up.
+
+   Callbacks rather than promises: the rest of this file is written in the same
+   plain style, and a dialog that resolves later reads no better than one that
+   calls back. */
+var dlgState = null;
+
+function closeDialog(){
+  dscrim.classList.remove("on");
+  dlg.classList.remove("on");
+  dlgState = null;
+}
+function openDialog(html, st){
+  dlgState = st || {};
+  dlg.innerHTML = html;
+  dscrim.classList.add("on");
+  dlg.classList.add("on");
+  var first = dlg.querySelector("input, textarea");
+  // A beat, so the panel is on screen before the keyboard comes up over it.
+  if (first) setTimeout(function(){
+    try { first.focus(); if (first.select) first.select(); } catch(e){}
+  }, 80);
+}
+function dlgHead(o){
+  return '<h3>' + esc(o.title || "") + '</h3>' +
+    (o.body ? '<div class="dbody">' + esc(o.body) + '</div>' : '');
+}
+/* A notice. One way out, and nothing to decide. */
+function say(o, onClose){
+  if (typeof o === "string") o = { body:o };
+  openDialog(dlgHead({ title:o.title || "", body:o.body }) +
+    '<div class="dacts"><button class="btn primary" data-dlg="yes">' +
+    esc(o.ok || "OK") + '</button></div>',
+    { onYes: onClose || null });
+}
+/* A question with consequences. The affirmative carries the weight, so it
+   names what it will do rather than saying "OK". */
+function ask(o, onYes){
+  openDialog(dlgHead(o) +
+    '<div class="dacts">' +
+      '<button class="btn primary' + (o.danger ? " danger" : "") + '" data-dlg="yes">' +
+        esc(o.yes || "Continue") + '</button>' +
+      '<button class="btn ghost" data-dlg="no">' + esc(o.no || "Cancel") + '</button>' +
+    '</div>', { onYes:onYes });
+}
+/* One or more values, asked together. Two prompts back to back for a name and
+   a number was two chances to change your mind halfway through. */
+function askFields(o, onDone){
+  var fields = o.fields || [];
+  openDialog(dlgHead(o) +
+    fields.map(function(f){
+      var id = 'dlg-' + f.k;
+      return '<div class="dfield"><label for="' + id + '">' + esc(f.label) + '</label>' +
+        (f.multiline
+          ? '<textarea id="' + id + '" placeholder="' + esc(f.placeholder || "") + '">' +
+            esc(f.value == null ? "" : String(f.value)) + '</textarea>'
+          : '<input id="' + id + '" type="' + (f.type || "text") + '"' +
+            (f.type === "number" ? ' inputmode="decimal" step="any"' : '') +
+            ' placeholder="' + esc(f.placeholder || "") + '" value="' +
+            esc(f.value == null ? "" : String(f.value)) + '">') +
+        '</div>';
+    }).join("") +
+    '<div class="derr" id="dlg-err" style="display:none"></div>' +
+    '<div class="dacts">' +
+      '<button class="btn primary" data-dlg="yes">' + esc(o.yes || "Save") + '</button>' +
+      '<button class="btn ghost" data-dlg="no">' + esc(o.no || "Cancel") + '</button>' +
+    '</div>',
+    { fields:fields, onYes:onDone, validate:o.validate });
+}
+/* Text to be copied out by hand, when the clipboard route is unavailable. */
+function showText(o){
+  openDialog(dlgHead(o) +
+    '<div class="dfield"><textarea id="dlg-text" readonly style="min-height:150px">' +
+    esc(o.text || "") + '</textarea></div>' +
+    '<div class="dacts"><button class="btn primary" data-dlg="yes">Done</button></div>',
+    {});
+}
 var draft = null;
 
 function openSheet(w, d){
@@ -3855,6 +4090,11 @@ function openSheet(w, d){
     carbG: (l.fuel && l.fuel.carbG > 0) ? l.fuel.carbG : "",
     gut: (l.fuel && l.fuel.gut) || null,
     shoeId: l.shoeId || (defaultShoe() ? defaultShoe().id : null),
+    /* Fourteen fields is too many to scroll past to log a Tuesday easy run.
+       The rest fold away — but not when there is already something in them, and
+       not when the plan is asking this particular run for strides or fuelling. */
+    detail: logHasDetail(l) ||
+            (stridesOn() && runHasStrides(w, d)) || fuelApplies(w, d),
     painOn: !!(l.pain && l.pain.area),
     area: l.pain ? l.pain.area : null,
     painNote: l.pain ? (l.pain.note || "") : "",
@@ -3883,6 +4123,16 @@ function indexOfRun(w, id){
 }
 
 var EFFORT_LABEL = { easy:"Easy", moderate:"Moderate", hard:"Hard" };
+
+/* Whether a run already carries anything beyond distance and time. Read off
+   the stored log rather than the draft, because the draft fills in defaults
+   the moment it opens and would answer yes to everything. */
+function logHasDetail(l){
+  if (!l) return false;
+  return !!(l.hr || l.kcal || (l.splits && l.splits.length) || l.effort ||
+            l.rpe || l.feel || l.note || l.cond || l.fuel ||
+            typeof l.strideReps === "number");
+}
 
 /* Ten buttons in a row, on a phone, means small ones — so the number carries
    the choice and the descriptor for whatever is selected is spelled out
@@ -4037,6 +4287,17 @@ function drawSheet(){
       '<div class="inp"><input id="f-sec" type="number" inputmode="numeric" min="0" max="59" placeholder="00" value="' + draft.sec + '"><span class="u">sec</span></div>' +
       '</div></div><div class="pace" id="pace"></div>';
 
+    /* Pain stays out of the fold. Something you are burying is something you
+       stop logging, and this is the one field that exists to catch a pattern. */
+    h += painFieldsHTML();
+
+    h += '<button class="disc' + (draft.detail ? " on" : "") + '" data-act="toggle-detail">' +
+      '<span>' + (draft.detail ? "Hide detail" : "Add detail") + '</span>' +
+      '<span class="ds">' + (draft.detail ? "" :
+        "heart rate, splits, effort, shoes, conditions") + '</span>' +
+      '<span class="dc">' + (draft.detail ? "&minus;" : "+") + '</span></button>';
+
+    if (draft.detail){
     h += '<div class="field"><span class="label">Heart rate &amp; energy</span><div class="inputs">' +
       '<div class="inp"><input id="f-hr" type="number" inputmode="numeric" min="60" max="230" placeholder="&mdash;" value="' + draft.hr + '"><span class="u">avg bpm</span></div>' +
       '<div class="inp"><input id="f-kcal" type="number" inputmode="numeric" min="0" max="9999" placeholder="&mdash;" value="' + draft.kcal + '"><span class="u">kcal</span></div>' +
@@ -4127,14 +4388,35 @@ function drawSheet(){
       '</div>' +
       '<div class="tiny" style="margin-top:8px">None of this touches the plan maths. It is ' +
       'here so a slow week has an explanation attached to it a year from now.</div></div>';
+
+    h += runNoteFieldHTML();
+    }                                    /* end of the detail block */
+  } else {
+    /* Skipped. Why it did not happen is the whole of what is worth recording,
+       so both of these stay in plain sight. */
+    h += painFieldsHTML() + runNoteFieldHTML();
   }
 
-  h += '<div class="field"><span class="label">Pain</span><div class="seg">' +
+  h += '<div class="sheet-actions">' +
+    '<button class="btn primary" data-act="save">Save</button>' +
+    (draft.existing
+      ? '<div class="btn-row" style="margin-top:8px">' +
+        '<button class="btn ghost danger" data-act="clear">Clear this log</button>' +
+        '<button class="btn ghost" data-act="cancel">Cancel</button></div>'
+      : '<button class="btn ghost" data-act="cancel" style="margin-top:8px">Cancel</button>') +
+    '</div>';
+
+  sheet.innerHTML = h;
+  syncPace();
+}
+
+/* Pain, and where and how if there was any. Shared by both statuses. */
+function painFieldsHTML(){
+  var h = '<div class="field"><span class="label">Pain</span><div class="seg">' +
     '<button data-field="painOn" data-v="0"' + (!draft.painOn ? ' class="on"' : '') + '>None</button>' +
     '<button data-field="painOn" data-v="1"' + (draft.painOn ? ' class="on"' : '') +
       ' style="' + (draft.painOn ? 'background:var(--danger);color:#2a0000;border-color:var(--danger)' : '') + '">Had pain</button>' +
     '</div></div>';
-
   if (draft.painOn){
     h += '<div class="field"><span class="label">Where</span><div class="chips">' +
       AREAS.map(function(a){
@@ -4143,22 +4425,14 @@ function drawSheet(){
       '<div class="field"><span class="label">Note</span>' +
       '<textarea id="f-painnote" placeholder="Sharp on downhills, eased after 2 km&hellip;">' + esc(draft.painNote) + '</textarea></div>';
   }
-
-  /* Outside the completed block on purpose: why a run was skipped is exactly
-     the kind of thing worth a sentence. */
-  h += '<div class="field"><span class="label">Note</span>' +
+  return h;
+}
+function runNoteFieldHTML(){
+  return '<div class="field"><span class="label">Note</span>' +
     '<textarea id="f-runnote" style="min-height:70px" placeholder="' +
     (draft.status === "skipped" ? "Why it did not happen&hellip;"
                                 : "Legs heavy from Thursday. Held back on the hills&hellip;") +
     '">' + esc(draft.note) + '</textarea></div>';
-
-  h += '<button class="btn primary" data-act="save" style="margin-bottom:10px">Save</button>';
-  if (draft.existing)
-    h += '<button class="btn ghost danger" data-act="clear" style="margin-bottom:10px">Clear this log</button>';
-  h += '<button class="btn ghost" data-act="cancel">Cancel</button>';
-
-  sheet.innerHTML = h;
-  syncPace();
 }
 
 function readInputs(){
@@ -4241,25 +4515,13 @@ function saveDraft(){
   }
 
   var km = parseFloat(draft.km);
-  if (!(km > 0)) { alert("Enter a distance greater than zero, or mark the run skipped."); return; }
-  if (draft.painOn && !draft.area) { alert("Pick where the pain was."); return; }
+  if (!(km > 0)) { say({ body:"Enter a distance greater than zero, or mark the run skipped." }); return; }
+  if (draft.painOn && !draft.area) { say({ body:"Pick where the pain was." }); return; }
 
   var sec = draftSec();
 
-  /* Recovery-week guard: warn before saving a run longer than planned. */
-  if (p.tag === "RECOVERY"){
-    var prev = getLog(w, d);
-    var others = weekActual(w) - (prev && prev.done ? prev.km : 0);
-    var wtot = weekTotal(w);
-    var msgs = [];
-    if (km > pkm) msgs.push("This run is " + n1(km) + " km against " + n1(pkm) + " km planned.");
-    if (others + km > wtot) msgs.push("The week would reach " + n1(others + km) + " km against " + n1(wtot) + " km planned.");
-    if (msgs.length && !confirm(
-        "Week " + (w+1) + " is a recovery week.\n\n" + msgs.join("\n") +
-        "\n\nRecovery weeks are what let the build weeks work. Save anyway?")) return;
-  }
-
   var hr = parseInt(draft.hr, 10), kc = parseInt(draft.kcal, 10);
+  var commit = function(){
   setLog(w, d, {
     done:true, skipped:false,
     km:km, durSec:sec, effort:draft.effort,
@@ -4280,6 +4542,28 @@ function saveDraft(){
     cond: draftCond()
   });
   save(); closeSheet(); render();
+  };
+
+  /* Recovery-week guard: ask before saving a run longer than planned. The
+     commit above is a closure so the answer can arrive later without the rest
+     of this function having to be written twice. */
+  if (p.tag === "RECOVERY"){
+    var prev = getLog(w, d);
+    var others = weekActual(w) - (prev && prev.done ? prev.km : 0);
+    var wtot = weekTotal(w);
+    var msgs = [];
+    if (km > pkm) msgs.push("This run is " + n1(km) + " km against " + n1(pkm) + " km planned.");
+    if (others + km > wtot)
+      msgs.push("The week would reach " + n1(others + km) + " km against " + n1(wtot) + " km planned.");
+    if (msgs.length){
+      ask({ title:"Week " + (w+1) + " is a recovery week",
+            yes:"Save it anyway", no:"Go back",
+            body:msgs.join("\n") + "\n\nRecovery weeks are what let the build weeks work." },
+          commit);
+      return;
+    }
+  }
+  commit();
 }
 
 /* A history run answers to no plan slot, so the log sheet cannot edit it.
@@ -4376,7 +4660,7 @@ function saveStrength(){
   if (el) strDraft.mins = el.value === "" ? "" : parseInt(el.value, 10);
   var any = false;
   STRENGTH.forEach(function(x){ if (strDraft.items[x.k]) any = true; });
-  if (!any){ alert("Tick at least one exercise, or cancel."); return; }
+  if (!any){ say({ body:"Tick at least one exercise, or cancel." }); return; }
   var mins = parseInt(strDraft.mins, 10);
   setStrength(strDraft.w, strDraft.i, {
     done: true,
@@ -4524,21 +4808,34 @@ function doCopy(){
   var txt = exportBlob();
   if (navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(txt).then(
-      function(){ alert("Copied. Paste it somewhere safe."); },
+      function(){ say({ title:"Copied", body:"Paste it somewhere safe." }); },
       function(){ promptFallback(txt); }
     );
   } else promptFallback(txt);
 }
-function promptFallback(txt){ window.prompt("Copy your data:", txt); }
+function promptFallback(txt){
+  showText({ title:"Copy your data",
+             body:"Select all of this and copy it somewhere safe.", text:txt });
+}
 function doImport(){
-  var txt = window.prompt("Paste an exported JSON backup:");
-  if (!txt) return;
-  var data;
-  try { data = JSON.parse(txt); }
-  catch(e){ alert("That is not valid JSON."); return; }
-  if (!data || typeof data !== "object" || !data.logs){ alert("No logs found in that file."); return; }
-  if (!confirm("Replace everything currently stored with this backup?\n\n" +
-      "This can be undone afterwards.")) return;
+  askFields({ title:"Restore a backup", yes:"Read it",
+    body:"Paste the JSON from an export.",
+    fields:[{ k:"json", label:"Backup", multiline:true, placeholder:'{"logs":\u2026}' }],
+    validate:function(v){
+      if (!v.json) return "Nothing pasted.";
+      var d;
+      try { d = JSON.parse(v.json); } catch(e){ return "That does not parse as JSON."; }
+      if (!d || typeof d !== "object" || !d.logs) return "No logs section in that backup.";
+      return null;
+    } }, function(v){
+      var data = JSON.parse(v.json);
+      ask({ title:"Replace everything with this backup?", danger:true, yes:"Replace it all",
+            body:"Everything currently on the device is swapped for what is in the file. " +
+                 "This can be undone afterwards." },
+        function(){ applyBackup(data); });
+    });
+}
+function applyBackup(data){
   snapshot("Restore a backup");
   state.logs = data.logs;
   if (planOK(data.plan)){
@@ -4555,21 +4852,25 @@ function doImport(){
   if (Array.isArray(data.shoes) && data.shoes.length) state.shoes = data.shoes;
   if (data.settings && data.settings.hrMax > 0) state.settings = data.settings;
   save(); render();
-  alert("Restored.");
+  say({ title:"Restored", body:"Everything is back from that backup. Stats has an undo if it was the wrong one." });
 }
 function doReset(){
-  if (!confirm("Erase every logged run and put the plan back to its original " +
-      DEFAULT_PLAN.length + " weeks?\n\nExport first if you want a copy off the device. " +
-      "There is one step of undo afterwards.")) return;
-  if (!confirm("Really erase everything?")) return;
-  snapshot("Erase logs and reset the plan");
-  state.logs = {};
-  state.extras = [];
-  state.strength = {};
-  state.cross = {};
-  state.plan = freshPlan();
-  state.seq = maxSeq(state.plan);
-  save(); render();
+  ask({ title:"Erase everything and start over?", danger:true, yes:"Erase it all",
+        body:"Every logged run goes, and the plan returns to its original " +
+             DEFAULT_PLAN.length + " weeks.\n\nExport first if you want a copy off the " +
+             "device. There is one step of undo afterwards." }, function(){
+    ask({ title:"Really erase everything?", danger:true, yes:"Yes, erase it",
+          body:"Last check." }, function(){
+      snapshot("Erase logs and reset the plan");
+      state.logs = {};
+      state.extras = [];
+      state.strength = {};
+      state.cross = {};
+      state.plan = freshPlan();
+      state.seq = maxSeq(state.plan);
+      save(); render();
+    });
+  });
 }
 
 /* ============================ IMPORT RUNS ============================
@@ -5122,9 +5423,10 @@ function readFile(f){
     var fr = new FileReader();
     fr.onload = function(){ tryParse(String(fr.result)); };
     fr.onerror = function(){
-      alert(f.size >= STREAM_THRESHOLD
-        ? "That file is too large for this browser to read in one go."
-        : "Could not read that file.");
+      say({ title:"Could not read that file",
+             body: f.size >= STREAM_THRESHOLD
+               ? "It is too large for this browser to read in one go."
+               : "The file could not be opened." });
     };
     fr.readAsText(f);
     return;
@@ -5132,14 +5434,15 @@ function readFile(f){
 
   peekFile(f).then(function(head){
     if (!/<HealthData|HKWorkoutActivityType/i.test(head)){
-      alert("That file is " + Math.round(f.size / 1048576) + " MB, which is too large to read " +
-            "unless it is an Apple Health export.");
+      say({ title:"That file is too large",
+             body: Math.round(f.size / 1048576) + " MB can only be read if it is an " +
+                   "Apple Health export, which this does not look like." });
       return;
     }
     showScanning(0, 0);
     return streamHealthWorkouts(f, showScanning).then(function(acts){
       if (!acts.length){
-        alert("No running workouts found in that Health export.");
+        say({ title:"No runs in that export", body:"Nothing in the file reads as a running workout." });
         drawImport();
         return;
       }
@@ -5147,7 +5450,8 @@ function readFile(f){
       drawImport();
     });
   }).catch(function(err){
-    alert("Could not read that file. " + (err && err.message ? err.message : ""));
+    say({ title:"Could not read that file",
+           body:(err && err.message) ? err.message : "" });
   });
 }
 
@@ -5165,7 +5469,7 @@ function tryParse(text){
   try {
     importRows = buildImportRows(parseActivities(text));
   } catch (err){
-    alert(err && err.message ? err.message : "Could not read that.");
+    say({ title:"Could not read that", body:(err && err.message) || "" });
     return;
   }
   drawImport();
@@ -5222,18 +5526,48 @@ function applyImport(){
   var msg = [];
   if (n) msg.push(n + " onto the plan");
   if (x) msg.push(x + " as history");
-  alert("Imported " + (n + x) + " run" + ((n + x) === 1 ? "" : "s") +
-    (msg.length > 1 ? " — " + msg.join(", ") : "") + ".\n\n" +
-    (n ? "Effort and pain are not in the file — tap any run to add them." :
-         "History shows in the monthly table and the VO₂ trend."));
+  say({ title:"Imported " + (n + x) + " run" + ((n + x) === 1 ? "" : "s") +
+          (msg.length > 1 ? " \u2014 " + msg.join(", ") : ""),
+        body:(n ? "Effort, RPE and pain are not in a file \u2014 tap any run to add them."
+                : "History shows in the monthly table and the VO\u2082 trend.") });
 }
 
 /* ============================ EVENTS ============================ */
 document.addEventListener("click", function(e){
   var el;
 
+  /* First, so a dialog button can never fall through to whatever it is
+     covering. */
+  el = e.target.closest("[data-dlg]");
+  if (el){
+    var kind = el.dataset.dlg, st = dlgState, vals = null;
+    if (kind === "yes" && st && st.fields){
+      vals = {};
+      st.fields.forEach(function(f){
+        var inp = document.getElementById("dlg-" + f.k);
+        vals[f.k] = inp ? inp.value.trim() : "";
+      });
+      // A rejected value keeps the dialog open, with what was typed still in it.
+      if (st.validate){
+        var err = st.validate(vals);
+        if (err){
+          var eEl = document.getElementById("dlg-err");
+          if (eEl){ eEl.textContent = err; eEl.style.display = "block"; }
+          return;
+        }
+      }
+    }
+    var cb = (kind === "yes" && st) ? st.onYes : null;
+    closeDialog();
+    if (cb) cb(vals || true);
+    return;
+  }
+
   el = e.target.closest("[data-tab]");
   if (el){ tab = el.dataset.tab; render(); return; }
+
+  el = e.target.closest("[data-stats]");
+  if (el){ statsSection = el.dataset.stats; render(); return; }
 
   el = e.target.closest("[data-xt]");
   if (el){
@@ -5339,6 +5673,12 @@ document.addEventListener("click", function(e){
   if (el){
     var a = el.dataset.act;
     if (a === "edit-run"){ draft.mode = "edit"; drawSheet(); return; }
+    else if (a === "toggle-detail"){
+      readInputs();                       // keep whatever is already typed
+      draft.detail = !draft.detail;
+      drawSheet();
+      return;
+    }
     else if (a === "save")   saveDraft();
     else if (a === "cancel") closeSheet();
     else if (a === "clear"){
@@ -5349,19 +5689,22 @@ document.addEventListener("click", function(e){
     else if (a === "strides-yes"){ state.settings.strides = true;  save(); render(); }
     else if (a === "strides-no"){  state.settings.strides = false; save(); render(); }
     else if (a === "shoe-add"){
-      var nmA = window.prompt("Name for the new pair:", "Pair " + (state.shoes.length + 1));
-      if (nmA === null) return;
-      var kmA = window.prompt("Kilometres already on them, if any:", "0");
-      if (kmA === null) return;
-      addShoe(nmA.trim(), parseFloat(kmA));
+      askFields({ title:"Add a pair", yes:"Add them",
+        body:"They go into service today and are offered when you log a run.",
+        fields:[
+          { k:"name", label:"Name", value:"Pair " + (state.shoes.length + 1),
+            placeholder:"Trail pair" },
+          { k:"km", label:"Kilometres already on them", type:"number", value:"0" }
+        ] }, function(v){ addShoe(v.name, parseFloat(v.km)); });
     }
     else if (a === "shoe-retire"){
       var shR = shoeById(el.dataset.id);
       if (!shR) return;
-      if (!confirm("Retire " + shR.name + " at " + n1(shoeKm(shR)) + " km?\n\n" +
-          "Runs already logged against them keep their mileage. They stop being " +
-          "offered when you log a run.")) return;
-      retireShoe(shR.id);
+      ask({ title:"Retire " + shR.name + "?", yes:"Retire them",
+            body:"At " + n1(shoeKm(shR)) + " km.\n\nRuns already logged against them keep " +
+                 "their mileage, and the pair stays in the retired list. It just stops being " +
+                 "offered when you log a run." },
+        function(){ retireShoe(shR.id); });
     }
     else if (a === "shoe-unretire"){
       var shU = shoeById(el.dataset.id);
@@ -5373,14 +5716,19 @@ document.addEventListener("click", function(e){
     else if (a === "shoe-edit"){
       var sh2 = shoeById(el.dataset.id);
       if (!sh2) return;
-      var nm2 = window.prompt("Name for this pair:", sh2.name);
-      if (nm2 === null) return;
-      var km2 = window.prompt("Kilometres already on them when first recorded:", String(sh2.startKm || 0));
-      if (km2 === null) return;
-      var v2 = parseFloat(km2);
-      sh2.name = nm2.trim() || sh2.name;
-      if (isFinite(v2) && v2 >= 0) sh2.startKm = Math.round(v2 * 10) / 10;
-      save(); render();
+      askFields({ title:"Edit " + sh2.name, yes:"Save",
+        body:"Starting kilometres are what the pair had already run when you first " +
+             "recorded them, on top of everything logged since.",
+        fields:[
+          { k:"name", label:"Name", value:sh2.name },
+          { k:"km", label:"Kilometres when first recorded", type:"number",
+            value:String(sh2.startKm || 0) }
+        ] }, function(v){
+          var v2 = parseFloat(v.km);
+          sh2.name = v.name || sh2.name;
+          if (isFinite(v2) && v2 >= 0) sh2.startKm = Math.round(v2 * 10) / 10;
+          save(); render();
+        });
     }
     else if (a === "xt-save") saveCross();
     else if (a === "xt-clear"){
@@ -5423,14 +5771,21 @@ document.addEventListener("click", function(e){
     }
     else if (a === "apply-import") applyImport();
     else if (a === "doctor-done"){
-      var when = window.prompt("Date of the check-up (YYYY-MM-DD):", toISO(today()));
-      if (when === null) return;
-      when = String(when).trim();
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(when)){ alert("Use the form 2026-11-20."); return; }
-      var nt = window.prompt("Anything worth keeping from it? (optional)", "");
-      if (nt === null) nt = "";
-      state.checks.doctor = { done:true, date:when, note:nt.trim() || null };
-      save(); render();
+      askFields({ title:"See a doctor before Phase 2", yes:"Mark it done",
+        fields:[
+          { k:"date", label:"Date of the check-up", type:"date", value:toISO(today()) },
+          { k:"note", label:"Anything worth keeping (optional)", multiline:true,
+            placeholder:"All clear. Blood pressure fine." }
+        ],
+        validate:function(v){
+          // A date input will not hand back a malformed value, but one that has
+          // degraded to a text box can, and an empty one is reachable either way.
+          if (!v.date) return "Pick a date.";
+          return /^\d{4}-\d{2}-\d{2}$/.test(v.date) ? null : "Use the form 2026-11-20.";
+        } }, function(v){
+          state.checks.doctor = { done:true, date:v.date, note:v.note || null };
+          save(); render();
+        });
     }
     else if (a === "doctor-undo"){
       delete state.checks.doctor;
@@ -5451,7 +5806,7 @@ document.addEventListener("click", function(e){
       var mx = parseInt(document.getElementById("s-hrmax").value, 10);
       var rs = parseInt(document.getElementById("s-hrrest").value, 10);
       if (!(mx > 0) || !(rs > 0) || mx <= rs){
-        alert("Max heart rate has to be above resting."); return;
+        say({ body:"Max heart rate has to be above resting." }); return;
       }
       state.settings.hrMax = mx; state.settings.hrRest = rs;
       save(); render();
@@ -5465,11 +5820,14 @@ document.addEventListener("click", function(e){
       save(); render();
     }
     else if (a === "clear-extras"){
-      if (!confirm("Remove all " + state.extras.length + " runs kept as history?\n\n" +
-                   "Runs logged against the plan are not touched. This can be undone.")) return;
-      snapshot("Remove " + state.extras.length + " history runs");
-      state.extras = [];
-      save(); render();
+      var nEx = state.extras.length;
+      ask({ title:"Remove all " + nEx + " history runs?", danger:true, yes:"Remove them",
+            body:"Runs logged against the plan are not touched. This can be undone." },
+        function(){
+          snapshot("Remove " + nEx + " history runs");
+          state.extras = [];
+          save(); render();
+        });
     }
     else if (a === "undo") doUndo();
     else if (a === "rescue-history") rescueHistory();
@@ -5482,6 +5840,10 @@ document.addEventListener("click", function(e){
 });
 
 scrim.addEventListener("click", closeSheet);
+dscrim.addEventListener("click", closeDialog);
+document.addEventListener("keydown", function(e){
+  if (e.key === "Escape" && dlgState) closeDialog();
+});
 
 document.getElementById("fileIn").addEventListener("change", function(e){
   var f = e.target.files && e.target.files[0];

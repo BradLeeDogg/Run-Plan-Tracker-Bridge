@@ -175,6 +175,11 @@ Over a 42-week base build the resting rate is supposed to fall, so the value now
 travels with the run: each estimate uses the most recent morning reading on or
 before that run's date, falling back to the setting when there is none that old.
 
+Stats is in four sections — **Training**, **Body**, **Records** and
+**History** — because fourteen cards on one scroll is not a page anybody reads
+to the end. Training is how the block is going, Body is what you are doing,
+Records is what you have achieved, History is what is stored.
+
 Stats breaks the block down **week by week** — planned against done, run count,
 total time, average pace, heart rate and calories, with the current week
 highlighted.
@@ -269,6 +274,26 @@ splits typed by hand as well as imported ones — and drawn dashed, apart from t
 splits. Kept out of the list on purpose: a 400 m split is not comparable with a
 1 km one, and letting it in would hand "fastest split" to whatever fraction the
 run happened to finish on.
+
+## Logging a run
+
+The sheet opens short: status, distance and time, pain, Save. Everything
+else — heart rate, splits, effort, RPE, how it felt, shoes, conditions, the
+note — is behind **Add detail**, which opens itself when the run already
+carries any of it, or when the plan is asking that particular run for strides
+or fuelling. Pain stays out of the fold on purpose: something you bury is
+something you stop logging, and it is the one field that exists to catch a
+pattern. Save is pinned to the bottom of the sheet however long it gets.
+
+A skipped run shows pain and the note in plain sight instead, since why it did
+not happen is the whole of what is worth recording.
+
+Every question the app asks is its own — no browser `confirm()`, `prompt()` or
+`alert()` anywhere. They are unstyleable, and in a home-screen app visibly not
+part of it. The replacements can also ask for more than one thing at a time, so
+naming a pair of shoes and saying what they have already run is one dialog
+rather than two prompts back to back, and a rejected value keeps the panel open
+with what you typed still in it.
 
 ## Changing the plan
 
