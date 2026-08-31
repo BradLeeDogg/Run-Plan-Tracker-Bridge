@@ -1037,6 +1037,8 @@ function load(){
   if (!planOK(s.plan)){ s = migrateV1(s); s.migrated = true; }
   if (!s.settings || typeof s.settings !== "object") s.settings = {};
   if (typeof s.planId !== "string") s.planId = planOK(s.plan) ? "legacy" : PLAN_ID;
+  // A plan read from outside carries its own name; the shipped one uses PLAN_NAME.
+  if (typeof s.planName !== "string" || !s.planName) s.planName = null;
   if (!(s.settings.hrMax > 0))  s.settings.hrMax  = 190;   // edit in Stats
   if (!(s.settings.hrRest > 0)) s.settings.hrRest = 55;
   // Runs that belong to no plan slot — history imported from before the block
@@ -2425,6 +2427,216 @@ function fmtK(x){
    already logged is moved to history first, so switching plans cannot cost you
    a run you actually did. */
 function planIsCurrent(){ return state.planId === PLAN_ID; }
+function planName(){ return state.planName || PLAN_NAME; }
+
+/* ---------- reshaping several weeks at once ----------
+
+   Editing a week at a time is right for one change and wrong for forty. Moving
+   every long run to Saturday, or taking a block up ten per cent, is one
+   decision and should be one action.
+
+   All of it edits the plan in place, so the run ids never change and not a
+   single log is touched — that is the whole reason these are safe to offer. */
+
+/* Scale the distances in a week range. Rounded to the half-kilometre, because
+   a plan that reads 12.37 km is a plan nobody follows. */
+function scaleWeeks(from, to, factor){
+  var n = 0;
+  for (var w = from; w <= to && w < planLen(); w++)
+    runsOf(w).forEach(function(r){
+      if (!(r.km > 0)) return;
+      var v = Math.round(r.km * factor * 2) / 2;
+      if (v < 0.5) v = 0.5;                 // a run is a run
+      if (v !== r.km){ r.km = v; n++; }
+    });
+  return n;
+}
+
+/* Move sessions from one day of the week to another, across a range. `which`
+   is a weekday offset, or "long" for whichever run is longest that week. */
+function moveWeekday(from, to, which, target){
+  var moved = 0, blocked = 0;
+  for (var w = from; w <= to && w < planLen(); w++){
+    var rs = runsOf(w), pick = null;
+    if (which === "long"){
+      var d = 0;
+      for (var i = 0; i < rs.length; i++) if (rs[i].km > rs[d].km) d = i;
+      pick = rs.length ? rs[d] : null;
+    } else {
+      for (var j = 0; j < rs.length; j++) if (rs[j].off === which){ pick = rs[j]; break; }
+    }
+    if (!pick || pick.off === target) continue;
+    // Another run already there is a collision, and two runs on one day is not
+    // something this plan's week can express. Left alone, and counted.
+    var taken = rs.some(function(o){ return o !== pick && o.off === target; });
+    if (taken){ blocked++; continue; }
+    pick.off = target;
+    sortRuns(w);
+    moved++;
+  }
+  return { moved:moved, blocked:blocked };
+}
+
+/* ---------- reading a plan from outside the app ----------
+
+   Until now the only plan this app knew was the one in its own source, which
+   made "change the plan" mean "edit the one you have, week by week". A coach
+   hands you a spreadsheet; there was nowhere to put it.
+
+   Three shapes are accepted, because a plan arrives in whatever form its author
+   had to hand: the app's own stored plan, the seed shape at the top of this
+   file, and a CSV of runs. Everything is normalised to the stored shape with
+   fresh ids, and nothing is written until it has been read successfully. */
+var PLAN_TYPES = ["easy", "long", "tempo", "race"];
+
+function planFromSeedWeek(wk2, n, idFor){
+  var runs = (wk2.r || []).map(function(x){
+    var o = x[3] || {};
+    var r = { id:idFor(), off:+x[0], km:+x[1], type:PLAN_TYPES.indexOf(x[2]) >= 0 ? x[2] : "easy" };
+    if (o.cap) r.cap = o.cap;
+    if (o.tempo) r.tempo = o.tempo;
+    if (o.mp) r.mp = o.mp;
+    if (o.strides) r.strides = true;
+    return r;
+  });
+  return { start:wk2.s, tag:wk2.t || null, phase:wk2.p || 1, note:wk2.n || null, runs:runs };
+}
+
+/* One row per run. Columns are found by name, so column order does not matter
+   and extra columns are ignored — a coach's spreadsheet has plenty of those. */
+function planFromRows(rows){
+  var byWeek = {}, order = [];
+  rows.forEach(function(r){
+    var iso = r.date;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso || "")) return;
+    var mon = mondayISO(iso);
+    if (!byWeek[mon]){ byWeek[mon] = { start:mon, tag:null, phase:1, note:null, runs:[] }; order.push(mon); }
+    var wk2 = byWeek[mon];
+    var off = dayDiff(parseISO(mon), parseISO(iso));
+    var run = { off:off, km:r.km, type:PLAN_TYPES.indexOf(r.type) >= 0 ? r.type : "easy" };
+    if (r.cap > 0) run.cap = r.cap;
+    if (r.tempo > 0) run.tempo = r.tempo;
+    if (r.mp > 0) run.mp = r.mp;
+    if (r.strides) run.strides = true;
+    wk2.runs.push(run);
+    if (r.note && !wk2.note) wk2.note = r.note;
+    if (r.tag && !wk2.tag) wk2.tag = r.tag;
+    if (r.phase > 0) wk2.phase = r.phase;
+  });
+  order.sort();
+  return order.map(function(k){ return byWeek[k]; });
+}
+
+function parsePlanCSV(text){
+  var lines = String(text).replace(/\r/g, "").split("\n").filter(function(l){ return l.trim(); });
+  if (lines.length < 2) throw new Error("That has no rows under its header.");
+  var sep = (lines[0].indexOf("\t") >= 0) ? "\t" : ",";
+  var head = lines[0].split(sep).map(function(x){ return keyish(x); });
+  var col = function(names){
+    for (var i = 0; i < head.length; i++)
+      if (names.indexOf(head[i]) >= 0) return i;
+    return -1;
+  };
+  var cDate = col(["date","day","when"]);
+  var cKm   = col(["km","distance","distancekm","kilometres","kilometers"]);
+  if (cDate < 0) throw new Error("No date column. Add one headed \u201cdate\u201d, with dates like 2026-08-11.");
+  if (cKm < 0)   throw new Error("No distance column. Add one headed \u201ckm\u201d.");
+  var cType = col(["type","session","kind"]), cNote = col(["note","notes","comment"]);
+  var cTag = col(["tag","week","weektag"]), cPhase = col(["phase"]);
+  var cCap = col(["cap","capmin"]), cTempo = col(["tempo","tempomin"]);
+  var cMp = col(["mp","marathonpace","mpkm"]), cStr = col(["strides"]);
+
+  var rows = [], bad = 0;
+  for (var i = 1; i < lines.length; i++){
+    var f = lines[i].split(sep).map(function(x){ return x.trim().replace(/^"|"$/g, ""); });
+    var km = parseFloat(f[cKm]);
+    var d = (f[cDate] || "").slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || !(km > 0)){ bad++; continue; }
+    rows.push({
+      date:d, km:km,
+      type: cType >= 0 ? String(f[cType] || "").toLowerCase() : "easy",
+      note: cNote >= 0 ? f[cNote] : null,
+      tag:  cTag >= 0 && !/^\d+$/.test(f[cTag] || "") ? (f[cTag] || "").toUpperCase() : null,
+      phase: cPhase >= 0 ? parseInt(f[cPhase], 10) : 0,
+      cap: cCap >= 0 ? parseFloat(f[cCap]) : 0,
+      tempo: cTempo >= 0 ? parseFloat(f[cTempo]) : 0,
+      mp: cMp >= 0 ? parseFloat(f[cMp]) : 0,
+      strides: cStr >= 0 && /^(1|y|yes|true)$/i.test(f[cStr] || "")
+    });
+  }
+  if (!rows.length) throw new Error("No usable rows \u2014 every one was missing a date or a distance.");
+  return { rows:rows, skipped:bad };
+}
+
+/* Whatever arrived, turned into a plan this app can hold. Throws with something
+   worth reading rather than returning null. */
+function parsePlanText(text){
+  text = String(text || "").trim();
+  if (!text) throw new Error("Nothing to read.");
+  var seq = 0, idFor = function(){ return "p" + (++seq); };
+  var weeks = null, skipped = 0, source = "";
+
+  if (text.charAt(0) === "{" || text.charAt(0) === "["){
+    var data;
+    try { data = JSON.parse(text); }
+    catch(e){ throw new Error("That starts like JSON but does not parse: " + e.message); }
+    var arr = Array.isArray(data) ? data
+            : (data && Array.isArray(data.plan)) ? data.plan : null;
+    if (!arr) throw new Error("No plan found. A backup needs a \u201cplan\u201d array; " +
+                              "a plan file should be the array itself.");
+    if (!arr.length) throw new Error("That plan has no weeks in it.");
+    if (arr[0] && typeof arr[0].s === "string" && Array.isArray(arr[0].r)){
+      weeks = arr.map(function(w){ return planFromSeedWeek(w, 0, idFor); });
+      source = "a plan in the app\u2019s own seed shape";
+    } else {
+      weeks = arr.map(function(w){
+        return {
+          start: w.start, tag: w.tag || null, phase: w.phase || 1, note: w.note || null,
+          runs: (w.runs || []).map(function(r){
+            var o = { id:idFor(), off:+r.off, km:+r.km,
+                      type:PLAN_TYPES.indexOf(r.type) >= 0 ? r.type : "easy" };
+            if (r.cap) o.cap = r.cap;
+            if (r.tempo) o.tempo = r.tempo;
+            if (r.mp) o.mp = r.mp;
+            if (r.strides) o.strides = true;
+            return o;
+          })
+        };
+      });
+      source = "a stored plan";
+    }
+  } else {
+    var csv = parsePlanCSV(text);
+    weeks = planFromRows(csv.rows);
+    skipped = csv.skipped;
+    weeks.forEach(function(w){ w.runs.forEach(function(r){ r.id = idFor(); }); });
+    source = csv.rows.length + " rows of CSV";
+  }
+
+  /* Whatever the source, the result has to satisfy the same rules the app's own
+     plan does, or it is not a plan. */
+  weeks = weeks.filter(function(w){ return w && w.runs && w.runs.length; });
+  if (!weeks.length) throw new Error("That has no weeks with runs in them.");
+  if (weeks.length > MAX_WEEKS)
+    throw new Error("That is " + weeks.length + " weeks. The most this app holds is " + MAX_WEEKS + ".");
+  weeks.forEach(function(w){
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(w.start || ""))
+      throw new Error("A week has no valid start date. Weeks start on a Monday, as 2026-08-10.");
+    w.start = mondayISO(w.start);          // snap to the Monday, as the app assumes
+    w.runs.forEach(function(r){
+      if (!(r.km > 0)) throw new Error("A run in the week of " + w.start + " has no distance.");
+      if (!(r.off >= 0 && r.off <= 6))
+        throw new Error("A run in the week of " + w.start + " falls outside its week.");
+    });
+    w.runs.sort(function(a, b){ return a.off - b.off; });
+    // Sessions the plan does not mention still get their slots, as freshPlan does.
+    w.strength = STRENGTH_OFFSETS.map(function(off){ return { id:"s" + (++seq), off:off }; });
+    w.cross = XT_OFFSETS.map(function(off){ return { id:"x" + (++seq), off:off }; });
+  });
+  weeks.sort(function(a, b){ return a.start < b.start ? -1 : a.start > b.start ? 1 : 0; });
+  if (!planOK(weeks)) throw new Error("That did not come out as a plan this app can hold.");
+  return { plan:weeks, skipped:skipped, source:source };
+}
 
 /* ---------- changing the plan without losing what you have done ----------
 
@@ -2541,45 +2753,88 @@ function planTransfer(newPlan, opts){
   return res;
 }
 
-function adoptNewPlan(){
-  var newPlan = freshPlan();
+function adoptNewPlan(){ restoreShippedPlan(); }
+
+/* Swap a plan in, keeping every run the dates can account for. Shared by the
+   three routes that replace a plan — the shipped one, a restore of it, and one
+   read from outside — so all three behave the same and are previewed the same. */
+function installPlan(newPlan, opts){
+  opts = opts || {};
   var t = planTransfer(newPlan, { rescueHistory:true });
-
-  var lines = [PLAN_NAME, "",
-    DEFAULT_PLAN.length + " weeks, " + n1(DEFAULT_PLAN.reduce(function(a, x){
-      return a + x.r.reduce(function(b, y){ return b + y[1]; }, 0); }, 0)) +
-      " km, finishing " + fmtLong(parseISO(RACE_DATE)) + ".", ""];
-
+  var lines = [];
+  if (opts.summary) lines.push(opts.summary, "");
   if (t.matched)
     lines.push(t.matched + " logged run" + (t.matched === 1 ? "" : "s") +
-      " will move across onto the new plan, matched by date" +
+      " move across onto it, matched by date" +
       (t.rescued ? " \u2014 " + t.rescued + " of them pulled back out of history" : "") + ".");
   if (t.strengthKept || t.crossKept)
-    lines.push(t.strengthKept + " strength and " + t.crossKept +
-      " cross-training session" + (t.crossKept === 1 ? "" : "s") + " move across too.");
+    lines.push(t.strengthKept + " strength and " + t.crossKept + " cross-training session" +
+      (t.crossKept === 1 ? "" : "s") + " move across too.");
   if (t.toHistory)
     lines.push(t.toHistory + " run" + (t.toHistory === 1 ? "" : "s") +
       " fall on days the new plan has nothing near, so " +
       (t.toHistory === 1 ? "it stays" : "they stay") + " in your history.");
-  if (!t.matched && !t.toHistory) lines.push("Nothing is logged against the current plan.");
+  if (!t.matched && !t.toHistory) lines.push("Nothing is logged yet, so nothing has to move.");
   lines.push("", "This can be undone afterwards.");
 
-  ask({ title:"Load this plan?", body:lines.join("\n"), yes:"Load it" }, function(){
-    snapshot("Load " + PLAN_NAME);
+  ask({ title:opts.title || "Load this plan?", yes:opts.yes || "Load it",
+        body:lines.join("\n") }, function(){
+    snapshot(opts.undoLabel || "Load a plan");
     state.logs = t.logs;
     state.strength = t.strength;
     state.cross = t.cross;
     state.extras = t.extras;
     state.plan = newPlan;
     state.seq = Math.max(state.seq || 0, maxSeq(state.plan));
-    state.planId = PLAN_ID;
-    state.settings.strides = null;        // the gate is about this plan, ask again
+    state.planId = opts.planId || ("custom-" + Date.now());
+    state.planName = opts.planName || null;
+    state.settings.strides = null;        // the gate belongs to a plan, so ask again
     save(); render();
-    say({ title:"Loaded " + PLAN_NAME,
+    say({ title:opts.done || "Plan loaded",
           body:(t.matched ? t.matched + " run" + (t.matched === 1 ? " is" : "s are") +
-                            " attached to the new plan.\n" : "") +
+                            " attached to it.\n" : "") +
                (t.toHistory ? t.toHistory + " kept as history.\n" : "") +
                "\nStats has an undo if this is not what you wanted." });
+  });
+}
+
+/* The plan the app ships with, put back without touching a single logged run.
+   "Erase logs and reset the plan" was the only way to get it back, and it took
+   everything with it. */
+function restoreShippedPlan(){
+  installPlan(freshPlan(), {
+    title:"Restore " + PLAN_NAME + "?",
+    yes:"Restore it",
+    summary:DEFAULT_PLAN.length + " weeks, " + n1(DEFAULT_PLAN.reduce(function(a, x){
+      return a + x.r.reduce(function(b, y){ return b + y[1]; }, 0); }, 0)) +
+      " km, finishing " + fmtLong(parseISO(RACE_DATE)) + ".",
+    undoLabel:"Restore " + PLAN_NAME,
+    planId:PLAN_ID, planName:null,
+    done:"Restored " + PLAN_NAME
+  });
+}
+
+/* A plan from outside: pasted, or read off a file. */
+function loadPlanFromText(text, label){
+  var parsed;
+  try { parsed = parsePlanText(text); }
+  catch(e){
+    say({ title:"That is not a plan this app can read", body:e.message });
+    return;
+  }
+  var km = parsed.plan.reduce(function(a, w){
+    return a + w.runs.reduce(function(b, r){ return b + r.km; }, 0); }, 0);
+  installPlan(parsed.plan, {
+    title:"Load this plan?",
+    yes:"Load it",
+    summary:"Read " + parsed.source + ": " + parsed.plan.length + " weeks, " + n1(km) +
+      " km, " + fmtDate(parseISO(parsed.plan[0].start)) + " to " +
+      fmtDate(addDays(parseISO(parsed.plan[parsed.plan.length-1].start), 6)) + "." +
+      (parsed.skipped ? "\n" + parsed.skipped + " row" + (parsed.skipped === 1 ? "" : "s") +
+        " skipped for having no date or no distance." : ""),
+    undoLabel:"Load " + (label || "a plan"),
+    planName:label || null,
+    done:"Plan loaded"
   });
 }
 
@@ -3009,6 +3264,8 @@ function viewPlan(){
       '</div></div>';
   }
 
+  h += planToolsHTML();
+
   h += '<div class="card"><div class="wk-head" style="padding:0">' +
       '<div><div class="t">Whole plan</div>' +
       '<div class="d">' + planLen() + ' weeks &middot; ' +
@@ -3019,6 +3276,34 @@ function viewPlan(){
     '<div class="tiny">Weeks copy the shape of the last one, so add and then edit. ' +
       'Editing the plan never disturbs runs you have already logged.</div></div>';
   return h;
+}
+
+/* Everything that changes the plan wholesale, in one place at the foot of the
+   Plan tab — which is where you look when the plan is the thing that is wrong. */
+function planToolsHTML(){
+  var custom = state.planName;
+  return '<div class="card" style="margin-top:14px">' +
+    '<div class="label" style="margin-bottom:10px">Change the plan</div>' +
+    (custom ? '<div class="tiny" style="margin-top:0;margin-bottom:10px">Currently on ' +
+      '<b style="color:var(--text)">' + esc(custom) + '</b>, loaded rather than shipped.</div>' : '') +
+    '<button class="btn" data-act="reshape">Reshape several weeks</button>' +
+    '<div class="tiny">Scale a block\u2019s distances, or move a day \u2014 every long run to ' +
+    'Saturday, say \u2014 across a range of weeks in one go. Edits in place, so nothing you have ' +
+    'logged is touched.</div>' +
+    '<div class="btn-row" style="margin-top:12px">' +
+      '<button class="btn" data-act="plan-load">Paste a plan</button>' +
+      '<button class="btn" data-act="plan-file">From a file</button>' +
+    '</div>' +
+    '<div class="tiny">A CSV with a date and a km column per run is the simplest \u2014 ' +
+    'type, note, tag and phase columns are read if they are there. A JSON backup or plan ' +
+    'array works too. Runs you have already logged stay attached wherever the dates line up.</div>' +
+    (planIsCurrent() ? '' :
+      '<button class="btn ghost" data-act="plan-restore" style="margin-top:12px">' +
+      'Restore ' + esc(PLAN_NAME) + '</button>' +
+      '<div class="tiny">Puts the shipped plan back without erasing a single run. ' +
+      '&ldquo;Erase logs and reset the plan&rdquo; in Stats is the other one, and it does ' +
+      'exactly what it says.</div>') +
+    '</div>';
 }
 
 /* Tapping a column fills this in. A chart on a phone has no hover, so the
@@ -3477,7 +3762,7 @@ function countdownHTML(){
   }
 
   return '<div class="cd">' +
-    '<div class="cdh"><span class="cdn">' + esc(PLAN_NAME) + '</span>' +
+    '<div class="cdh"><span class="cdn">' + esc(planName()) + '</span>' +
       '<span class="cdd">' + fmtDate(tg.date) + ' ' + tg.date.getFullYear() + '</span></div>' +
     '<div class="cdl">' + line + '</div>' +
     '<div class="cdbar"><i style="width:' + pct + '%"></i></div>' +
@@ -4113,7 +4398,7 @@ function openSheet(w, d){
 }
 function closeSheet(){
   scrim.classList.remove("on"); sheet.classList.remove("on");
-  draft = null; editW = null; strDraft = null; xtDraft = null;
+  draft = null; editW = null; strDraft = null; xtDraft = null; rsDraft = null;
 }
 /* Position of a run inside its week, by id — indices move when days change. */
 function indexOfRun(w, id){
@@ -4728,6 +5013,114 @@ function saveCross(){
 
 /* ============================ WEEK EDIT SHEET ============================ */
 var editW = null;
+
+/* Bulk edits, previewed in words before they happen. */
+var rsDraft = null;
+function openReshapeSheet(){
+  draft = null; editW = null; strDraft = null; xtDraft = null;
+  var c = currentWeekIndex();
+  rsDraft = { op:"scale", from:c + 1, to:planLen(), pct:100, which:"long", target:5 };
+  drawReshapeSheet();
+  scrim.classList.add("on"); sheet.classList.add("on");
+}
+function drawReshapeSheet(){
+  var r = rsDraft, from = Math.max(1, Math.min(r.from, planLen()));
+  var to = Math.max(from, Math.min(r.to, planLen()));
+  var seg = function(field, val, label){
+    return '<button data-rs="' + field + '" data-v="' + val + '"' +
+           (String(r[field]) === String(val) ? ' class="on"' : '') + '>' + label + '</button>';
+  };
+
+  var h = '<div class="grab"></div><h2>Reshape several weeks</h2>' +
+    '<div class="sub">Edits the plan in place. Nothing you have logged is touched, ' +
+    'and there is an undo afterwards.</div>';
+
+  h += '<div class="field"><span class="label">What to change</span><div class="seg">' +
+    seg("op","scale","Distances") + seg("op","move","A day") + '</div></div>';
+
+  h += '<div class="field"><span class="label">Weeks</span><div class="inputs">' +
+    '<div class="inp"><input id="rs-from" type="number" inputmode="numeric" min="1" max="' +
+      planLen() + '" value="' + from + '"><span class="u">from</span></div>' +
+    '<div class="inp"><input id="rs-to" type="number" inputmode="numeric" min="1" max="' +
+      planLen() + '" value="' + to + '"><span class="u">to</span></div>' +
+    '</div><div class="tiny" style="margin-top:6px">Week ' + from + ' is ' +
+    fmtDate(weekStart(from-1)) + '; week ' + to + ' is ' + fmtDate(weekStart(to-1)) + '.</div></div>';
+
+  if (r.op === "scale"){
+    h += '<div class="field"><span class="label">Scale to</span><div class="inputs">' +
+      '<div class="inp"><input id="rs-pct" type="number" inputmode="numeric" min="25" max="200" ' +
+      'value="' + r.pct + '"><span class="u">per cent</span></div></div>' +
+      '<div class="seg" style="margin-top:8px">' +
+        seg("pct","90","\u221210%") + seg("pct","100","Same") +
+        seg("pct","110","+10%") + seg("pct","120","+20%") + '</div>';
+    var tot = 0, after = 0;
+    for (var w = from-1; w <= to-1; w++){ tot += weekTotal(w); }
+    after = Math.round(tot * (r.pct/100) * 10) / 10;
+    h += '<div class="pace" style="margin-top:12px">' + n1(tot) + ' km across those weeks ' +
+      'becomes about <b>' + n1(after) + ' km</b></div>' +
+      '<div class="tiny">Rounded to the half-kilometre per run, so the total lands near ' +
+      'rather than exactly on that.</div></div>';
+  } else {
+    h += '<div class="field"><span class="label">Move</span><div class="chips cond">' +
+      '<button data-rs="which" data-v="long"' + (r.which === "long" ? ' class="on"' : '') +
+        '>The long run</button>' +
+      WD_SHORT.map(function(nm, off){
+        return '<button data-rs="which" data-v="' + off + '"' +
+               (String(r.which) === String(off) ? ' class="on"' : '') + '>' + nm + '</button>';
+      }).join("") + '</div></div>';
+    h += '<div class="field"><span class="label">To</span><div class="days">' +
+      WD_SHORT.map(function(nm, off){
+        return '<button data-rs="target" data-v="' + off + '"' +
+               (r.target === off ? ' class="on"' : '') + '>' + nm + '</button>';
+      }).join("") + '</div>' +
+      '<div class="tiny" style="margin-top:6px">A week that already has a run on the target ' +
+      'day is left alone rather than made to hold two, and you are told how many.</div></div>';
+  }
+
+  h += '<div class="sheet-actions">' +
+    '<button class="btn primary" data-act="rs-apply">Apply to weeks ' + from +
+      '\u2013' + to + '</button>' +
+    '<button class="btn ghost" data-act="cancel" style="margin-top:8px">Cancel</button>' +
+    '</div>';
+  sheet.innerHTML = h;
+}
+function readReshape(){
+  var f = document.getElementById("rs-from"), t = document.getElementById("rs-to"),
+      pc = document.getElementById("rs-pct");
+  if (f) rsDraft.from = parseInt(f.value, 10) || 1;
+  if (t) rsDraft.to = parseInt(t.value, 10) || planLen();
+  if (pc) rsDraft.pct = parseInt(pc.value, 10) || 100;
+}
+function applyReshape(){
+  readReshape();
+  var r = rsDraft;
+  var from = Math.max(1, Math.min(r.from, planLen()));
+  var to = Math.max(from, Math.min(r.to, planLen()));
+
+  if (r.op === "scale"){
+    if (!(r.pct >= 25 && r.pct <= 200)){
+      say({ body:"Scale between 25 and 200 per cent." }); return;
+    }
+    if (r.pct === 100){ closeSheet(); return; }
+    snapshot("Scale weeks " + from + "\u2013" + to + " to " + r.pct + "%");
+    var n = scaleWeeks(from-1, to-1, r.pct/100);
+    save(); closeSheet(); render();
+    say({ title:"Weeks " + from + "\u2013" + to + " scaled to " + r.pct + "%",
+          body:n + " run" + (n === 1 ? "" : "s") + " changed. Stats has an undo." });
+    return;
+  }
+
+  var which = r.which === "long" ? "long" : parseInt(r.which, 10);
+  snapshot("Move a day in weeks " + from + "\u2013" + to);
+  var res = moveWeekday(from-1, to-1, which, r.target);
+  save(); closeSheet(); render();
+  say({ title:res.moved + " run" + (res.moved === 1 ? "" : "s") + " moved to " +
+          WD_SHORT[r.target],
+        body:(res.blocked
+          ? res.blocked + " week" + (res.blocked === 1 ? " was" : "s were") +
+            " left alone, already having a run on that day.\n\n"
+          : "") + "Stats has an undo." });
+}
 
 function openWeekSheet(w){
   editW = w;
@@ -5569,6 +5962,16 @@ document.addEventListener("click", function(e){
   el = e.target.closest("[data-stats]");
   if (el){ statsSection = el.dataset.stats; render(); return; }
 
+  el = e.target.closest("[data-rs]");
+  if (el && rsDraft){
+    readReshape();                        // keep the typed week range
+    rsDraft[el.dataset.rs] = el.dataset.v;
+    if (el.dataset.rs === "pct") rsDraft.pct = parseInt(el.dataset.v, 10);
+    if (el.dataset.rs === "target") rsDraft.target = parseInt(el.dataset.v, 10);
+    drawReshapeSheet();
+    return;
+  }
+
   el = e.target.closest("[data-xt]");
   if (el){
     var xp = el.dataset.xt.split(",");
@@ -5748,6 +6151,24 @@ document.addEventListener("click", function(e){
     }
     else if (a === "shift") shiftFrom(+el.dataset.w);
     /* ---- plan editing ---- */
+    else if (a === "reshape") openReshapeSheet();
+    else if (a === "rs-apply") applyReshape();
+    else if (a === "plan-restore") restoreShippedPlan();
+    else if (a === "plan-load"){
+      askFields({ title:"Load a plan", yes:"Read it",
+        body:"CSV with a date and a km column per run is the simplest. " +
+             "A JSON backup or plan array works too.",
+        fields:[
+          { k:"name", label:"Call it", value:"", placeholder:"Coach\u2019s plan" },
+          { k:"text", label:"The plan", multiline:true,
+            placeholder:"date,km,type\n2026-08-11,7,easy\n2026-08-13,8,easy\n2026-08-16,9,long" }
+        ],
+        validate:function(v){
+          if (!v.text) return "Nothing pasted.";
+          try { parsePlanText(v.text); } catch(e){ return e.message; }
+          return null;
+        } }, function(v){ loadPlanFromText(v.text, v.name || null); });
+    }
     else if (a === "edit-week") openWeekSheet(+el.dataset.w);
     else if (a === "add-week") addWeek();
     else if (a === "del-week"){ closeSheet(); deleteWeek(+el.dataset.w); }
@@ -5762,8 +6183,9 @@ document.addEventListener("click", function(e){
         drawSheet(); render();
       }
     }
-    else if (a === "import-runs") openImport();
-    else if (a === "pick-file") document.getElementById("fileIn").click();
+    else if (a === "import-runs"){ fileIntent = "runs"; openImport(); }
+    else if (a === "pick-file"){ fileIntent = "runs"; document.getElementById("fileIn").click(); }
+    else if (a === "plan-file"){ fileIntent = "plan"; document.getElementById("fileIn").click(); }
     else if (a === "parse-text") tryParse(document.getElementById("imp-text").value);
     else if (a === "imp-row"){
       var row = importRows[+el.dataset.i];
@@ -5845,10 +6267,29 @@ document.addEventListener("keydown", function(e){
   if (e.key === "Escape" && dlgState) closeDialog();
 });
 
+/* The file picker is shared between importing runs and loading a plan, so it
+   has to be told which was asked for. */
+var fileIntent = "runs";
 document.getElementById("fileIn").addEventListener("change", function(e){
   var f = e.target.files && e.target.files[0];
-  if (f) readFile(f);
   e.target.value = "";        // so the same file can be picked again
+  if (!f) return;
+  if (fileIntent === "plan"){
+    fileIntent = "runs";
+    if (f.size > 2 * 1024 * 1024){
+      say({ title:"That file is too large for a plan",
+            body:"A season's plan is a few kilobytes. This looks like something else." });
+      return;
+    }
+    var fr = new FileReader();
+    fr.onload = function(){
+      loadPlanFromText(String(fr.result), f.name.replace(/\.[a-z0-9]+$/i, ""));
+    };
+    fr.onerror = function(){ say({ title:"Could not read that file" }); };
+    fr.readAsText(f);
+    return;
+  }
+  readFile(f);
 });
 /* Search redraws only the browse body. A full render would rebuild the input
    and hand the keyboard back to the page mid-word. */

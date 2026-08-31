@@ -328,6 +328,35 @@ with what you typed still in it.
 - **Length of the block.** *Add a week at the end* extends it, copying the shape
   of the final week; *Delete week* shortens it and pulls the later weeks back so
   the calendar stays tight.
+
+- **Many weeks at once.** Plan → *Reshape several weeks* does over a range what
+  editing does to one: scale the distances by a percentage, or move a weekday —
+  every long run to Saturday, say — across weeks 12 to 30 in a single action. It
+  edits in place, so run ids never change and not one log is touched. Distances
+  round to the half-kilometre, because a plan reading 12.37 km is a plan nobody
+  follows, and a week that already has a run on the target day is left alone
+  rather than made to hold two, with the count reported back.
+
+- **A plan from somewhere else.** Plan → *Paste a plan* or *From a file* reads
+  one in and swaps it for the block you are on, keeping every run the dates can
+  account for. Three shapes are accepted, because a plan arrives in whatever
+  form its author had to hand:
+
+  | Shape | What it needs |
+  |---|---|
+  | CSV or TSV | A `date` column and a `km` column, one row per run. `type`, `note`, `tag`, `phase`, `cap`, `tempo`, `mp` and `strides` are read if present. |
+  | JSON plan | The array this app stores, or a whole backup with a `plan` in it. |
+  | JSON seed | The `{s, t, p, n, r}` shape at the top of `index.html`. |
+
+  Columns are found by header name, so their order does not matter and a
+  coach's extra columns are ignored. Rows missing a date or a distance are
+  skipped and counted rather than being fatal. Week starts snap to the Monday,
+  since the whole app reckons days as offsets from one. Nothing is written until
+  the file has parsed, and a refusal says which part failed.
+
+- **Putting the shipped plan back.** *Restore Marathon Build* returns the
+  original 42 weeks without erasing a run. It used to be that **Erase logs and
+  reset the plan** was the only route back, and it took everything with it.
 - **Slipping the whole thing.** The per-week controls move that week and
   everything after it a week earlier or later.
 
