@@ -48,8 +48,8 @@ Service workers need `http://localhost` or HTTPS — opening `index.html` as a
 ## What it tracks
 
 Per run: completed or skipped, actual distance and duration, average heart rate,
-calories, effort (easy / moderate / hard), and any pain with a body-area tag and
-a note. Pace and the VO<sub>2</sub> estimate are derived and shown as you type.
+calories, effort (easy / moderate / hard), an RPE out of ten, how it felt, which
+shoes, and any pain with a body-area tag and a note. Pace and the VO<sub>2</sub> estimate are derived and shown as you type.
 
 Duration is entered as **hours, minutes and seconds** — a three-hour long run is
 3 h 12, not 192 minutes. The hours box is left blank for anything under an hour.
@@ -102,15 +102,78 @@ the base phase and **required from phase 2**, which is the plan's own wording.
 Pick what you did — bike, swim, row, elliptical or other — and how long. Like
 strength, it adds no running distance and cannot trip the volume guards.
 
-**Shoes** — the plan replaces at 700 km. A pair counts every run dated between
-the day it went into service and the day it was retired, on top of whatever it
-had already run when first recorded. A warning appears at 85% and again past
-700. Retiring a pair starts the next one: the retirement day is the old pair's
-last day and the new pair starts the day after, so a run on the changeover day
-counts once, not twice.
+**Morning readings** — resting heart rate, hours slept and body weight, one
+number each. The card asks at the top of Today on a morning with nothing
+recorded and steps down the page once answered, because a daily prompt that
+stays put after it has been answered stops being read.
+
+Resting rate carries most of the value. A sustained rise over *your own*
+baseline — the mean of the last 14 mornings, once there are at least five of
+them — is the oldest cheap sign that the build is outrunning the recovery, and
+it is flagged at 5 bpm with the plain warning that one morning is noise. It also
+anchors the VO<sub>2</sub> estimate; see below.
+
+**Session RPE and training load** — every guard in this app counts kilometres,
+which means a 14 km tempo and a 14 km easy run are indistinguishable to all of
+them, and from week 22 the plan has you doing one of each most weeks. Rating a
+session 1–10 and multiplying by its minutes gives a number that works for a run,
+a bike hour and twenty minutes of calf raises alike, so total load can be seen
+rather than inferred from mileage. Sessions logged before RPE existed fall back
+to a stand-in from their effort rating and are marked as estimated wherever the
+figures appear.
+
+Stats shows the last 7 days against the weekly average of the last 28, load per
+week, and the split across running, cross-training and strength — a split
+distance cannot show, since it counts only the first of the three. The ratio
+stays blank until there are four weeks behind it rather than reporting a number
+that only means the week is being compared with itself, and it is framed as a
+trend to read rather than a rule: the method has had fair criticism, and the
+sound part of it is what the plan's own recovery weeks already say.
+
+Paired with it, a separate **how it felt** tap. The gap between the two is the
+signal — hard that felt strong is fitness arriving, easy that felt rough is
+fatigue banking up.
+
+**Fuelling practice** — *"Begin fueling practice: 30-60g carb/hr"* is the only
+numeric prescription in the plan that had nowhere to be answered. Long runs of
+16 km and over from phase 3 now carry a carbohydrate field: you enter the total
+grams, because gels are countable and a rate is not, and the app derives g/hr
+from the run's own duration and marks it against the plan's band. A gut-tolerance
+tap goes with it. Read from the plan's phase and distance rather than a fixed
+week, so reshaping the plan moves which runs ask.
+
+**See a doctor before Phase 2** — the plan's other untracked instruction, said
+once in one week's note and then never again, which is exactly how a sentence
+like that gets missed. A banner appears four weeks before phase 2 starts and
+escalates once phase 2 has begun without it; ticking it records the date and an
+optional note, and it shows as done in Readiness. The week comes from the plan's
+phase field, so it moves with edits.
+
+**Shoes** — several pairs can be in service at once, each with its own name and
+mileage. The plan replaces at 700 km, with a warning at 85% and again past 700,
+per pair.
+
+Mileage keys on the pair a run names, not on dates. With one pair the service
+window told you everything; with a rotation two windows overlap and the dates
+decide nothing. Runs logged before rotation existed were assigned to their pair
+once, at load, using the old window rule — so every existing total reads exactly
+as it did rather than resetting to zero on an update. Runs that end up naming no
+pair are counted and surfaced rather than having their distance quietly vanish
+from every total.
+
+The log sheet only offers a picker when more than one pair is in service, and
+one pair is marked default so a single-pair setup carries on needing no thought.
 
 Per week: actual against planned with a percentage, rolling 4-week volume, and
 a streak of consecutive completed runs.
+
+The VO<sub>2</sub> estimate scales by heart-rate reserve, so it needs a resting
+rate. It used to read one global setting for every run, which meant the whole
+historical trend was scaled by whatever that setting said *today* — correcting a
+stale 55 down to 48 silently lifted every VO<sub>2</sub> the app had ever shown.
+Over a 42-week base build the resting rate is supposed to fall, so the value now
+travels with the run: each estimate uses the most recent morning reading on or
+before that run's date, falling back to the setting when there is none that old.
 
 Stats breaks the block down **week by week** — planned against done, run count,
 total time, average pace, heart rate and calories, with the current week
