@@ -280,8 +280,26 @@ run happened to finish on.
   recovery or peak. Week totals are always summed from the runs, never stored,
   so they cannot drift.
 - **Switching plans.** When the plan in the app is newer than the one on your
-  device, it offers to load it. Accepting moves every run you have already
-  logged into history first, so changing plans never costs you a run you did.
+  device, it offers to load it — and runs you have already logged **come with
+  you**. Logs key on run ids, which is what makes editing a plan safe; replacing
+  one gives every run a new id, so the old behaviour swept every log into
+  history. Safe, but it emptied the week table, the streak and every adherence
+  figure of a block you had actually run.
+
+  A date is the thing that survives a plan change. A run done on 25 August is
+  still a run done on 25 August whatever the new plan calls that day, so logs
+  are re-pointed onto whichever run in the new plan falls on their date, within
+  three days. Strength and cross-training sessions move the same way. Only what
+  genuinely has no home goes to history, and you are told the split — how many
+  move across, how many do not — before anything happens.
+
+  If an earlier plan change already stranded runs in history, Stats offers to
+  **re-attach** them: the same matcher, run against the plan you are on now.
+
+- **Undo.** A plan change, a restore, a reset or a history wipe takes a snapshot
+  first, and Stats offers one step back for as long as it is there. If storage
+  is too tight to hold both, the snapshot is dropped rather than the save
+  failing — losing the ability to go back beats losing the thing itself.
 - **Length of the block.** *Add a week at the end* extends it, copying the shape
   of the final week; *Delete week* shortens it and pulls the later weeks back so
   the calendar stays tight.

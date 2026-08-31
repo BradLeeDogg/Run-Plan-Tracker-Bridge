@@ -1033,8 +1033,44 @@ function load(){
 }
 function save(){
   _rhrIdx = null;                     // the daily readings may have moved
-  try { localStorage.setItem(KEY, JSON.stringify(state)); }
-  catch(e){ alert("Could not save — device storage may be full or private browsing is on."); }
+  try { localStorage.setItem(KEY, JSON.stringify(state)); return; }
+  catch(e){}
+  /* An undo snapshot roughly doubles what is stored. If there is not room for
+     both, the live data wins and the undo is dropped — losing the ability to
+     go back is a great deal better than losing the thing itself. */
+  if (state.undo){
+    var keep = state.undo;
+    state.undo = null;
+    try { localStorage.setItem(KEY, JSON.stringify(state)); return; }
+    catch(e2){ state.undo = keep; }
+  }
+  alert("Could not save — device storage may be full or private browsing is on.");
+}
+
+/* ---------- one step back ----------
+   Everything destructive in this app used to be one confirm() away from
+   permanent. A single snapshot costs almost nothing and turns each of them
+   into something you can look at afterwards and change your mind about. */
+function snapshot(label){
+  try {
+    var copy = JSON.parse(JSON.stringify(state));
+    delete copy.undo;                 // never nest them
+    state.undo = { label:label, at:Date.now(), state:copy };
+  } catch(e){ state.undo = null; }    // rather no undo than a failed action
+}
+function undoLabel(){
+  return (state.undo && state.undo.state) ? state.undo.label : null;
+}
+function doUndo(){
+  if (!state.undo || !state.undo.state) return;
+  if (!confirm("Undo \u201c" + state.undo.label + "\u201d?\n\n" +
+      "Everything goes back to how it was immediately before that. Anything " +
+      "logged since will be lost.")) return;
+  var back = state.undo.state;
+  Object.keys(state).forEach(function(k){ delete state[k]; });
+  Object.keys(back).forEach(function(k){ state[k] = back[k]; });
+  state.undo = null;
+  save(); render();
 }
 
 /* ---------- plan accessors ---------- */
@@ -2320,42 +2356,187 @@ function fmtK(x){
    a run you actually did. */
 function planIsCurrent(){ return state.planId === PLAN_ID; }
 
-function adoptNewPlan(){
-  var kept = 0;
-  for (var w = 0; w < planLen(); w++)
-    for (var d = 0; d < runsOf(w).length; d++){
-      var l = getLog(w, d);
-      if (!l || !l.done || !l.date) continue;
-      if (haveExtra(l.date, l.km || 0)) continue;
-      state.extras.push({
-        id: newId(), done:true, skipped:false,
-        km: l.km, durSec: l.durSec || 0, hr: l.hr || null, kcal: l.kcal || null,
-        splits: l.splits || null, effort: l.effort || null,
-        date: l.date, ts: l.ts || Date.now(),
-        extra: true, fromPlan: true, pain: l.pain || null
+/* ---------- changing the plan without losing what you have done ----------
+
+   Logs key on run ids, which is what makes editing a plan safe. Replacing one
+   is different: the new plan's runs are new objects with new ids, so every log
+   would orphan, and the old behaviour was to sweep them all into history —
+   safe, but it emptied the week table, the streak and every adherence figure
+   of a block you had actually run.
+
+   A date is the thing that survives a plan change. A run done on 25 August is
+   still a run done on 25 August whatever the new plan calls that day, so logs
+   are re-pointed onto whichever run in the new plan falls on their date. Only
+   what genuinely has no home goes to history. */
+var REATTACH_DAYS = 3;          // the window the importer already uses to pair a run
+
+/* Dates for every session in a plan array, without needing it installed. */
+function planSlots(plan, key){
+  var out = [];
+  plan.forEach(function(wk2, w){
+    (wk2[key] || []).forEach(function(r, d){
+      out.push({ w:w, d:d, id:r.id,
+                 date: toISO(addDays(parseISO(wk2.start), r.off || 0)) });
+    });
+  });
+  return out.sort(function(a, b){ return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+}
+/* The free slot nearest a date, exact match first. Entries are matched in date
+   order so that an earlier run cannot be displaced by a later one reaching
+   back for the same slot. */
+function nearestSlot(slots, taken, date, windowDays){
+  var best = null, bestGap = Infinity;
+  for (var i = 0; i < slots.length; i++){
+    if (taken[slots[i].id]) continue;
+    var gap = Math.abs(dayDiff(parseISO(date), parseISO(slots[i].date)));
+    if (gap > windowDays) continue;
+    if (gap < bestGap){ best = slots[i]; bestGap = gap; }
+    if (gap === 0) break;                      // nothing beats the same day
+  }
+  return best;
+}
+
+/* Work out where everything lands, without changing anything. The preview and
+   the commit run the same function, so what you are shown is what happens. */
+function planTransfer(newPlan, opts){
+  opts = opts || {};
+  var res = { logs:{}, strength:{}, cross:{}, extras:[],
+              matched:0, rescued:0, toHistory:0, strengthKept:0, crossKept:0 };
+
+  var gather = function(store, plan, key){
+    var out = [];
+    if (plan){
+      plan.forEach(function(wk2, w){
+        (wk2[key] || []).forEach(function(r){
+          var l = store[r.id];
+          if (l && (l.done || l.skipped) && l.date) out.push({ log:l, from:"plan" });
+        });
       });
-      kept++;
     }
+    return out;
+  };
 
-  if (!confirm("Load " + PLAN_NAME + "?\n\n" + DEFAULT_PLAN.length + " weeks, " +
-      n1(DEFAULT_PLAN.reduce(function(a, x){
-        return a + x.r.reduce(function(b, y){ return b + y[1]; }, 0); }, 0)) +
-      " km, finishing " + fmtLong(parseISO(RACE_DATE)) + ".\n\n" +
-      (kept ? kept + " logged run" + (kept === 1 ? "" : "s") + " will be kept as history."
-            : "Nothing is logged against the current plan.")))
-    return;
+  /* Runs: what is on the plan now, plus anything an earlier plan change
+     stranded in history — those were plan runs once and can come home. */
+  var runEntries = gather(state.logs, state.plan, "runs");
+  var keptExtras = [];
+  state.extras.forEach(function(l, i){
+    if (opts.rescueHistory && l && l.done && l.date && l.fromPlan)
+      runEntries.push({ log:l, from:"history", idx:i });
+    else keptExtras.push(l);
+  });
+  runEntries.sort(function(a, b){ return a.log.date < b.log.date ? -1 : 1; });
 
-  state.extras.sort(function(a, b){ return (a.date || "") < (b.date || "") ? -1 : 1; });
-  state.logs = {};
-  state.strength = {};
-  state.cross = {};
-  state.plan = freshPlan();
+  var runSlots = planSlots(newPlan, "runs"), takenRuns = {};
+  runEntries.forEach(function(e){
+    var slot = nearestSlot(runSlots, takenRuns, e.log.date, REATTACH_DAYS);
+    if (slot){
+      takenRuns[slot.id] = true;
+      var copy = JSON.parse(JSON.stringify(e.log));
+      delete copy.fromPlan;                     // it is on a plan again
+      delete copy.extra;
+      delete copy.id;
+      res.logs[slot.id] = copy;
+      res.matched++;
+      if (e.from === "history") res.rescued++;
+    } else if (e.from === "plan"){
+      var h = JSON.parse(JSON.stringify(e.log));
+      h.id = "x" + (res.extras.length + 1) + "-" + (h.date || "");
+      h.extra = true; h.fromPlan = true;
+      res.extras.push(h);
+      res.toHistory++;
+    } else {
+      keptExtras.push(e.log);                   // came from history, stays there
+    }
+  });
+  res.extras = keptExtras.concat(res.extras)
+    .filter(Boolean)
+    .sort(function(a, b){ return (a.date || "") < (b.date || "") ? -1 : 1; });
+
+  /* Strength and cross-training the same way, on their own slots. */
+  [["strength", "strengthKept"], ["cross", "crossKept"]].forEach(function(pair){
+    var key = pair[0];
+    var entries = gather(state[key], state.plan, key)
+      .sort(function(a, b){ return a.log.date < b.log.date ? -1 : 1; });
+    var slots = planSlots(newPlan, key), taken = {};
+    entries.forEach(function(e){
+      var slot = nearestSlot(slots, taken, e.log.date, REATTACH_DAYS);
+      if (!slot) return;                        // no home, and no history for these
+      taken[slot.id] = true;
+      res[key][slot.id] = JSON.parse(JSON.stringify(e.log));
+      res[pair[1]]++;
+    });
+  });
+
+  return res;
+}
+
+function adoptNewPlan(){
+  var newPlan = freshPlan();
+  var t = planTransfer(newPlan, { rescueHistory:true });
+
+  var lines = [PLAN_NAME, "",
+    DEFAULT_PLAN.length + " weeks, " + n1(DEFAULT_PLAN.reduce(function(a, x){
+      return a + x.r.reduce(function(b, y){ return b + y[1]; }, 0); }, 0)) +
+      " km, finishing " + fmtLong(parseISO(RACE_DATE)) + ".", ""];
+
+  if (t.matched)
+    lines.push(t.matched + " logged run" + (t.matched === 1 ? "" : "s") +
+      " will move across onto the new plan, matched by date" +
+      (t.rescued ? " \u2014 " + t.rescued + " of them pulled back out of history" : "") + ".");
+  if (t.strengthKept || t.crossKept)
+    lines.push(t.strengthKept + " strength and " + t.crossKept +
+      " cross-training session" + (t.crossKept === 1 ? "" : "s") + " move across too.");
+  if (t.toHistory)
+    lines.push(t.toHistory + " run" + (t.toHistory === 1 ? "" : "s") +
+      " fall on days the new plan has nothing near, so " +
+      (t.toHistory === 1 ? "it stays" : "they stay") + " in your history.");
+  if (!t.matched && !t.toHistory) lines.push("Nothing is logged against the current plan.");
+  lines.push("", "This can be undone afterwards.");
+
+  if (!confirm("Load this plan?\n\n" + lines.join("\n"))) return;
+
+  snapshot("Load " + PLAN_NAME);
+  state.logs = t.logs;
+  state.strength = t.strength;
+  state.cross = t.cross;
+  state.extras = t.extras;
+  state.plan = newPlan;
   state.seq = Math.max(state.seq || 0, maxSeq(state.plan));
   state.planId = PLAN_ID;
   state.settings.strides = null;          // the gate is about this plan, ask again
   save(); render();
-  alert("Loaded " + PLAN_NAME + "." + (kept ? "\n\n" + kept + " earlier run" +
-    (kept === 1 ? " is" : "s are") + " now in your history." : ""));
+  alert("Loaded " + PLAN_NAME + ".\n\n" +
+    (t.matched ? t.matched + " run" + (t.matched === 1 ? " is" : "s are") +
+                 " attached to the new plan." : "") +
+    (t.toHistory ? "\n" + t.toHistory + " kept as history." : "") +
+    "\n\nStats has an undo if this is not what you wanted.");
+}
+
+/* Runs stranded in history by an earlier plan change, brought back onto the
+   plan they now fit. The same matcher, run against the plan already installed. */
+function rescueHistory(){
+  var t = planTransfer(state.plan, { rescueHistory:true });
+  if (!t.rescued){
+    alert("Nothing in your history lines up with a free day on this plan.");
+    return;
+  }
+  if (!confirm(t.rescued + " run" + (t.rescued === 1 ? "" : "s") +
+      " in your history fall on days this plan has runs for, and can be attached " +
+      "to it.\n\nThey will count towards their weeks again \u2014 adherence, the " +
+      "week table and the streak. This can be undone afterwards.")) return;
+  snapshot("Re-attach " + t.rescued + " run" + (t.rescued === 1 ? "" : "s") + " to the plan");
+  state.logs = t.logs;
+  state.strength = t.strength;
+  state.cross = t.cross;
+  state.extras = t.extras;
+  save(); render();
+  alert(t.rescued + " run" + (t.rescued === 1 ? " is" : "s are") + " back on the plan.");
+}
+/* How many could be rescued, for the offer to be worth making. */
+function rescuableCount(){
+  if (!state.extras.some(function(l){ return l && l.fromPlan; })) return 0;
+  return planTransfer(state.plan, { rescueHistory:true }).rescued;
 }
 
 function shiftFrom(w){
@@ -3045,6 +3226,26 @@ function viewStats(){
     '220 minus your age is the usual starting point; the highest figure you have actually seen on a hard ' +
     'effort is better.</div></div>';
 
+  var undoL = undoLabel();
+  var resc = rescuableCount();
+  if (undoL || resc){
+    h += '<div class="card"><div class="label" style="margin-bottom:10px">Putting things back</div>';
+    if (undoL)
+      h += '<div class="verdict near"><b>Undo: ' + esc(undoL) + '</b>' +
+        'From ' + fmtLong(new Date(state.undo.at)) + '. One step is kept, and it is ' +
+        'replaced by the next thing big enough to be worth undoing.</div>' +
+        '<button class="btn" data-act="undo" style="margin-top:10px">Undo that</button>';
+    if (resc)
+      h += '<div class="verdict' + (undoL ? '" style="margin-top:12px' : '') + '">' +
+        '<b>' + resc + ' history run' + (resc === 1 ? '' : 's') + ' could rejoin the plan</b>' +
+        'They fall on days this plan has runs for. Attaching them puts their distance back ' +
+        'into the week table, adherence and the streak, where a plan change had left it ' +
+        'outside.</div>' +
+        '<button class="btn" data-act="rescue-history" style="margin-top:10px">' +
+        'Re-attach ' + resc + ' run' + (resc === 1 ? '' : 's') + '</button>';
+    h += '</div>';
+  }
+
   h += '<div class="card"><div class="label" style="margin-bottom:12px">Your data</div>' +
     '<button class="btn primary" data-act="import-runs" style="margin-bottom:10px">Import runs from a file</button>' +
     '<div class="btn-row" style="margin-bottom:10px">' +
@@ -3600,6 +3801,13 @@ function render(){
     tab === "today" ? fmtLong(t) : "Week " + (currentWeekIndex()+1) + " of " + planLen();
 
   var view = document.getElementById("view");
+  /* Saving anything re-renders the whole view, and scrolling to the top after
+     every save means losing your place — on Stats, which is a long page, that
+     is most of the page. Arriving at a tab should start at the top; staying on
+     one and saving something should not move at all. */
+  var sameTab = (tab === lastTab);
+  var keepY = sameTab ? (window.pageYOffset || document.documentElement.scrollTop || 0) : 0;
+
   view.innerHTML =
     tab === "today" ? viewToday() : tab === "plan" ? viewPlan() : viewStats();
 
@@ -3611,11 +3819,15 @@ function render(){
   Array.prototype.forEach.call(document.querySelectorAll(".tabbar button"), function(b){
     b.classList.toggle("on", b.dataset.tab === tab);
   });
-  if (tab === "plan"){
+  if (tab === "plan" && !sameTab){
     var cur = document.querySelector(".wk.current");
     if (cur) cur.scrollIntoView({ block:"center" });
-  } else {
+  } else if (!sameTab){
     window.scrollTo(0, 0);
+  } else if (keepY){
+    // Never past the end: the page may have got shorter, and a scroll beyond it
+    // lands on blank space.
+    window.scrollTo(0, Math.min(keepY, Math.max(0, document.body.scrollHeight - window.innerHeight)));
   }
 }
 
@@ -4325,7 +4537,9 @@ function doImport(){
   try { data = JSON.parse(txt); }
   catch(e){ alert("That is not valid JSON."); return; }
   if (!data || typeof data !== "object" || !data.logs){ alert("No logs found in that file."); return; }
-  if (!confirm("Replace everything currently stored with this backup?")) return;
+  if (!confirm("Replace everything currently stored with this backup?\n\n" +
+      "This can be undone afterwards.")) return;
+  snapshot("Restore a backup");
   state.logs = data.logs;
   if (planOK(data.plan)){
     state.plan = data.plan;                       // v2 backup: plan travels with the logs
@@ -4344,8 +4558,11 @@ function doImport(){
   alert("Restored.");
 }
 function doReset(){
-  if (!confirm("Erase every logged run and put the plan back to its original 12 weeks?\n\nThis cannot be undone. Export first if you want a copy.")) return;
+  if (!confirm("Erase every logged run and put the plan back to its original " +
+      DEFAULT_PLAN.length + " weeks?\n\nExport first if you want a copy off the device. " +
+      "There is one step of undo afterwards.")) return;
   if (!confirm("Really erase everything?")) return;
+  snapshot("Erase logs and reset the plan");
   state.logs = {};
   state.extras = [];
   state.strength = {};
@@ -5249,10 +5466,13 @@ document.addEventListener("click", function(e){
     }
     else if (a === "clear-extras"){
       if (!confirm("Remove all " + state.extras.length + " runs kept as history?\n\n" +
-                   "Runs logged against the plan are not touched.")) return;
+                   "Runs logged against the plan are not touched. This can be undone.")) return;
+      snapshot("Remove " + state.extras.length + " history runs");
       state.extras = [];
       save(); render();
     }
+    else if (a === "undo") doUndo();
+    else if (a === "rescue-history") rescueHistory();
     else if (a === "export") doExport();
     else if (a === "copy")   doCopy();
     else if (a === "import") doImport();
