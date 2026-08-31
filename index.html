@@ -201,6 +201,19 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
 .readout .mets em.over{color:var(--warn)}
 
 /* ---------- tab bar ---------- */
+/* Sections within Stats. Scrolls sideways rather than wrapping, so four chips
+   stay on one line on the narrowest phone and a fifth would not break it. */
+.subnav{
+  display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+  padding-bottom:2px;
+}
+.subnav::-webkit-scrollbar{display:none}
+.subnav button{
+  flex:1 0 auto;min-height:40px;padding:0 15px;border-radius:11px;font-size:14px;font-weight:800;
+  border:1.5px solid var(--line);background:var(--surface);color:var(--muted);white-space:nowrap;
+}
+.subnav button.on{background:var(--surface2);color:var(--text);border-color:var(--accent)}
+
 .tabbar{
   position:fixed;left:0;right:0;bottom:0;z-index:40;
   display:flex;background:rgba(10,12,16,.93);
@@ -215,6 +228,36 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
 }
 .tabbar button.on{color:var(--accent)}
 .tabbar svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- dialogs ----------
+   Above the sheet, because several of them are raised from inside one. */
+.dscrim{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:70;
+  opacity:0;pointer-events:none;transition:opacity .16s}
+.dscrim.on{opacity:1;pointer-events:auto}
+.dlg{
+  position:fixed;left:50%;top:50%;z-index:80;
+  width:min(360px, calc(100vw - 32px));max-height:82vh;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  background:var(--surface);border:1px solid var(--line);border-radius:20px;
+  padding:20px 18px 18px;
+  transform:translate(-50%,-46%) scale(.96);opacity:0;pointer-events:none;
+  transition:opacity .16s, transform .16s cubic-bezier(.32,.72,0,1);
+}
+.dlg.on{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto}
+.dlg h3{font-size:18px;font-weight:800;letter-spacing:-.02em;margin:0 0 8px}
+.dlg .dbody{font-size:14.5px;line-height:1.5;color:var(--muted);white-space:pre-wrap}
+.dlg .dfield{margin-top:14px}
+.dlg .dfield label{display:block;font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);font-weight:800;margin-bottom:6px}
+.dlg .dfield input,.dlg .dfield textarea{
+  width:100%;min-height:48px;padding:0 14px;border-radius:12px;font-size:16px;font-weight:600;
+  border:1.5px solid var(--line);background:var(--surface2);color:var(--text);
+}
+.dlg .dfield textarea{padding:12px 14px;min-height:84px;resize:vertical;font-weight:500}
+.dlg .dfield input:focus,.dlg .dfield textarea:focus{outline:none;border-color:var(--accent)}
+.dlg .derr{margin-top:10px;font-size:13px;font-weight:700;color:var(--danger)}
+.dlg .dacts{display:flex;flex-direction:column;gap:8px;margin-top:18px}
+.dlg .dacts .btn{min-height:50px;font-size:16px}
 
 /* ---------- sheet ---------- */
 .scrim{position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:50;opacity:0;pointer-events:none;transition:opacity .2s}
@@ -392,6 +435,18 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
 
 /* The readiness verdict. Colour carries the reading, so it is legible before
    the sentence is. */
+/* The morning card. Quiet by design — it is looked at every day for 42 weeks. */
+.card.morning{border-color:rgba(94,168,255,.22)}
+.mrn{
+  margin-top:12px;padding:11px 13px;border-radius:12px;font-size:13.5px;line-height:1.45;
+  background:var(--surface2);border:1px solid var(--line);border-left:3px solid var(--recovery);
+  color:var(--muted);
+}
+.mrn b{color:var(--text)}
+.mrn.high{background:rgba(255,176,58,.10);border-color:rgba(255,176,58,.38);
+  border-left-color:var(--warn);color:#ffd699}
+.mrn.high b{color:var(--warn)}
+
 .verdict{
   margin-top:12px;padding:12px 14px;border-radius:13px;font-size:13.5px;line-height:1.45;
   background:var(--surface2);border:1px solid var(--line);border-left:3px solid var(--dim);
@@ -405,6 +460,36 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
 .verdict.over b,.verdict.behind b{color:var(--warn)}
 .verdict.well-behind{border-left-color:var(--danger)}
 .verdict.well-behind b{color:var(--danger)}
+/* One pair in the rotation. */
+.shoe{
+  margin-top:12px;padding:13px 14px;border-radius:14px;
+  background:var(--surface2);border:1px solid var(--line);
+}
+.shoe.near{border-color:rgba(255,176,58,.35)}
+.shoe.over{border-color:rgba(255,95,95,.42)}
+.shoe .btn-row .btn{min-height:38px;font-size:13px}
+
+/* A one-off the plan asks for, and whether it has been done. */
+.chk{
+  display:flex;gap:11px;align-items:flex-start;margin-top:12px;padding:12px 14px;
+  border-radius:13px;background:var(--surface2);border:1px solid var(--line);
+  font-size:13.5px;line-height:1.45;color:var(--muted);
+}
+.chk b{display:block;margin-bottom:2px;font-size:14.5px;color:var(--text)}
+.chk .tick{
+  flex:0 0 auto;width:22px;height:22px;border-radius:7px;border:2px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;margin-top:1px;
+}
+.chk.done{border-color:rgba(60,224,140,.3)}
+.chk.done .tick{background:var(--accent);border-color:var(--accent);color:#06210f}
+.chk.due{border-color:rgba(255,176,58,.4)}
+.chk.due .tick{border-color:var(--warn)}
+.chk.late{border-color:rgba(255,95,95,.45)}
+.chk.late .tick{border-color:var(--danger)}
+.lnk{
+  display:inline-block;margin-left:8px;background:none;border:none;padding:0;
+  color:var(--recovery);font-size:13px;font-weight:700;text-decoration:underline;
+}
 .phasebox{margin-top:12px;padding:12px 14px;border-radius:13px;
   background:rgba(94,168,255,.06);border:1px solid rgba(94,168,255,.18)}
 .phasebox .pn{font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
@@ -447,6 +532,38 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
 }
 .inp input:focus{outline:none;border-color:var(--accent)}
 .inp .u{display:block;text-align:center;font-size:11px;color:var(--muted);margin-top:5px;text-transform:uppercase;letter-spacing:.07em;font-weight:700}
+/* Ten buttons across a phone. Small, but each still a real tap target, and
+   the selected one takes a colour from the intensity it represents. */
+.scale{display:flex;gap:4px}
+.scale button{
+  flex:1;min-width:0;height:46px;border-radius:10px;font-size:14px;font-weight:800;
+  border:1.5px solid var(--line);background:var(--surface2);color:var(--text);
+  font-variant-numeric:tabular-nums;padding:0;
+}
+.scale button.on{color:#06210f;border-color:transparent}
+.scale button.on.r1,.scale button.on.r2,.scale button.on.r3{background:var(--easy)}
+.scale button.on.r4,.scale button.on.r5,.scale button.on.r6{background:var(--moderate);color:#241500}
+.scale button.on.r7,.scale button.on.r8{background:#ff8a3a;color:#2a1000}
+.scale button.on.r9,.scale button.on.r10{background:var(--hard);color:#2a0000}
+.seg.feel button{font-size:13px;padding:0 4px}
+.seg.feel button.on{background:var(--recovery);color:#04203f;border-color:var(--recovery)}
+.mets em.load{color:var(--recovery)}
+.mets em.load i{color:rgba(94,168,255,.7)}
+.fb{font-weight:800}
+.fb.in{color:var(--accent)}
+.fb.under{color:var(--warn)}
+.fb.over{color:var(--recovery)}
+.loadbands{display:flex;gap:6px;margin-top:12px}
+.loadbands span{
+  flex:1;text-align:center;padding:6px 2px;border-radius:8px;font-size:10.5px;font-weight:800;
+  background:var(--surface2);border:1px solid var(--line);color:var(--dim);
+  text-transform:uppercase;letter-spacing:.04em;
+}
+.loadbands span.on.low{background:rgba(94,168,255,.16);color:var(--recovery);border-color:rgba(94,168,255,.4)}
+.loadbands span.on.ok{background:rgba(60,224,140,.16);color:var(--accent);border-color:rgba(60,224,140,.4)}
+.loadbands span.on.climb{background:rgba(255,176,58,.15);color:var(--warn);border-color:rgba(255,176,58,.4)}
+.loadbands span.on.spike{background:rgba(255,95,95,.15);color:var(--danger);border-color:rgba(255,95,95,.42)}
+
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chips button{
   min-height:46px;padding:0 15px;border-radius:12px;
@@ -488,6 +605,28 @@ textarea:focus{outline:none;border-color:var(--accent)}
   font-variant-numeric:tabular-nums;min-height:20px;
 }
 .pace b{color:var(--accent);font-size:16px}
+/* The fold. A row rather than a link, because it is the thing you tap when the
+   run was more than a distance and a time. */
+.disc{
+  display:flex;align-items:center;gap:10px;width:100%;margin:2px 0 16px;
+  min-height:52px;padding:0 14px;border-radius:13px;
+  border:1.5px dashed var(--line);background:transparent;color:var(--text);
+  font-size:15px;font-weight:700;text-align:left;
+}
+.disc.on{border-style:solid;background:var(--surface2)}
+.disc .ds{flex:1;min-width:0;font-size:12.5px;font-weight:600;color:var(--dim);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.disc .dc{flex:0 0 auto;font-size:20px;font-weight:800;color:var(--muted);line-height:1}
+
+/* Save stays reachable however long the sheet gets. */
+.sheet-actions{
+  position:sticky;bottom:0;z-index:2;
+  margin:18px -14px calc(-20px - env(safe-area-inset-bottom));
+  padding:12px 14px calc(14px + env(safe-area-inset-bottom));
+  background:var(--surface);border-top:1px solid var(--line);
+}
+.sheet-actions .btn-row .btn{min-height:48px;font-size:15px}
+
 .hidden{display:none!important}
 .empty{text-align:center;color:var(--muted);padding:40px 20px;font-size:15px}
 
@@ -541,6 +680,8 @@ textarea:focus{outline:none;border-color:var(--accent)}
 
 <div class="scrim" id="scrim"></div>
 <div class="sheet" id="sheet"></div>
+<div class="dscrim" id="dscrim"></div>
+<div class="dlg" id="dlg" role="dialog" aria-modal="true"></div>
 <input type="file" id="fileIn" class="hidden" accept=".tcx,.gpx,.xml,.json,.csv,.txt,text/xml,application/xml,application/json,text/csv,text/plain">
 
 <script>
@@ -722,6 +863,68 @@ var STRIDES_SECONDS = 20;
 var AREAS = ["Knee","Shin","Calf","Achilles","Ankle","Foot",
              "Hamstring","Quad","Hip","IT band","Groin","Lower back","Other"];
 
+/* "See a doctor before Phase 2" — week 16 in the plan as supplied, and the
+   other prescription that had nowhere to be answered. A single tick with a
+   date, prompted a few weeks ahead and escalating if phase 2 arrives without
+   it. The week is read from the plan's phase field, so it moves with edits. */
+var DOCTOR_WARN_WEEKS = 4;
+
+/* Fuelling practice. The plan says it in week 31 — "Begin fueling practice:
+   30-60g carb/hr" — and until now that was a note with nowhere to answer it,
+   the only numeric prescription in the whole plan that could not be logged.
+
+   Read from the plan's own phase and distance rather than a hardcoded week, so
+   editing the plan moves it. Phase 3 with a long run of 16 km or more picks out
+   exactly the week the note appears on, and keeps doing so if the weeks shift. */
+var FUEL_PHASE = 3;
+var FUEL_MIN_KM = 16;
+var FUEL_TARGET_LO = 30;              // grams of carbohydrate per hour
+var FUEL_TARGET_HI = 60;
+var GUT_SCALE = [
+  { v:"fine", t:"Fine" }, { v:"ok", t:"A bit off" }, { v:"bad", t:"Bad" }
+];
+
+/* Session RPE, and the load it makes possible.
+
+   Every guard in this app counts kilometres, which means a 14 km tempo and a
+   14 km easy run are indistinguishable to all of them — and from week 22 the
+   plan has you doing one of each most weeks. Rating the session 1-10 and
+   multiplying by its minutes gives a figure that works for a run, a bike hour
+   and a strength session alike, so total load can be seen rather than inferred
+   from mileage.
+
+   The acute-to-chronic comparison built on it has had fair methodological
+   criticism, so it is shown as a trend to read rather than a verdict to obey.
+   The underlying idea — do not spike the load — is what the plan's own
+   recovery weeks already encode. */
+var RPE_SCALE = [
+  { v:1,  t:"Very easy" },   { v:2,  t:"Easy" },
+  { v:3,  t:"Comfortable" }, { v:4,  t:"Steady" },
+  { v:5,  t:"Moderate" },    { v:6,  t:"Somewhat hard" },
+  { v:7,  t:"Hard" },        { v:8,  t:"Very hard" },
+  { v:9,  t:"Extremely hard" }, { v:10, t:"Maximal" }
+];
+/* Sessions logged before RPE existed still have an effort rating, so they get
+   a stand-in rather than being dropped from the totals — marked as estimated
+   wherever the numbers are shown, because a stand-in is not a reading. */
+var RPE_FROM_EFFORT = { easy:3, moderate:5, hard:8 };
+var RPE_DEFAULT_OTHER = 4;            // an unrated strength or cross session
+var FEEL_SCALE = [
+  { v:1, t:"Rough" }, { v:2, t:"Flat" }, { v:3, t:"Fine" },
+  { v:4, t:"Good" },  { v:5, t:"Strong" }
+];
+var ACUTE_DAYS = 7;
+var CHRONIC_DAYS = 28;
+
+/* Morning readings. Resting heart rate is the cheap one that earns its keep:
+   taken on waking, a sustained rise over your own recent baseline is the
+   oldest and most reliable sign that the build is outrunning the recovery.
+   It also anchors the VO2 estimate — see rhrOn(). */
+var RHR_BASELINE_DAYS = 14;           // what "your own baseline" means
+var RHR_MIN_BASELINE = 5;             // too few readings to call a baseline
+var RHR_FLAG_ABOVE = 5;               // bpm over baseline before it is worth saying
+var SLEEP_SHORT_H = 7;                // below this, flagged in the weekly read
+
 /* Conditions. A run is not just a distance and a time — 14 km into a headwind
    on a January trail is not the 14 km the same pace suggests, and a year from
    now the only thing that will explain a slow week is what was written down at
@@ -834,6 +1037,8 @@ function load(){
   if (!planOK(s.plan)){ s = migrateV1(s); s.migrated = true; }
   if (!s.settings || typeof s.settings !== "object") s.settings = {};
   if (typeof s.planId !== "string") s.planId = planOK(s.plan) ? "legacy" : PLAN_ID;
+  // A plan read from outside carries its own name; the shipped one uses PLAN_NAME.
+  if (typeof s.planName !== "string" || !s.planName) s.planName = null;
   if (!(s.settings.hrMax > 0))  s.settings.hrMax  = 190;   // edit in Stats
   if (!(s.settings.hrRest > 0)) s.settings.hrRest = 55;
   // Runs that belong to no plan slot — history imported from before the block
@@ -856,16 +1061,88 @@ function load(){
   // the recovery check.
   if (!s.strength || typeof s.strength !== "object") s.strength = {};
   if (!s.cross || typeof s.cross !== "object") s.cross = {};
+  // Morning readings, keyed by date: { rhr, sleepH, kg }. Nothing here is a
+  // session, so none of it reaches the distance maths or the volume guards.
+  if (!s.daily || typeof s.daily !== "object") s.daily = {};
+  // One-off things the plan asks for that are neither runs nor readings.
+  if (!s.checks || typeof s.checks !== "object") s.checks = {};
   if (!Array.isArray(s.shoes) || !s.shoes.length)
     s.shoes = [{ id:"sh1", name:"Current shoes", since:WEEK1_MONDAY,
-                 startKm:SHOE_START_KM, retired:null }];
+                 startKm:SHOE_START_KM, retired:null, def:true }];
+
+  /* Rotation migration. Mileage used to be worked out from a pair's service
+     window, which only ever worked because there was one pair at a time. With
+     several in service the windows overlap and the dates decide nothing, so
+     every run now names its pair.
+
+     Runs logged before that carry no name, so they are assigned here once,
+     using the old rule — the pair whose window covers the run, and only when
+     exactly one does. That leaves every existing total reading precisely as it
+     did, rather than resetting the shoes to zero on an app update. */
+  if (s.shoesRotation !== 2){
+    var assign = function(l){
+      if (!l || !l.done || !l.date || !(l.km > 0) || l.shoeId) return;
+      var hits = s.shoes.filter(function(sh){
+        if (l.date < sh.since) return false;
+        return !(sh.retired && l.date > sh.retired);
+      });
+      if (hits.length === 1) l.shoeId = hits[0].id;   // ambiguous stays unassigned
+    };
+    Object.keys(s.logs).forEach(function(k){ assign(s.logs[k]); });
+    (s.extras || []).forEach(assign);
+    if (!s.shoes.some(function(sh){ return sh.def && !sh.retired; })){
+      var firstActive = s.shoes.filter(function(sh){ return !sh.retired; })[0];
+      if (firstActive) firstActive.def = true;
+    }
+    s.shoesRotation = 2;
+  }
   s.version = 2;
   delete s.weekStarts;                                     // superseded by plan[].start
   return s;
 }
 function save(){
-  try { localStorage.setItem(KEY, JSON.stringify(state)); }
-  catch(e){ alert("Could not save — device storage may be full or private browsing is on."); }
+  _rhrIdx = null;                     // the daily readings may have moved
+  try { localStorage.setItem(KEY, JSON.stringify(state)); return; }
+  catch(e){}
+  /* An undo snapshot roughly doubles what is stored. If there is not room for
+     both, the live data wins and the undo is dropped — losing the ability to
+     go back is a great deal better than losing the thing itself. */
+  if (state.undo){
+    var keep = state.undo;
+    state.undo = null;
+    try { localStorage.setItem(KEY, JSON.stringify(state)); return; }
+    catch(e2){ state.undo = keep; }
+  }
+  say({ title:"Could not save", body:"Device storage may be full, or private browsing is on. Nothing was written." });
+}
+
+/* ---------- one step back ----------
+   Everything destructive in this app used to be one confirm() away from
+   permanent. A single snapshot costs almost nothing and turns each of them
+   into something you can look at afterwards and change your mind about. */
+function snapshot(label){
+  try {
+    var copy = JSON.parse(JSON.stringify(state));
+    delete copy.undo;                 // never nest them
+    state.undo = { label:label, at:Date.now(), state:copy };
+  } catch(e){ state.undo = null; }    // rather no undo than a failed action
+}
+function undoLabel(){
+  return (state.undo && state.undo.state) ? state.undo.label : null;
+}
+function doUndo(){
+  if (!state.undo || !state.undo.state) return;
+  var label = state.undo.label;
+  ask({ title:"Undo \u201c" + label + "\u201d?", danger:true, yes:"Undo it",
+        body:"Everything goes back to how it was immediately before that. " +
+             "Anything logged since will be lost." }, function(){
+    if (!state.undo || !state.undo.state) return;
+    var back = state.undo.state;
+    Object.keys(state).forEach(function(k){ delete state[k]; });
+    Object.keys(back).forEach(function(k){ state[k] = back[k]; });
+    state.undo = null;
+    save(); render();
+  });
 }
 
 /* ---------- plan accessors ---------- */
@@ -904,6 +1181,7 @@ function runPrescription(w, d){
   // Half hours matter here: the plan's cap is 210 minutes, and rounding it to
   // the nearest hour showed "cap 4 h" — half an hour more than the plan allows,
   // on the one session where the cap is the point.
+  if (fuelApplies(w, d)) out.push(FUEL_TARGET_LO + "\u2013" + FUEL_TARGET_HI + " g carb/hr");
   if (r.cap){
     var hh = r.cap / 60;
     out.push("cap " + (hh === Math.round(hh) ? hh + " h"
@@ -969,45 +1247,96 @@ function strengthTotals(){
 }
 
 /* ---------- cross-training ---------- */
-/* ---------- shoes ---------- */
-function activeShoe(){
-  for (var i = state.shoes.length - 1; i >= 0; i--)
-    if (!state.shoes[i].retired) return state.shoes[i];
+/* ---------- shoes ----------
+   Several pairs can be in service at once — a road pair, a trail pair, a race
+   pair — so a run has to say which it was in. Mileage keys on that, not on
+   dates: with one pair the service window told you everything, with a rotation
+   two windows overlap and the dates no longer decide anything.
+
+   Runs logged before rotation existed were backfilled onto their pair at load
+   (see load()), so the history stays exactly as it read. */
+function activeShoes(){
+  return state.shoes.filter(function(sh){ return !sh.retired; });
+}
+function retiredShoes(){
+  return state.shoes.filter(function(sh){ return !!sh.retired; });
+}
+/* The pair a run goes on unless told otherwise. */
+function defaultShoe(){
+  var act = activeShoes();
+  if (!act.length) return null;
+  for (var i = 0; i < act.length; i++) if (act[i].def) return act[i];
+  return act[0];
+}
+function shoeById(id){
+  for (var i = 0; i < state.shoes.length; i++)
+    if (state.shoes[i].id === id) return state.shoes[i];
   return null;
 }
-/* Every run in the pair's service window, plan or history alike. */
+function newShoeId(){
+  var m = 0;
+  state.shoes.forEach(function(sh){
+    var n = parseInt(String(sh.id).replace(/^sh/, ""), 10);
+    if (isFinite(n) && n > m) m = n;
+  });
+  return "sh" + (m + 1);
+}
+/* Everything worn on this pair, plan runs and history alike. */
 function shoeKm(sh){
   if (!sh) return 0;
   var km = sh.startKm || 0;
   allLogs().forEach(function(l){
     if (!l.date || !(l.km > 0)) return;
-    if (l.date < sh.since) return;
-    if (sh.retired && l.date > sh.retired) return;
+    if (l.shoeId !== sh.id) return;
     km += l.km;
   });
   return Math.round(km * 10) / 10;
 }
+/* Completed runs that name no pair. Worth surfacing rather than silently
+   losing their distance out of every pair's total. */
+function unshodRuns(){
+  return allLogs().filter(function(l){
+    return l.date && l.km > 0 && !l.shoeId;
+  }).length;
+}
+/* Kept for the one place a single pair is still the right question. */
+function activeShoe(){ return defaultShoe(); }
 function shoeState(sh){
   var km = shoeKm(sh);
   if (km >= SHOE_KM) return { km:km, level:"over" };
   if (km >= SHOE_KM * SHOE_WARN_AT) return { km:km, level:"near" };
   return { km:km, level:"ok" };
 }
-/* The day a pair is retired is its last day in service, and the next pair
-   starts the day after. Sharing the boundary would let a run logged on the
-   changeover day count towards both pairs, which is how a shoe silently reads
-   200 km further on than it has actually run. */
-function retireShoe(name){
-  var cur = activeShoe(), from = today();
-  if (cur){
-    cur.retired = toISO(from);
-    from = addDays(from, 1);
+/* Retiring is now just retiring: a pair goes out of service on the day it is
+   retired, and nothing is created in its place. Adding a pair is its own act,
+   because with a rotation the two are no longer the same event. */
+function retireShoe(id){
+  var sh = shoeById(id);
+  if (!sh || sh.retired) return;
+  sh.retired = toISO(today());
+  sh.def = false;
+  // The rotation must still have a default to log runs against.
+  if (!defaultShoe()){
+    var act = activeShoes();
+    if (act.length) act[0].def = true;
   }
-  state.shoes.push({
-    id: "sh" + (state.shoes.length + 1),
+  save(); render();
+}
+function addShoe(name, startKm){
+  var sh = {
+    id: newShoeId(),
     name: name || ("Pair " + (state.shoes.length + 1)),
-    since: toISO(from), startKm: 0, retired: null
-  });
+    since: toISO(today()),
+    startKm: startKm > 0 ? Math.round(startKm * 10) / 10 : 0,
+    retired: null,
+    def: !defaultShoe()                    // the first pair in service leads
+  };
+  state.shoes.push(sh);
+  save(); render();
+  return sh;
+}
+function setDefaultShoe(id){
+  state.shoes.forEach(function(sh){ sh.def = (sh.id === id && !sh.retired); });
   save(); render();
 }
 
@@ -1220,6 +1549,221 @@ function tailChipHTML(t){
     n1(t.km) + ' km</i></span>';
 }
 
+/* ---------- the pre-phase-2 check ---------- */
+/* The first week of the first phase past the base one. */
+function phase2Week(){
+  for (var w = 0; w < planLen(); w++) if ((wk(w).phase || 1) >= 2) return w;
+  return -1;
+}
+function doctorCheck(){ return state.checks.doctor || null; }
+function doctorState(){
+  var w = phase2Week();
+  if (w < 0) return null;                          // no second phase to prepare for
+  var start = weekStart(w), t = today();
+  var days = dayDiff(t, start);
+  var rec = doctorCheck();
+  return {
+    week: w + 1, start: start, days: days,
+    done: !!(rec && rec.done), rec: rec,
+    // Worth raising a few weeks out, and worth raising more loudly once the
+    // phase it was meant to precede has already begun.
+    due: days <= DOCTOR_WARN_WEEKS * 7,
+    overdue: days < 0
+  };
+}
+
+/* ---------- fuelling ---------- */
+function fuelApplies(w, d){
+  var r = runAt(w, d);
+  if (!r) return false;
+  return isLong(w, d) && (wk(w).phase || 1) >= FUEL_PHASE && (r.km || 0) >= FUEL_MIN_KM;
+}
+/* The first week the practice is asked for, so the app can say where it starts. */
+function fuelFromWeek(){
+  for (var w = 0; w < planLen(); w++)
+    for (var d = 0; d < runsOf(w).length; d++)
+      if (fuelApplies(w, d)) return w + 1;
+  return 0;
+}
+/* Grams per hour is what the plan prescribes, but total grams is what you
+   actually know — three gels is a number you can count, 47 g/hr is not. So the
+   total is entered and the rate derived from the run's own duration. */
+function fuelRate(l){
+  if (!l || !l.fuel || !(l.fuel.carbG > 0) || !(l.durSec > 0)) return null;
+  var hours = l.durSec / 3600;
+  if (!(hours > 0.25)) return null;                 // too short for a rate to mean anything
+  return Math.round(l.fuel.carbG / hours);
+}
+function fuelBand(gPerHr){
+  if (gPerHr === null) return null;
+  if (gPerHr < FUEL_TARGET_LO) return { k:"under", t:"under the plan\u2019s " +
+    FUEL_TARGET_LO + "\u2013" + FUEL_TARGET_HI + " g/hr" };
+  if (gPerHr <= FUEL_TARGET_HI) return { k:"in", t:"inside the plan\u2019s " +
+    FUEL_TARGET_LO + "\u2013" + FUEL_TARGET_HI + " g/hr" };
+  return { k:"over", t:"above the plan\u2019s " + FUEL_TARGET_LO + "\u2013" +
+    FUEL_TARGET_HI + " g/hr" };
+}
+function gutLabel(v){
+  var g = GUT_SCALE.filter(function(x){ return x.v === v; })[0];
+  return g ? g.t : null;
+}
+/* Every long run that asked for fuelling, and what was taken on it. */
+function fuelSessions(){
+  var out = [];
+  for (var w = 0; w < planLen(); w++)
+    for (var d = 0; d < runsOf(w).length; d++){
+      if (!fuelApplies(w, d)) continue;
+      var l = getLog(w, d);
+      out.push({ w:w, d:d, log:l, date:toISO(runDate(w, d)),
+                 done: !!(l && l.done), rate: l ? fuelRate(l) : null });
+    }
+  return out;
+}
+
+/* ---------- training load ----------
+   Load is RPE x minutes, in arbitrary units, which is the standard session-RPE
+   figure. Its value here is that it is the same unit for a run, a swim and
+   twenty minutes of calf raises, so the three can finally be added up. */
+function rpeOf(l, kind){
+  if (!l) return null;
+  if (l.rpe >= 1 && l.rpe <= 10) return l.rpe;
+  if (kind === "run" && l.effort && RPE_FROM_EFFORT[l.effort]) return RPE_FROM_EFFORT[l.effort];
+  return kind === "run" ? null : RPE_DEFAULT_OTHER;
+}
+function rpeIsEstimated(l){ return !(l && l.rpe >= 1 && l.rpe <= 10); }
+
+/* Every completed session with a date, a duration and a load. Runs, cross
+   training and strength together — the point of the exercise. */
+function sessionLoads(){
+  var out = [];
+  var add = function(l, kind, mins){
+    if (!l || !l.done || !l.date || !(mins > 0)) return;
+    var r = rpeOf(l, kind);
+    if (!(r > 0)) return;
+    out.push({ date:l.date, kind:kind, mins:mins, rpe:r,
+               load:Math.round(r * mins), estimated:rpeIsEstimated(l) });
+  };
+  Object.keys(state.logs).forEach(function(k){
+    var l = state.logs[k];
+    if (l && l.done) add(l, "run", (l.durSec || 0) / 60);
+  });
+  extraLogs().forEach(function(l){ add(l, "run", (l.durSec || 0) / 60); });
+  Object.keys(state.cross).forEach(function(k){
+    var c = state.cross[k]; if (c) add(c, "cross", c.mins || 0);
+  });
+  Object.keys(state.strength).forEach(function(k){
+    var st = state.strength[k]; if (st) add(st, "strength", st.mins || 0);
+  });
+  return out.sort(function(a, b){ return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+}
+/* Total load in the window ending on `to`, `days` long and inclusive of it. */
+function loadBetween(sessions, to, days){
+  var from = toISO(addDays(parseISO(to), -(days - 1)));
+  var sum = 0, n = 0, est = 0;
+  sessions.forEach(function(x){
+    if (x.date >= from && x.date <= to){ sum += x.load; n++; if (x.estimated) est++; }
+  });
+  return { load:sum, sessions:n, estimated:est };
+}
+/* Acute against chronic: this week's load against the weekly average of the
+   last four. A ratio near 1 means this week looks like the recent normal. */
+function loadRatio(){
+  var sessions = sessionLoads();
+  if (!sessions.length) return null;
+  var to = toISO(today());
+  var acute = loadBetween(sessions, to, ACUTE_DAYS);
+  var chronicWin = loadBetween(sessions, to, CHRONIC_DAYS);
+  var chronic = chronicWin.load / (CHRONIC_DAYS / ACUTE_DAYS);   // per acute-length week
+
+  // Before there is four weeks of history behind it the ratio is comparing a
+  // week against itself, which always reads about 1 and means nothing.
+  var first = sessions[0].date;
+  var span = dayDiff(parseISO(first), parseISO(to)) + 1;
+  var settled = span >= CHRONIC_DAYS;
+
+  return {
+    acute:acute.load, chronic:Math.round(chronic),
+    ratio: chronic > 0 ? Math.round(acute.load / chronic * 100) / 100 : null,
+    sessions:acute.sessions, estimated:chronicWin.estimated,
+    totalSessions:chronicWin.sessions, settled:settled, days:span
+  };
+}
+function loadBand(r){
+  if (r === null) return { k:"none", t:"Not enough to compare against yet." };
+  if (r < 0.8)  return { k:"low",   t:"Lighter than the recent normal \u2014 a recovery week, or a week that slipped." };
+  if (r <= 1.3) return { k:"ok",    t:"In step with the last four weeks." };
+  if (r <= 1.5) return { k:"climb", t:"Climbing faster than the recent normal. Worth a look at what is planned next." };
+  return { k:"spike", t:"A long way above the recent normal. This is the shape of week that tends to precede an injury." };
+}
+/* Load by plan week, for the chart. */
+function weeklyLoads(){
+  var sessions = sessionLoads(), out = [];
+  for (var w = 0; w < planLen(); w++){
+    var a = toISO(weekStart(w)), b = toISO(addDays(weekStart(w), 6)), sum = 0;
+    sessions.forEach(function(x){ if (x.date >= a && x.date <= b) sum += x.load; });
+    out.push({ w:w, load:sum });
+  }
+  return out;
+}
+
+/* ---------- morning readings ----------
+   Kept apart from the logs: a weight or a night's sleep is not a session, and
+   none of it may reach weekly distance, the 110% warning or a recovery week. */
+function dayRec(iso){ return state.daily[iso] || null; }
+function setDay(iso, rec){
+  if (rec && (rec.rhr || rec.sleepH || rec.kg)) state.daily[iso] = rec;
+  else delete state.daily[iso];                    // an emptied day is no day
+  _rhrIdx = null;
+}
+/* Every date with a reading, oldest first. */
+function dailyDates(){ return Object.keys(state.daily).sort(); }
+function dailySeries(key){
+  var out = [];
+  dailyDates().forEach(function(d){
+    var v = state.daily[d][key];
+    if (typeof v === "number" && v > 0) out.push({ date:d, v:v });
+  });
+  return out;
+}
+
+/* Resting heart rate as it stood on a given day — the most recent reading on
+   or before that date. Built once and cached, because vo2for() asks for it
+   for every run on every render, and rebuilding the index each time would
+   make that quadratic. save() clears the cache. */
+var _rhrIdx = null;
+function rhrIndex(){
+  if (!_rhrIdx) _rhrIdx = dailySeries("rhr");
+  return _rhrIdx;
+}
+function rhrOn(iso){
+  var a = rhrIndex(), lo = 0, hi = a.length - 1, best = null;
+  while (lo <= hi){                                 // last entry with date <= iso
+    var mid = (lo + hi) >> 1;
+    if (a[mid].date <= iso){ best = a[mid].v; lo = mid + 1; }
+    else hi = mid - 1;
+  }
+  return best;
+}
+/* The mean of the readings in the window before (and not including) a date.
+   Your own baseline, not a population one — the number that matters is the
+   change from where you normally sit. */
+function rhrBaseline(iso){
+  var a = rhrIndex(), from = toISO(addDays(parseISO(iso), -RHR_BASELINE_DAYS));
+  var vals = a.filter(function(x){ return x.date >= from && x.date < iso; })
+               .map(function(x){ return x.v; });
+  if (vals.length < RHR_MIN_BASELINE) return null;  // not enough to call it a baseline
+  return Math.round(vals.reduce(function(p, q){ return p + q; }, 0) / vals.length * 10) / 10;
+}
+/* Today's reading against that baseline, when both exist. */
+function rhrFlag(iso){
+  var rec = dayRec(iso);
+  if (!rec || !(rec.rhr > 0)) return null;
+  var base = rhrBaseline(iso);
+  if (base === null) return null;
+  var delta = Math.round((rec.rhr - base) * 10) / 10;
+  return { rhr:rec.rhr, base:base, delta:delta, high:delta >= RHR_FLAG_ABOVE };
+}
+
 /* ---------- VO2 max estimate ----------
    Pace -> oxygen cost (ACSM/Daniels running equation), then scaled by heart
    rate reserve, since %HRreserve tracks %VO2reserve closely. This is an
@@ -1228,11 +1772,20 @@ function tailChipHTML(t){
 function vo2for(l){
   if (!l || !l.done || !(l.km > 0) || !(l.durSec > 0) || !(l.hr > 0)) return null;
   var st = state.settings;
-  if (!(st.hrMax > st.hrRest)) return null;
+  /* Resting heart rate as it was on the day of the run, falling back to the
+     setting when there is no reading that old.
+
+     This used to read the single settings figure for every run, which meant
+     the whole historical trend was scaled by whatever the setting said today:
+     correcting a stale 55 down to 48 silently lifted every VO2 the app had
+     ever shown. Over a 42-week base build the resting rate is supposed to
+     fall, so the value has to travel with the run rather than with the app. */
+  var rest = rhrOn(l.date || "") || st.hrRest;
+  if (!(st.hrMax > rest)) return null;
   var v = (l.km * 1000) / (l.durSec / 60);                      // metres per minute
   if (!(v > 60) || v > 500) return null;
   var cost = -4.60 + 0.182258 * v + 0.000104 * v * v;           // ml/kg/min at that pace
-  var frac = (l.hr - st.hrRest) / (st.hrMax - st.hrRest);       // heart rate reserve
+  var frac = (l.hr - rest) / (st.hrMax - rest);                 // heart rate reserve
   if (!(frac > 0.4) || frac > 1.05) return null;                // too easy or over max to be meaningful
   return Math.round(((cost - 3.5) / frac + 3.5) * 10) / 10;
 }
@@ -1874,43 +2427,444 @@ function fmtK(x){
    already logged is moved to history first, so switching plans cannot cost you
    a run you actually did. */
 function planIsCurrent(){ return state.planId === PLAN_ID; }
+function planName(){ return state.planName || PLAN_NAME; }
 
-function adoptNewPlan(){
-  var kept = 0;
-  for (var w = 0; w < planLen(); w++)
-    for (var d = 0; d < runsOf(w).length; d++){
-      var l = getLog(w, d);
-      if (!l || !l.done || !l.date) continue;
-      if (haveExtra(l.date, l.km || 0)) continue;
-      state.extras.push({
-        id: newId(), done:true, skipped:false,
-        km: l.km, durSec: l.durSec || 0, hr: l.hr || null, kcal: l.kcal || null,
-        splits: l.splits || null, effort: l.effort || null,
-        date: l.date, ts: l.ts || Date.now(),
-        extra: true, fromPlan: true, pain: l.pain || null
-      });
-      kept++;
+/* ---------- reshaping several weeks at once ----------
+
+   Editing a week at a time is right for one change and wrong for forty. Moving
+   every long run to Saturday, or taking a block up ten per cent, is one
+   decision and should be one action.
+
+   All of it edits the plan in place, so the run ids never change and not a
+   single log is touched — that is the whole reason these are safe to offer. */
+
+/* Scale the distances in a week range. Rounded to the half-kilometre, because
+   a plan that reads 12.37 km is a plan nobody follows. */
+function scaleWeeks(from, to, factor){
+  var n = 0;
+  for (var w = from; w <= to && w < planLen(); w++)
+    runsOf(w).forEach(function(r){
+      if (!(r.km > 0)) return;
+      var v = Math.round(r.km * factor * 2) / 2;
+      if (v < 0.5) v = 0.5;                 // a run is a run
+      if (v !== r.km){ r.km = v; n++; }
+    });
+  return n;
+}
+
+/* Move sessions from one day of the week to another, across a range. `which`
+   is a weekday offset, or "long" for whichever run is longest that week. */
+function moveWeekday(from, to, which, target){
+  var moved = 0, blocked = 0;
+  for (var w = from; w <= to && w < planLen(); w++){
+    var rs = runsOf(w), pick = null;
+    if (which === "long"){
+      var d = 0;
+      for (var i = 0; i < rs.length; i++) if (rs[i].km > rs[d].km) d = i;
+      pick = rs.length ? rs[d] : null;
+    } else {
+      for (var j = 0; j < rs.length; j++) if (rs[j].off === which){ pick = rs[j]; break; }
     }
+    if (!pick || pick.off === target) continue;
+    // Another run already there is a collision, and two runs on one day is not
+    // something this plan's week can express. Left alone, and counted.
+    var taken = rs.some(function(o){ return o !== pick && o.off === target; });
+    if (taken){ blocked++; continue; }
+    pick.off = target;
+    sortRuns(w);
+    moved++;
+  }
+  return { moved:moved, blocked:blocked };
+}
 
-  if (!confirm("Load " + PLAN_NAME + "?\n\n" + DEFAULT_PLAN.length + " weeks, " +
-      n1(DEFAULT_PLAN.reduce(function(a, x){
-        return a + x.r.reduce(function(b, y){ return b + y[1]; }, 0); }, 0)) +
-      " km, finishing " + fmtLong(parseISO(RACE_DATE)) + ".\n\n" +
-      (kept ? kept + " logged run" + (kept === 1 ? "" : "s") + " will be kept as history."
-            : "Nothing is logged against the current plan.")))
+/* ---------- reading a plan from outside the app ----------
+
+   Until now the only plan this app knew was the one in its own source, which
+   made "change the plan" mean "edit the one you have, week by week". A coach
+   hands you a spreadsheet; there was nowhere to put it.
+
+   Three shapes are accepted, because a plan arrives in whatever form its author
+   had to hand: the app's own stored plan, the seed shape at the top of this
+   file, and a CSV of runs. Everything is normalised to the stored shape with
+   fresh ids, and nothing is written until it has been read successfully. */
+var PLAN_TYPES = ["easy", "long", "tempo", "race"];
+
+function planFromSeedWeek(wk2, n, idFor){
+  var runs = (wk2.r || []).map(function(x){
+    var o = x[3] || {};
+    var r = { id:idFor(), off:+x[0], km:+x[1], type:PLAN_TYPES.indexOf(x[2]) >= 0 ? x[2] : "easy" };
+    if (o.cap) r.cap = o.cap;
+    if (o.tempo) r.tempo = o.tempo;
+    if (o.mp) r.mp = o.mp;
+    if (o.strides) r.strides = true;
+    return r;
+  });
+  return { start:wk2.s, tag:wk2.t || null, phase:wk2.p || 1, note:wk2.n || null, runs:runs };
+}
+
+/* One row per run. Columns are found by name, so column order does not matter
+   and extra columns are ignored — a coach's spreadsheet has plenty of those. */
+function planFromRows(rows){
+  var byWeek = {}, order = [];
+  rows.forEach(function(r){
+    var iso = r.date;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso || "")) return;
+    var mon = mondayISO(iso);
+    if (!byWeek[mon]){ byWeek[mon] = { start:mon, tag:null, phase:1, note:null, runs:[] }; order.push(mon); }
+    var wk2 = byWeek[mon];
+    var off = dayDiff(parseISO(mon), parseISO(iso));
+    var run = { off:off, km:r.km, type:PLAN_TYPES.indexOf(r.type) >= 0 ? r.type : "easy" };
+    if (r.cap > 0) run.cap = r.cap;
+    if (r.tempo > 0) run.tempo = r.tempo;
+    if (r.mp > 0) run.mp = r.mp;
+    if (r.strides) run.strides = true;
+    wk2.runs.push(run);
+    if (r.note && !wk2.note) wk2.note = r.note;
+    if (r.tag && !wk2.tag) wk2.tag = r.tag;
+    if (r.phase > 0) wk2.phase = r.phase;
+  });
+  order.sort();
+  return order.map(function(k){ return byWeek[k]; });
+}
+
+function parsePlanCSV(text){
+  var lines = String(text).replace(/\r/g, "").split("\n").filter(function(l){ return l.trim(); });
+  if (lines.length < 2) throw new Error("That has no rows under its header.");
+  var sep = (lines[0].indexOf("\t") >= 0) ? "\t" : ",";
+  var head = lines[0].split(sep).map(function(x){ return keyish(x); });
+  var col = function(names){
+    for (var i = 0; i < head.length; i++)
+      if (names.indexOf(head[i]) >= 0) return i;
+    return -1;
+  };
+  var cDate = col(["date","day","when"]);
+  var cKm   = col(["km","distance","distancekm","kilometres","kilometers"]);
+  if (cDate < 0) throw new Error("No date column. Add one headed \u201cdate\u201d, with dates like 2026-08-11.");
+  if (cKm < 0)   throw new Error("No distance column. Add one headed \u201ckm\u201d.");
+  var cType = col(["type","session","kind"]), cNote = col(["note","notes","comment"]);
+  var cTag = col(["tag","week","weektag"]), cPhase = col(["phase"]);
+  var cCap = col(["cap","capmin"]), cTempo = col(["tempo","tempomin"]);
+  var cMp = col(["mp","marathonpace","mpkm"]), cStr = col(["strides"]);
+
+  var rows = [], bad = 0;
+  for (var i = 1; i < lines.length; i++){
+    var f = lines[i].split(sep).map(function(x){ return x.trim().replace(/^"|"$/g, ""); });
+    var km = parseFloat(f[cKm]);
+    var d = (f[cDate] || "").slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || !(km > 0)){ bad++; continue; }
+    rows.push({
+      date:d, km:km,
+      type: cType >= 0 ? String(f[cType] || "").toLowerCase() : "easy",
+      note: cNote >= 0 ? f[cNote] : null,
+      tag:  cTag >= 0 && !/^\d+$/.test(f[cTag] || "") ? (f[cTag] || "").toUpperCase() : null,
+      phase: cPhase >= 0 ? parseInt(f[cPhase], 10) : 0,
+      cap: cCap >= 0 ? parseFloat(f[cCap]) : 0,
+      tempo: cTempo >= 0 ? parseFloat(f[cTempo]) : 0,
+      mp: cMp >= 0 ? parseFloat(f[cMp]) : 0,
+      strides: cStr >= 0 && /^(1|y|yes|true)$/i.test(f[cStr] || "")
+    });
+  }
+  if (!rows.length) throw new Error("No usable rows \u2014 every one was missing a date or a distance.");
+  return { rows:rows, skipped:bad };
+}
+
+/* Whatever arrived, turned into a plan this app can hold. Throws with something
+   worth reading rather than returning null. */
+function parsePlanText(text){
+  text = String(text || "").trim();
+  if (!text) throw new Error("Nothing to read.");
+  var seq = 0, idFor = function(){ return "p" + (++seq); };
+  var weeks = null, skipped = 0, source = "";
+
+  if (text.charAt(0) === "{" || text.charAt(0) === "["){
+    var data;
+    try { data = JSON.parse(text); }
+    catch(e){ throw new Error("That starts like JSON but does not parse: " + e.message); }
+    var arr = Array.isArray(data) ? data
+            : (data && Array.isArray(data.plan)) ? data.plan : null;
+    if (!arr) throw new Error("No plan found. A backup needs a \u201cplan\u201d array; " +
+                              "a plan file should be the array itself.");
+    if (!arr.length) throw new Error("That plan has no weeks in it.");
+    if (arr[0] && typeof arr[0].s === "string" && Array.isArray(arr[0].r)){
+      weeks = arr.map(function(w){ return planFromSeedWeek(w, 0, idFor); });
+      source = "a plan in the app\u2019s own seed shape";
+    } else {
+      weeks = arr.map(function(w){
+        return {
+          start: w.start, tag: w.tag || null, phase: w.phase || 1, note: w.note || null,
+          runs: (w.runs || []).map(function(r){
+            var o = { id:idFor(), off:+r.off, km:+r.km,
+                      type:PLAN_TYPES.indexOf(r.type) >= 0 ? r.type : "easy" };
+            if (r.cap) o.cap = r.cap;
+            if (r.tempo) o.tempo = r.tempo;
+            if (r.mp) o.mp = r.mp;
+            if (r.strides) o.strides = true;
+            return o;
+          })
+        };
+      });
+      source = "a stored plan";
+    }
+  } else {
+    var csv = parsePlanCSV(text);
+    weeks = planFromRows(csv.rows);
+    skipped = csv.skipped;
+    weeks.forEach(function(w){ w.runs.forEach(function(r){ r.id = idFor(); }); });
+    source = csv.rows.length + " rows of CSV";
+  }
+
+  /* Whatever the source, the result has to satisfy the same rules the app's own
+     plan does, or it is not a plan. */
+  weeks = weeks.filter(function(w){ return w && w.runs && w.runs.length; });
+  if (!weeks.length) throw new Error("That has no weeks with runs in them.");
+  if (weeks.length > MAX_WEEKS)
+    throw new Error("That is " + weeks.length + " weeks. The most this app holds is " + MAX_WEEKS + ".");
+  weeks.forEach(function(w){
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(w.start || ""))
+      throw new Error("A week has no valid start date. Weeks start on a Monday, as 2026-08-10.");
+    w.start = mondayISO(w.start);          // snap to the Monday, as the app assumes
+    w.runs.forEach(function(r){
+      if (!(r.km > 0)) throw new Error("A run in the week of " + w.start + " has no distance.");
+      if (!(r.off >= 0 && r.off <= 6))
+        throw new Error("A run in the week of " + w.start + " falls outside its week.");
+    });
+    w.runs.sort(function(a, b){ return a.off - b.off; });
+    // Sessions the plan does not mention still get their slots, as freshPlan does.
+    w.strength = STRENGTH_OFFSETS.map(function(off){ return { id:"s" + (++seq), off:off }; });
+    w.cross = XT_OFFSETS.map(function(off){ return { id:"x" + (++seq), off:off }; });
+  });
+  weeks.sort(function(a, b){ return a.start < b.start ? -1 : a.start > b.start ? 1 : 0; });
+  if (!planOK(weeks)) throw new Error("That did not come out as a plan this app can hold.");
+  return { plan:weeks, skipped:skipped, source:source };
+}
+
+/* ---------- changing the plan without losing what you have done ----------
+
+   Logs key on run ids, which is what makes editing a plan safe. Replacing one
+   is different: the new plan's runs are new objects with new ids, so every log
+   would orphan, and the old behaviour was to sweep them all into history —
+   safe, but it emptied the week table, the streak and every adherence figure
+   of a block you had actually run.
+
+   A date is the thing that survives a plan change. A run done on 25 August is
+   still a run done on 25 August whatever the new plan calls that day, so logs
+   are re-pointed onto whichever run in the new plan falls on their date. Only
+   what genuinely has no home goes to history. */
+var REATTACH_DAYS = 3;          // the window the importer already uses to pair a run
+
+/* Dates for every session in a plan array, without needing it installed. */
+function planSlots(plan, key){
+  var out = [];
+  plan.forEach(function(wk2, w){
+    (wk2[key] || []).forEach(function(r, d){
+      out.push({ w:w, d:d, id:r.id,
+                 date: toISO(addDays(parseISO(wk2.start), r.off || 0)) });
+    });
+  });
+  return out.sort(function(a, b){ return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+}
+/* The free slot nearest a date, exact match first. Entries are matched in date
+   order so that an earlier run cannot be displaced by a later one reaching
+   back for the same slot. */
+function nearestSlot(slots, taken, date, windowDays){
+  var best = null, bestGap = Infinity;
+  for (var i = 0; i < slots.length; i++){
+    if (taken[slots[i].id]) continue;
+    var gap = Math.abs(dayDiff(parseISO(date), parseISO(slots[i].date)));
+    if (gap > windowDays) continue;
+    if (gap < bestGap){ best = slots[i]; bestGap = gap; }
+    if (gap === 0) break;                      // nothing beats the same day
+  }
+  return best;
+}
+
+/* Work out where everything lands, without changing anything. The preview and
+   the commit run the same function, so what you are shown is what happens. */
+function planTransfer(newPlan, opts){
+  opts = opts || {};
+  var res = { logs:{}, strength:{}, cross:{}, extras:[],
+              matched:0, rescued:0, toHistory:0, strengthKept:0, crossKept:0 };
+
+  var gather = function(store, plan, key){
+    var out = [];
+    if (plan){
+      plan.forEach(function(wk2, w){
+        (wk2[key] || []).forEach(function(r){
+          var l = store[r.id];
+          if (l && (l.done || l.skipped) && l.date) out.push({ log:l, from:"plan" });
+        });
+      });
+    }
+    return out;
+  };
+
+  /* Runs: what is on the plan now, plus anything an earlier plan change
+     stranded in history — those were plan runs once and can come home. */
+  var runEntries = gather(state.logs, state.plan, "runs");
+  var keptExtras = [];
+  state.extras.forEach(function(l, i){
+    if (opts.rescueHistory && l && l.done && l.date && l.fromPlan)
+      runEntries.push({ log:l, from:"history", idx:i });
+    else keptExtras.push(l);
+  });
+  runEntries.sort(function(a, b){ return a.log.date < b.log.date ? -1 : 1; });
+
+  var runSlots = planSlots(newPlan, "runs"), takenRuns = {};
+  runEntries.forEach(function(e){
+    var slot = nearestSlot(runSlots, takenRuns, e.log.date, REATTACH_DAYS);
+    if (slot){
+      takenRuns[slot.id] = true;
+      var copy = JSON.parse(JSON.stringify(e.log));
+      delete copy.fromPlan;                     // it is on a plan again
+      delete copy.extra;
+      delete copy.id;
+      res.logs[slot.id] = copy;
+      res.matched++;
+      if (e.from === "history") res.rescued++;
+    } else if (e.from === "plan"){
+      var h = JSON.parse(JSON.stringify(e.log));
+      h.id = "x" + (res.extras.length + 1) + "-" + (h.date || "");
+      h.extra = true; h.fromPlan = true;
+      res.extras.push(h);
+      res.toHistory++;
+    } else {
+      keptExtras.push(e.log);                   // came from history, stays there
+    }
+  });
+  res.extras = keptExtras.concat(res.extras)
+    .filter(Boolean)
+    .sort(function(a, b){ return (a.date || "") < (b.date || "") ? -1 : 1; });
+
+  /* Strength and cross-training the same way, on their own slots. */
+  [["strength", "strengthKept"], ["cross", "crossKept"]].forEach(function(pair){
+    var key = pair[0];
+    var entries = gather(state[key], state.plan, key)
+      .sort(function(a, b){ return a.log.date < b.log.date ? -1 : 1; });
+    var slots = planSlots(newPlan, key), taken = {};
+    entries.forEach(function(e){
+      var slot = nearestSlot(slots, taken, e.log.date, REATTACH_DAYS);
+      if (!slot) return;                        // no home, and no history for these
+      taken[slot.id] = true;
+      res[key][slot.id] = JSON.parse(JSON.stringify(e.log));
+      res[pair[1]]++;
+    });
+  });
+
+  return res;
+}
+
+function adoptNewPlan(){ restoreShippedPlan(); }
+
+/* Swap a plan in, keeping every run the dates can account for. Shared by the
+   three routes that replace a plan — the shipped one, a restore of it, and one
+   read from outside — so all three behave the same and are previewed the same. */
+function installPlan(newPlan, opts){
+  opts = opts || {};
+  var t = planTransfer(newPlan, { rescueHistory:true });
+  var lines = [];
+  if (opts.summary) lines.push(opts.summary, "");
+  if (t.matched)
+    lines.push(t.matched + " logged run" + (t.matched === 1 ? "" : "s") +
+      " move across onto it, matched by date" +
+      (t.rescued ? " \u2014 " + t.rescued + " of them pulled back out of history" : "") + ".");
+  if (t.strengthKept || t.crossKept)
+    lines.push(t.strengthKept + " strength and " + t.crossKept + " cross-training session" +
+      (t.crossKept === 1 ? "" : "s") + " move across too.");
+  if (t.toHistory)
+    lines.push(t.toHistory + " run" + (t.toHistory === 1 ? "" : "s") +
+      " fall on days the new plan has nothing near, so " +
+      (t.toHistory === 1 ? "it stays" : "they stay") + " in your history.");
+  if (!t.matched && !t.toHistory) lines.push("Nothing is logged yet, so nothing has to move.");
+  lines.push("", "This can be undone afterwards.");
+
+  ask({ title:opts.title || "Load this plan?", yes:opts.yes || "Load it",
+        body:lines.join("\n") }, function(){
+    snapshot(opts.undoLabel || "Load a plan");
+    state.logs = t.logs;
+    state.strength = t.strength;
+    state.cross = t.cross;
+    state.extras = t.extras;
+    state.plan = newPlan;
+    state.seq = Math.max(state.seq || 0, maxSeq(state.plan));
+    state.planId = opts.planId || ("custom-" + Date.now());
+    state.planName = opts.planName || null;
+    state.settings.strides = null;        // the gate belongs to a plan, so ask again
+    save(); render();
+    say({ title:opts.done || "Plan loaded",
+          body:(t.matched ? t.matched + " run" + (t.matched === 1 ? " is" : "s are") +
+                            " attached to it.\n" : "") +
+               (t.toHistory ? t.toHistory + " kept as history.\n" : "") +
+               "\nStats has an undo if this is not what you wanted." });
+  });
+}
+
+/* The plan the app ships with, put back without touching a single logged run.
+   "Erase logs and reset the plan" was the only way to get it back, and it took
+   everything with it. */
+function restoreShippedPlan(){
+  installPlan(freshPlan(), {
+    title:"Restore " + PLAN_NAME + "?",
+    yes:"Restore it",
+    summary:DEFAULT_PLAN.length + " weeks, " + n1(DEFAULT_PLAN.reduce(function(a, x){
+      return a + x.r.reduce(function(b, y){ return b + y[1]; }, 0); }, 0)) +
+      " km, finishing " + fmtLong(parseISO(RACE_DATE)) + ".",
+    undoLabel:"Restore " + PLAN_NAME,
+    planId:PLAN_ID, planName:null,
+    done:"Restored " + PLAN_NAME
+  });
+}
+
+/* A plan from outside: pasted, or read off a file. */
+function loadPlanFromText(text, label){
+  var parsed;
+  try { parsed = parsePlanText(text); }
+  catch(e){
+    say({ title:"That is not a plan this app can read", body:e.message });
     return;
+  }
+  var km = parsed.plan.reduce(function(a, w){
+    return a + w.runs.reduce(function(b, r){ return b + r.km; }, 0); }, 0);
+  installPlan(parsed.plan, {
+    title:"Load this plan?",
+    yes:"Load it",
+    summary:"Read " + parsed.source + ": " + parsed.plan.length + " weeks, " + n1(km) +
+      " km, " + fmtDate(parseISO(parsed.plan[0].start)) + " to " +
+      fmtDate(addDays(parseISO(parsed.plan[parsed.plan.length-1].start), 6)) + "." +
+      (parsed.skipped ? "\n" + parsed.skipped + " row" + (parsed.skipped === 1 ? "" : "s") +
+        " skipped for having no date or no distance." : ""),
+    undoLabel:"Load " + (label || "a plan"),
+    planName:label || null,
+    done:"Plan loaded"
+  });
+}
 
-  state.extras.sort(function(a, b){ return (a.date || "") < (b.date || "") ? -1 : 1; });
-  state.logs = {};
-  state.strength = {};
-  state.cross = {};
-  state.plan = freshPlan();
-  state.seq = Math.max(state.seq || 0, maxSeq(state.plan));
-  state.planId = PLAN_ID;
-  state.settings.strides = null;          // the gate is about this plan, ask again
-  save(); render();
-  alert("Loaded " + PLAN_NAME + "." + (kept ? "\n\n" + kept + " earlier run" +
-    (kept === 1 ? " is" : "s are") + " now in your history." : ""));
+/* Runs stranded in history by an earlier plan change, brought back onto the
+   plan they now fit. The same matcher, run against the plan already installed. */
+function rescueHistory(){
+  var t = planTransfer(state.plan, { rescueHistory:true });
+  if (!t.rescued){
+    say({ title:"Nothing to re-attach", body:"No run in your history falls on a day this plan has a free run for." });
+    return;
+  }
+  ask({ title:"Re-attach " + t.rescued + " run" + (t.rescued === 1 ? "" : "s") + "?",
+        yes:"Attach " + (t.rescued === 1 ? "it" : "them"),
+        body:t.rescued + " run" + (t.rescued === 1 ? "" : "s") + " in your history fall on " +
+             "days this plan has runs for.\n\nThey will count towards their weeks again " +
+             "\u2014 adherence, the week table and the streak. This can be undone afterwards." },
+    function(){
+      snapshot("Re-attach " + t.rescued + " run" + (t.rescued === 1 ? "" : "s") + " to the plan");
+      state.logs = t.logs;
+      state.strength = t.strength;
+      state.cross = t.cross;
+      state.extras = t.extras;
+      save(); render();
+      say({ body:t.rescued + " run" + (t.rescued === 1 ? " is" : "s are") + " back on the plan." });
+    });
+}
+/* How many could be rescued, for the offer to be worth making. */
+function rescuableCount(){
+  if (!state.extras.some(function(l){ return l && l.fromPlan; })) return 0;
+  return planTransfer(state.plan, { rescueHistory:true }).rescued;
 }
 
 function shiftFrom(w){
@@ -1934,7 +2888,7 @@ function nudgeWeek(w, weeks){
 }
 
 function addWeek(){
-  if (planLen() >= MAX_WEEKS){ alert("That is as long as the plan goes."); return; }
+  if (planLen() >= MAX_WEEKS){ say({ title:"That is as long as it goes", body:"A plan can run to " + MAX_WEEKS + " weeks." }); return; }
   var last = state.plan[planLen()-1];
   state.plan.push({
     start: toISO(addDays(parseISO(last.start), 7)),
@@ -1946,20 +2900,24 @@ function addWeek(){
 }
 
 function deleteWeek(w){
-  if (planLen() <= 1){ alert("The plan needs at least one week."); return; }
+  if (planLen() <= 1){ say({ body:"The plan needs at least one week." }); return; }
   var n = 0;
   runsOf(w).forEach(function(r){ if (state.logs[r.id]) n++; });
-  if (!confirm("Delete week " + (w+1) +
-      (n ? ", including " + n + " logged run" + (n === 1 ? "" : "s") : "") +
-      "?\n\nThis cannot be undone.")) return;
-  runsOf(w).forEach(function(r){ delete state.logs[r.id]; });
-  strengthOf(w).forEach(function(x){ delete state.strength[x.id]; });
-  crossOf(w).forEach(function(x){ delete state.cross[x.id]; });
-  state.plan.splice(w, 1);
-  // pull the later weeks back so the calendar stays tight
-  for (var i = w; i < planLen(); i++)
-    state.plan[i].start = toISO(addDays(weekStart(i), -7));
-  save(); render();
+  ask({ title:"Delete week " + (w+1) + "?", danger:true, yes:"Delete the week",
+        body:(n ? "This week has " + n + " logged run" + (n === 1 ? "" : "s") +
+                  " on it, which will go with it.\n\n" : "") +
+             "Later weeks move back a week so the calendar stays tight. " +
+             "Stats has an undo afterwards." }, function(){
+    snapshot("Delete week " + (w+1));
+    runsOf(w).forEach(function(r){ delete state.logs[r.id]; });
+    strengthOf(w).forEach(function(x){ delete state.strength[x.id]; });
+    crossOf(w).forEach(function(x){ delete state.cross[x.id]; });
+    state.plan.splice(w, 1);
+    // pull the later weeks back so the calendar stays tight
+    for (var i = w; i < planLen(); i++)
+      state.plan[i].start = toISO(addDays(weekStart(i), -7));
+    save(); render();
+  });
 }
 
 function setWeekTag(w, tag){
@@ -1980,7 +2938,7 @@ function setRunDay(w, d, off){
   var r = runAt(w, d);
   if (off < 0 || off > 6) return;
   if (runsOf(w).some(function(o){ return o !== r && o.off === off; })){
-    alert("There is already a run on that day this week.");
+    say({ body:"There is already a run on that day this week." });
     return false;
   }
   r.off = off;
@@ -1994,7 +2952,7 @@ function setRunDay(w, d, off){
 
 function addRun(w){
   var used = {}, rs = runsOf(w);
-  if (rs.length >= 7){ alert("That week already has a run every day."); return; }
+  if (rs.length >= 7){ say({ body:"That week already has a run every day." }); return; }
   rs.forEach(function(r){ used[r.off] = true; });
   var off = 0;
   for (var i = 0; i < 7; i++) if (!used[i]){ off = i; break; }
@@ -2006,11 +2964,17 @@ function addRun(w){
 
 function deleteRun(w, d){
   var r = runAt(w, d);
-  if (runsOf(w).length <= 1){ alert("A week needs at least one run. Delete the week instead."); return; }
-  if (state.logs[r.id] && !confirm("That run is logged. Delete it and its log?")) return;
-  delete state.logs[r.id];
-  runsOf(w).splice(d, 1);
-  save(); render();
+  if (runsOf(w).length <= 1){ say({ body:"A week needs at least one run. Delete the week instead." }); return; }
+  var drop = function(){
+    delete state.logs[r.id];
+    runsOf(w).splice(d, 1);
+    save(); render();
+    if (editW !== null) drawWeekSheet();
+  };
+  if (state.logs[r.id])
+    ask({ title:"That run is logged", danger:true, yes:"Delete it and its log",
+          body:"Deleting the run from the plan takes what you logged against it too." }, drop);
+  else drop();
 }
 
 /* ============================ VIEWS ============================ */
@@ -2019,6 +2983,25 @@ var tab = "today";
 function bannersHTML(){
   var h = "";
 
+  /* The plan asks for a doctor before the winter volume block. It says so in
+     one week's note and then never again, which is exactly how a sentence like
+     that gets missed. */
+  var doc = doctorState();
+  if (doc && !doc.done && doc.due){
+    h += '<div class="banner ' + (doc.overdue ? "danger" : "warn") + '">' +
+      '<div class="ico">' + (doc.overdue ? "&#9888;" : "&#9877;") + '</div><div>' +
+      '<b>See a doctor before Phase 2</b>' +
+      (doc.overdue
+        ? 'Phase 2 began ' + Math.abs(doc.days) + ' day' + (Math.abs(doc.days) === 1 ? '' : 's') +
+          ' ago, in week ' + doc.week + '. This is the plan&rsquo;s own instruction before the ' +
+          'volume goes up for the winter.'
+        : 'Phase 2 starts in ' + doc.days + ' day' + (doc.days === 1 ? '' : 's') +
+          ', week ' + doc.week + ' on ' + fmtDate(doc.start) + '. The plan asks for a ' +
+          'check-up before the volume goes up.') +
+      '<button class="act" data-act="doctor-done">Mark it done</button>' +
+      '</div></div>';
+  }
+
   painFlags().forEach(function(f){
     h += '<div class="banner danger"><div class="ico">&#9888;</div><div>' +
          '<b>' + esc(f.area) + ' pain logged ' + f.count + ' times in ' + PAIN_WINDOW_DAYS + ' days</b>' +
@@ -2026,8 +3009,7 @@ function bannersHTML(){
          'until it settles.</div></div>';
   });
 
-  var sh = activeShoe();
-  if (sh){
+  activeShoes().forEach(function(sh){
     var st2 = shoeState(sh);
     if (st2.level !== "ok"){
       h += '<div class="banner ' + (st2.level === "over" ? "warn" : "info") + '">' +
@@ -2039,10 +3021,10 @@ function bannersHTML(){
             'calf or knee problem, and this is a long build.'
           : 'Getting close to the ' + SHOE_KM + ' km replacement point. Worth breaking in the next ' +
             'pair alongside these rather than switching cold.') +
-        '<button class="act" data-act="new-shoes">Start a new pair</button>' +
+        '<button class="act" data-act="shoe-add">Add a pair</button>' +
         '</div></div>';
     }
-  }
+  });
 
   if (!planIsCurrent()){
     h += '<div class="banner info"><div class="ico">&#128197;</div><div>' +
@@ -2186,6 +3168,8 @@ function crossRowHTML(w, i, showToday){
 
 function viewToday(){
   var h = countdownHTML() + bannersHTML();
+  var todayRec = dayRec(toISO(today()));
+  if (!todayRec) h += morningCardHTML();          // ask before anything else
   var nx = nextRun(), t = today();
 
   if (!nx){
@@ -2240,6 +3224,9 @@ function viewToday(){
     '<div class="stat"><div class="v">' + streak() + '</div><div class="k">Run streak</div></div>' +
     '</div>';
 
+  // Answered already, so it sits down here rather than at the top.
+  if (todayRec) h += '<div style="height:12px"></div>' + morningCardHTML();
+
   return h;
 }
 
@@ -2277,6 +3264,8 @@ function viewPlan(){
       '</div></div>';
   }
 
+  h += planToolsHTML();
+
   h += '<div class="card"><div class="wk-head" style="padding:0">' +
       '<div><div class="t">Whole plan</div>' +
       '<div class="d">' + planLen() + ' weeks &middot; ' +
@@ -2287,6 +3276,34 @@ function viewPlan(){
     '<div class="tiny">Weeks copy the shape of the last one, so add and then edit. ' +
       'Editing the plan never disturbs runs you have already logged.</div></div>';
   return h;
+}
+
+/* Everything that changes the plan wholesale, in one place at the foot of the
+   Plan tab — which is where you look when the plan is the thing that is wrong. */
+function planToolsHTML(){
+  var custom = state.planName;
+  return '<div class="card" style="margin-top:14px">' +
+    '<div class="label" style="margin-bottom:10px">Change the plan</div>' +
+    (custom ? '<div class="tiny" style="margin-top:0;margin-bottom:10px">Currently on ' +
+      '<b style="color:var(--text)">' + esc(custom) + '</b>, loaded rather than shipped.</div>' : '') +
+    '<button class="btn" data-act="reshape">Reshape several weeks</button>' +
+    '<div class="tiny">Scale a block\u2019s distances, or move a day \u2014 every long run to ' +
+    'Saturday, say \u2014 across a range of weeks in one go. Edits in place, so nothing you have ' +
+    'logged is touched.</div>' +
+    '<div class="btn-row" style="margin-top:12px">' +
+      '<button class="btn" data-act="plan-load">Paste a plan</button>' +
+      '<button class="btn" data-act="plan-file">From a file</button>' +
+    '</div>' +
+    '<div class="tiny">A CSV with a date and a km column per run is the simplest \u2014 ' +
+    'type, note, tag and phase columns are read if they are there. A JSON backup or plan ' +
+    'array works too. Runs you have already logged stay attached wherever the dates line up.</div>' +
+    (planIsCurrent() ? '' :
+      '<button class="btn ghost" data-act="plan-restore" style="margin-top:12px">' +
+      'Restore ' + esc(PLAN_NAME) + '</button>' +
+      '<div class="tiny">Puts the shipped plan back without erasing a single run. ' +
+      '&ldquo;Erase logs and reset the plan&rdquo; in Stats is the other one, and it does ' +
+      'exactly what it says.</div>') +
+    '</div>';
 }
 
 /* Tapping a column fills this in. A chart on a phone has no hover, so the
@@ -2312,7 +3329,9 @@ function barReadoutHTML(i){
     '<div class="mets">' + bits.join("") + '</div></div>';
 }
 
-function viewStats(){
+/* Planned against actual, and the totals underneath it. The first thing on
+   Stats, and the reason the tab exists. */
+function statsOverviewHTML(){
   var maxKm = 0, i;
   for (i = 0; i < planLen(); i++) maxKm = Math.max(maxKm, weekTotal(i), weekActual(i));
   maxKm = Math.ceil((maxKm + 2) / 5) * 5 || 5;
@@ -2330,7 +3349,7 @@ function viewStats(){
            '<text x="' + (padL-5) + '" y="' + (y+3.5) + '" fill="#6b7688" font-size="9" text-anchor="end">' +
            Math.round(maxKm*f) + '</text>';
   });
-  var cur = currentWeekIndex();
+  var cur = currentWeekIndex(), lastLab = -99, lastLabelSVG = "";
   for (i = 0; i < planLen(); i++){
     var cx = padL + step * i + step/2;
     var tot = weekTotal(i);
@@ -2362,11 +3381,24 @@ function viewStats(){
              '" height="' + Math.max(ah, 2) + '" rx="' + Math.min(3, (bw - inset*2)/2) +
              '" fill="' + (over ? "#ffb03a" : "#3ce08c") + '"/>';
     }
-    if (i % labelEvery === 0 || i === planLen()-1 || i === cur)
-      svg += '<text x="' + cx + '" y="' + (H-8) + '" fill="' +
+    /* Three things want a label — the regular interval, the last week, and the
+       current one — and on a 42-week plan they land on top of each other. The
+       current week wins, the others give way to it. */
+    var wantLabel = (i % labelEvery === 0 || i === planLen()-1 || i === cur);
+    if (wantLabel && i !== cur && Math.abs(i - cur) < 2) wantLabel = false;
+    if (wantLabel && i !== planLen()-1 && lastLab >= 0 && i - lastLab < 2) wantLabel = false;
+    if (wantLabel && i === planLen()-1 && lastLab >= 0 && i - lastLab < 2){
+      // The final week is worth more than the tick before it, so drop that one.
+      svg = svg.replace(lastLabelSVG, "");
+    }
+    if (wantLabel){
+      lastLab = i;
+      lastLabelSVG = '<text x="' + cx + '" y="' + (H-8) + '" fill="' +
              (i === cur ? "#f3f6fa" : isRec ? "#5ea8ff" : "#6b7688") +
              '" font-size="9" font-weight="' + (i === cur ? "700" : "400") +
              '" text-anchor="middle">' + (i+1) + '</text>';
+      svg += lastLabelSVG;
+    }
   }
   svg += '</svg>';
 
@@ -2416,12 +3448,13 @@ function viewStats(){
       '<div class="stat"><div class="v">' + (allSec ? n1(allSec / 3600) : "&mdash;") +
         '</div><div class="k">hours running</div></div>' +
       '</div>';
-  }
+  };
+  return h;
+}
 
-  h += readinessHTML();
-  h += racePredictionHTML();
-  h += personalBestsHTML();
-
+/* Every week of the block as a row. */
+function weekTableHTML(){
+  var h = "";
   /* ---- week by week ---- */
   var wr = weekRows(), anyWeek = wr.some(function(r){ return r.runs || r.skipped; });
   h += '<div class="card" style="margin-top:12px"><div class="label">Week by week</div><div class="tbl"><table>' +
@@ -2446,10 +3479,12 @@ function viewStats(){
   h += '</tbody></table></div>' +
     (anyWeek ? '' : '<div class="tiny">Nothing logged yet, so only the plan column is filled.</div>') +
     '</div>';
+  return h;
+}
 
-  /* ---- browse by time ---- */
-  h += browseHTML();
-
+/* Runs that answer to no plan week. */
+function historyHTML(){
+  var h = "";
   /* ---- runs outside the plan ---- */
   if (state.extras.length){
     var ex = extraLogs();
@@ -2479,8 +3514,13 @@ function viewStats(){
       'over-volume or recovery warnings. Total time ' + (exSec ? durStr(exSec) : "&mdash;") + '.' +
       '<br><button class="btn ghost danger sm" data-act="clear-extras" style="margin-top:10px">' +
       'Remove all history</button></div></div>';
-  }
+  };
+  return h;
+}
 
+/* The VO2 trend, and the average heart rate behind it. */
+function vo2HTML(){
+  var h = "";
   /* ---- VO2 max trend ---- */
   var vs = vo2Series(), hrAvg = avgHR();
   h += '<div class="card" style="margin-top:12px"><div class="label">Estimated VO<sub>2</sub> max</div>';
@@ -2539,8 +3579,13 @@ function viewStats(){
       '<div class="stat"><div class="v">' + hrAvg + '</div><div class="k">Avg HR (bpm)</div></div>' +
       '<div class="stat"><div class="v">' + (vs.length ? vs[vs.length-1].vo2 : "&mdash;") + '</div><div class="k">Latest VO&#8322;</div></div>' +
       '</div>';
-  }
+  };
+  return h;
+}
 
+/* Strides, once the plan has asked the question. */
+function stridesHTML(){
+  var h = "";
   /* ---- heart rate limits, needed by the VO2 estimate ---- */
   var anyStrides = false;
   for (var sw = 0; sw < planLen() && !anyStrides; sw++)
@@ -2560,30 +3605,14 @@ function viewStats(){
       ' &times; ' + STRIDES_SECONDS + ' seconds at the end of the Tuesday run, from week ' +
       stridesFromWeek() + '. Relaxed fast, not a sprint, with a full walking recovery between ' +
       'each. Turn them off again if the legs stop feeling fresh.</div></div>';
-  }
+  };
+  return h;
+}
 
-  var ash = activeShoe();
-  if (ash){
-    var ss = shoeState(ash), pct = Math.min(100, Math.round(ss.km / SHOE_KM * 100));
-    h += '<div class="card"><div class="label" style="margin-bottom:10px">Shoes</div>' +
-      '<div class="wk-head" style="padding:0"><div><div class="t">' + esc(ash.name) + '</div>' +
-      '<div class="d">In service since ' + fmtDate(parseISO(ash.since)) +
-        (ash.startKm ? ' &middot; started at ' + n1(ash.startKm) + ' km' : '') + '</div></div>' +
-      '<div class="wk-nums"><div class="a">' + n1(ss.km) + '</div>' +
-      '<div class="p">of ' + SHOE_KM + ' km</div></div></div>' +
-      '<div class="bar"><i class="' + (ss.level === "over" ? "over" : "") +
-        '" style="width:' + pct + '%"></i></div>' +
-      '<div class="mets" style="margin-top:12px">' +
-        '<em>' + Math.max(0, Math.round(SHOE_KM - ss.km)) + ' <i>km left</i></em>' +
-        '<em>' + pct + ' <i>% worn</i></em>' +
-      '</div>' +
-      '<button class="btn" data-act="new-shoes" style="margin-top:12px">Retire these, start a new pair</button>' +
-      '<button class="btn ghost sm" data-act="edit-shoe" style="margin-top:8px">Edit name or starting km</button>' +
-      (state.shoes.length > 1 ? '<div class="tiny">' + (state.shoes.length - 1) +
-        ' earlier pair' + (state.shoes.length === 2 ? '' : 's') + ' retired.</div>' : '') +
-      '<div class="tiny">A pair counts every run dated from the day it went into service. ' +
-      'Replacement at ' + SHOE_KM + ' km comes from the plan.</div></div>';
-  }
+/* The two figures every VO2 estimate is scaled by. */
+function hrLimitsHTML(){
+  var h = "";
+
 
   h += '<div class="card"><div class="label" style="margin-bottom:12px">Heart rate limits</div>' +
     '<div class="inputs">' +
@@ -2594,7 +3623,37 @@ function viewStats(){
     '<div class="tiny">Every VO<sub>2</sub> estimate is scaled by these. If you do not know your max, ' +
     '220 minus your age is the usual starting point; the highest figure you have actually seen on a hard ' +
     'effort is better.</div></div>';
+  return h;
+}
 
+/* Undo, and history that could rejoin the plan. */
+function putBackHTML(){
+  var h = "";
+  var undoL = undoLabel();
+  var resc = rescuableCount();
+  if (undoL || resc){
+    h += '<div class="card"><div class="label" style="margin-bottom:10px">Putting things back</div>';
+    if (undoL)
+      h += '<div class="verdict near"><b>Undo: ' + esc(undoL) + '</b>' +
+        'From ' + fmtLong(new Date(state.undo.at)) + '. One step is kept, and it is ' +
+        'replaced by the next thing big enough to be worth undoing.</div>' +
+        '<button class="btn" data-act="undo" style="margin-top:10px">Undo that</button>';
+    if (resc)
+      h += '<div class="verdict' + (undoL ? '" style="margin-top:12px' : '') + '">' +
+        '<b>' + resc + ' history run' + (resc === 1 ? '' : 's') + ' could rejoin the plan</b>' +
+        'They fall on days this plan has runs for. Attaching them puts their distance back ' +
+        'into the week table, adherence and the streak, where a plan change had left it ' +
+        'outside.</div>' +
+        '<button class="btn" data-act="rescue-history" style="margin-top:10px">' +
+        'Re-attach ' + resc + ' run' + (resc === 1 ? '' : 's') + '</button>';
+    h += '</div>';
+  };
+  return h;
+}
+
+/* Export, restore, reset. Everything that leaves or replaces the device. */
+function yourDataHTML(){
+  var h = "";
   h += '<div class="card"><div class="label" style="margin-bottom:12px">Your data</div>' +
     '<button class="btn primary" data-act="import-runs" style="margin-bottom:10px">Import runs from a file</button>' +
     '<div class="btn-row" style="margin-bottom:10px">' +
@@ -2605,7 +3664,77 @@ function viewStats(){
     '<button class="btn ghost danger" data-act="reset">Erase logs and reset the plan</button>' +
     '<div class="tiny">Everything lives in this browser only &mdash; no account, no server, no network calls. ' +
     'Clearing Safari website data will wipe it, so export now and again.</div></div>';
+  return h;
+}
 
+/* Stats had grown to fourteen cards on one scroll, which is no longer a page
+   anybody reads to the end. Four sections, each a tab's worth: how the block is
+   going, what the body is doing, what has been achieved, and what is stored. */
+var STATS_SECTIONS = [
+  { k:"training", t:"Training" },
+  { k:"body",     t:"Body" },
+  { k:"records",  t:"Records" },
+  { k:"history",  t:"History" }
+];
+var statsSection = "training";
+
+function viewStats(){
+  var h = '<div class="subnav">' + STATS_SECTIONS.map(function(x){
+    return '<button data-stats="' + x.k + '"' +
+           (statsSection === x.k ? ' class="on"' : '') + '>' + x.t + '</button>';
+  }).join("") + '</div>';
+
+  if (statsSection === "body")
+    h += morningStatsHTML() + vo2HTML() + shoesHTML() + hrLimitsHTML();
+  else if (statsSection === "records")
+    h += racePredictionHTML() + personalBestsHTML();
+  else if (statsSection === "history")
+    h += browseHTML() + historyHTML() + putBackHTML() + yourDataHTML();
+  else
+    h += statsOverviewHTML() + readinessHTML() + trainingLoadHTML() +
+         fuellingHTML() + weekTableHTML() + stridesHTML();
+
+  return h;
+}
+
+/* Morning readings. Asked once, near the top, on a day with nothing recorded;
+   once there is a reading it steps back to a single line further down. A daily
+   prompt that stays put after it has been answered stops being read. */
+function morningCardHTML(){
+  var iso = toISO(today()), rec = dayRec(iso) || {};
+  var flag = rhrFlag(iso);
+  var has = !!(rec.rhr || rec.sleepH || rec.kg);
+
+  var h = '<div class="card morning"><div class="label">This morning</div>' +
+    '<div class="inputs" style="margin-top:12px">' +
+      '<div class="inp"><input id="m-rhr" type="number" inputmode="numeric" min="25" max="140" ' +
+        'placeholder="&mdash;" value="' + (rec.rhr || "") + '"><span class="u">resting bpm</span></div>' +
+      '<div class="inp"><input id="m-sleep" type="number" inputmode="decimal" step="0.25" min="0" max="16" ' +
+        'placeholder="&mdash;" value="' + (rec.sleepH || "") + '"><span class="u">hours slept</span></div>' +
+      '<div class="inp"><input id="m-kg" type="number" inputmode="decimal" step="0.1" min="30" max="200" ' +
+        'placeholder="&mdash;" value="' + (rec.kg || "") + '"><span class="u">kg</span></div>' +
+    '</div>' +
+    '<button class="btn" data-act="save-morning" style="margin-top:12px">' +
+      (has ? "Update this morning" : "Save this morning") + '</button>';
+
+  if (flag)
+    h += '<div class="mrn ' + (flag.high ? "high" : "ok") + '">' +
+      (flag.high
+        ? '<b>' + n1(flag.delta) + ' bpm over your baseline.</b> Resting rate sits ' +
+          n1(flag.delta) + ' above the ' + n1(flag.base) + ' of the last ' + RHR_BASELINE_DAYS +
+          ' days. One morning is noise; three in a row is the week telling you something.'
+        : 'Resting ' + flag.rhr + ' against a ' + n1(flag.base) + ' baseline' +
+          (flag.delta === 0 ? ', level.' : flag.delta < 0 ? ', ' + n1(-flag.delta) + ' below.'
+                                         : ', ' + n1(flag.delta) + ' above.')) +
+      '</div>';
+  else if (rec.rhr)
+    h += '<div class="mrn ok">Resting ' + rec.rhr + ' bpm recorded. A baseline needs ' +
+      RHR_MIN_BASELINE + ' mornings in the last ' + RHR_BASELINE_DAYS + ' before it can say ' +
+      'whether that is high for you.</div>';
+
+  h += '<div class="tiny">Taken on waking, before getting up. None of this counts as ' +
+    'training &mdash; it cannot reach your weekly distance or trip a volume guard. The resting ' +
+    'rate also anchors each run&rsquo;s VO<sub>2</sub> estimate to the day it was run.</div></div>';
   return h;
 }
 
@@ -2633,13 +3762,297 @@ function countdownHTML(){
   }
 
   return '<div class="cd">' +
-    '<div class="cdh"><span class="cdn">' + esc(PLAN_NAME) + '</span>' +
+    '<div class="cdh"><span class="cdn">' + esc(planName()) + '</span>' +
       '<span class="cdd">' + fmtDate(tg.date) + ' ' + tg.date.getFullYear() + '</span></div>' +
     '<div class="cdl">' + line + '</div>' +
     '<div class="cdbar"><i style="width:' + pct + '%"></i></div>' +
     '<div class="cdf">' + (days > 0 ? pct + '% of the block behind you' : 'Block complete') +
       ' &middot; week ' + (currentWeekIndex()+1) + ' of ' + planLen() + '</div>' +
   '</div>';
+}
+
+/* Every pair in the rotation, each with its own mileage. */
+function shoesHTML(){
+  var act = activeShoes(), ret = retiredShoes(), orphans = unshodRuns();
+  var h = '<div class="card"><div class="label" style="margin-bottom:4px">Shoes</div>';
+
+  if (!act.length)
+    h += '<div class="empty" style="padding:18px 8px">No pair in service.</div>';
+
+  act.forEach(function(sh){
+    var ss = shoeState(sh), pct = Math.min(100, Math.round(ss.km / SHOE_KM * 100));
+    var isDef = defaultShoe() && defaultShoe().id === sh.id;
+    h += '<div class="shoe' + (ss.level === "over" ? " over" : ss.level === "near" ? " near" : "") + '">' +
+      '<div class="wk-head" style="padding:0"><div><div class="t">' + esc(sh.name) +
+        (isDef ? ' <span class="badge today">default</span>' : '') + '</div>' +
+      '<div class="d">Since ' + fmtDate(parseISO(sh.since)) +
+        (sh.startKm ? ' &middot; started at ' + n1(sh.startKm) + ' km' : '') + '</div></div>' +
+      '<div class="wk-nums"><div class="a">' + n1(ss.km) + '</div>' +
+      '<div class="p">of ' + SHOE_KM + ' km</div></div></div>' +
+      '<div class="bar"><i class="' + (ss.level === "over" ? "over" : "") +
+        '" style="width:' + pct + '%"></i></div>' +
+      '<div class="mets" style="margin-top:10px">' +
+        '<em>' + Math.max(0, Math.round(SHOE_KM - ss.km)) + ' <i>km left</i></em>' +
+        '<em>' + pct + ' <i>% worn</i></em>' +
+      '</div>' +
+      '<div class="btn-row" style="margin-top:10px">' +
+        (isDef ? '' : '<button class="btn ghost sm" data-act="shoe-default" data-id="' +
+                      esc(sh.id) + '">Make default</button>') +
+        '<button class="btn ghost sm" data-act="shoe-edit" data-id="' + esc(sh.id) + '">Edit</button>' +
+        '<button class="btn ghost sm danger" data-act="shoe-retire" data-id="' + esc(sh.id) +
+          '">Retire</button>' +
+      '</div></div>';
+  });
+
+  h += '<button class="btn" data-act="shoe-add" style="margin-top:12px">Add a pair</button>';
+
+  if (ret.length){
+    h += '<div class="label" style="margin:16px 0 8px">Retired</div><div class="tbl"><table>' +
+      '<thead><tr><th>Pair</th><th class="n">km</th><th>Retired</th><th></th></tr></thead><tbody>';
+    ret.slice().reverse().forEach(function(sh){
+      h += '<tr><td>' + esc(sh.name) + '</td>' +
+        '<td class="n">' + n1(shoeKm(sh)) + '</td>' +
+        '<td class="dim">' + fmtDate(parseISO(sh.retired)) + '</td>' +
+        '<td class="n"><button class="xs" data-act="shoe-unretire" data-id="' + esc(sh.id) +
+          '">&#8630;</button></td></tr>';
+    });
+    h += '</tbody></table></div>';
+  }
+
+  if (orphans)
+    h += '<div class="tiny" style="color:var(--warn)">' + orphans + ' completed run' +
+      (orphans === 1 ? '' : 's') + ' name no pair, so their distance counts towards none. ' +
+      'Open a run and pick its shoes to fold it in.</div>';
+
+  h += '<div class="tiny">Each pair counts only the runs logged against it, so several can be ' +
+    'in service at once without their mileage running together. Replacement at ' + SHOE_KM +
+    ' km comes from the plan; the warning starts at ' + Math.round(SHOE_WARN_AT * 100) + '%.' +
+    '</div></div>';
+  return h;
+}
+
+/* Fuelling practice, once the plan starts asking for it. Hidden entirely
+   before then — there is nothing useful to say about a rehearsal that has not
+   been scheduled yet. */
+function fuellingHTML(){
+  var all = fuelSessions();
+  if (!all.length) return "";
+  var t = today();
+  var due = all.filter(function(x){ return dayDiff(t, parseISO(x.date)) <= 0; });
+  if (!due.length) return "";                     // the block has not reached it
+
+  var logged = due.filter(function(x){ return x.rate !== null; });
+  var h = '<div class="card" style="margin-top:12px"><div class="label">Fuelling practice</div>';
+
+  if (!logged.length){
+    return h + '<div class="empty" style="padding:20px 8px">' + due.length + ' long run' +
+      (due.length === 1 ? ' has' : 's have') + ' come due since week ' + fuelFromWeek() +
+      ' with nothing recorded. The plan asks for ' + FUEL_TARGET_LO + '&ndash;' +
+      FUEL_TARGET_HI + ' g of carbohydrate an hour.</div></div>';
+  }
+
+  var rates = logged.map(function(x){ return x.rate; });
+  var mean = Math.round(rates.reduce(function(a, b){ return a + b; }, 0) / rates.length);
+  var inBand = logged.filter(function(x){ return fuelBand(x.rate).k === "in"; }).length;
+  var bad = logged.filter(function(x){ return x.log.fuel && x.log.fuel.gut === "bad"; }).length;
+
+  h += '<div class="stats-row" style="margin-top:12px">' +
+    '<div class="stat"><div class="v">' + mean + '</div><div class="k">Mean g/hr</div></div>' +
+    '<div class="stat"><div class="v">' + inBand + '<span style="font-size:15px;color:var(--muted)"> / ' +
+      logged.length + '</span></div><div class="k">In the band</div></div>' +
+    '</div>';
+
+  h += '<div class="tbl" style="margin-top:12px"><table><thead><tr><th>Wk</th><th>Long run</th>' +
+    '<th class="n">Carb</th><th class="n">g/hr</th><th>Gut</th></tr></thead><tbody>';
+  due.slice().reverse().forEach(function(x){
+    var b = x.rate !== null ? fuelBand(x.rate) : null;
+    h += '<tr><td>' + (x.w + 1) + '</td>' +
+      '<td class="dim">' + n1(runAt(x.w, x.d).km) + ' km &middot; ' + fmtDate(parseISO(x.date)) + '</td>' +
+      '<td class="n">' + (x.log && x.log.fuel && x.log.fuel.carbG ? x.log.fuel.carbG + ' g' : "&mdash;") + '</td>' +
+      '<td class="n ' + (b ? (b.k === "in" ? "good" : "over") : "") + '">' +
+        (x.rate !== null ? x.rate : "&mdash;") + '</td>' +
+      '<td class="dim">' + (x.log && x.log.fuel && x.log.fuel.gut
+        ? esc(gutLabel(x.log.fuel.gut)) : "&mdash;") + '</td></tr>';
+  });
+  h += '</tbody></table></div>';
+
+  h += '<div class="tiny">' +
+    (bad ? '<b style="color:var(--warn)">' + bad + ' run' + (bad === 1 ? '' : 's') +
+           ' with the gut unhappy.</b> The gut trains like anything else &mdash; if the rate ' +
+           'is not going down well, build to it rather than abandoning it. ' : '') +
+    'The plan asks for ' + FUEL_TARGET_LO + '&ndash;' + FUEL_TARGET_HI + ' g/hr from week ' +
+    fuelFromWeek() + ', on long runs of ' + FUEL_MIN_KM + ' km and over in phase ' + FUEL_PHASE +
+    ' onward. Read from the plan, so reshaping it moves which runs ask. Rate is worked out ' +
+    'from what you took and how long you were out, since grams are countable and a rate is not.' +
+    '</div></div>';
+  return h;
+}
+
+/* Total load, and how this week compares with the recent normal. The one
+   view in the app that sees cross-training and strength as training rather
+   than as things that happen alongside it. */
+function trainingLoadHTML(){
+  var h = '<div class="card" style="margin-top:12px"><div class="label">Training load</div>';
+  var R = loadRatio();
+  if (!R)
+    return h + '<div class="empty" style="padding:22px 8px">Log a session with a time and ' +
+      'your load builds up here \u2014 runs, cross-training and strength in one number.</div></div>';
+  // Sessions exist, but none of them inside the window. A different thing from
+  // having logged nothing, and worth saying so rather than looking untouched.
+  if (!R.totalSessions)
+    return h + '<div class="empty" style="padding:22px 8px">Nothing logged in the last ' +
+      CHRONIC_DAYS + ' days, so there is no recent load to compare against.</div></div>';
+
+  var band = loadBand(R.settled ? R.ratio : null);
+
+  h += '<div class="stats-row" style="margin-top:12px">' +
+    '<div class="stat"><div class="v">' + fmtK(R.acute) + '</div><div class="k">Last 7 days</div></div>' +
+    '<div class="stat"><div class="v">' + fmtK(R.chronic) + '</div><div class="k">Weekly, last 4</div></div>' +
+    '<div class="stat"><div class="v">' + (R.settled && R.ratio !== null ? n1(R.ratio) : "&mdash;") +
+      '</div><div class="k">Ratio</div></div>' +
+    '</div>';
+
+  h += '<div class="loadbands">' +
+    ["low","ok","climb","spike"].map(function(k){
+      var lbl = { low:"Lighter", ok:"In step", climb:"Climbing", spike:"Spike" }[k];
+      return '<span class="' + k + (band.k === k ? " on" : "") + '">' + lbl + '</span>';
+    }).join("") + '</div>';
+
+  h += '<div class="verdict ' + (band.k === "ok" ? "on" : band.k === "spike" ? "well-behind"
+                               : band.k === "climb" ? "behind" : "near") + '">' +
+    '<b>' + (R.settled && R.ratio !== null ? n1(R.ratio) + " against the recent normal"
+                                           : "Still building a baseline") + '</b>' +
+    esc(R.settled ? band.t
+      : "The comparison needs four weeks behind it. " + R.days + " day" +
+        (R.days === 1 ? "" : "s") + " of sessions so far, so the ratio is left blank rather " +
+        "than shown as a number that only means the week is being compared with itself.") +
+    '</div>';
+
+  /* Weekly load beside weekly distance — the whole point is that they differ. */
+  var wl = weeklyLoads(), cur = currentWeekIndex();
+  var from = Math.max(0, cur - 11), slice = wl.slice(from, cur + 1);
+  var mx = slice.reduce(function(a, x){ return Math.max(a, x.load); }, 0);
+  if (mx > 0){
+    var W = 340, H = 96, padL = 30, padB = 16, plotW = W - padL - 6, plotH = H - padB - 6;
+    var step = plotW / slice.length, bw = Math.min(22, step * 0.6);
+    var svg = '<svg class="chart" style="height:104px" viewBox="0 0 ' + W + ' ' + H +
+              '" preserveAspectRatio="xMidYMid meet">';
+    svg += '<line x1="' + padL + '" y1="' + (6 + plotH) + '" x2="' + (padL + plotW) + '" y2="' +
+           (6 + plotH) + '" stroke="#2b333f" stroke-width="1"/>' +
+           '<text x="' + (padL - 5) + '" y="9.5" fill="#6b7688" font-size="9" text-anchor="end">' +
+           fmtK(mx) + '</text>';
+    slice.forEach(function(x, i){
+      var cx = padL + step * i + step/2, bh = plotH * (x.load / mx);
+      svg += '<rect x="' + (cx - bw/2) + '" y="' + (6 + plotH - bh) + '" width="' + bw +
+             '" height="' + Math.max(bh, 1.5) + '" rx="3" fill="' +
+             (x.w === cur ? "#3ce08c" : "#333e4e") + '"/>' +
+             '<text x="' + cx + '" y="' + (H - 4) + '" fill="' +
+             (x.w === cur ? "#f3f6fa" : "#6b7688") + '" font-size="8.5" text-anchor="middle">' +
+             (x.w + 1) + '</text>';
+    });
+    svg += '</svg>';
+    h += '<div class="label" style="margin-top:14px">Load per week</div>' + svg;
+  }
+
+  var byKind = { run:0, cross:0, strength:0 };
+  var to = toISO(today()), from28 = toISO(addDays(today(), -(CHRONIC_DAYS - 1)));
+  sessionLoads().forEach(function(x){
+    if (x.date >= from28 && x.date <= to) byKind[x.kind] += x.load;
+  });
+  var tot = byKind.run + byKind.cross + byKind.strength;
+  if (tot > 0)
+    h += '<div class="readout" style="margin-top:12px"><div class="mets">' +
+      '<em>' + Math.round(byKind.run / tot * 100) + ' <i>% running</i></em>' +
+      '<em>' + Math.round(byKind.cross / tot * 100) + ' <i>% cross-training</i></em>' +
+      '<em>' + Math.round(byKind.strength / tot * 100) + ' <i>% strength</i></em>' +
+      '</div><div class="tiny" style="margin-top:8px">Share of the last ' + CHRONIC_DAYS +
+      ' days&rsquo; load. Distance cannot show you this: it counts only the first of the three.' +
+      '</div></div>';
+
+  h += '<div class="tiny">Load is your effort rating out of ten times the minutes, which makes ' +
+    'a tempo, a bike hour and twenty minutes of calf raises comparable for the first time. ' +
+    'The ratio sets the last ' + ACUTE_DAYS + ' days against the weekly average of the last ' +
+    CHRONIC_DAYS + '. Treat it as a trend worth reading rather than a rule &mdash; the method ' +
+    'has had fair criticism, and the sound part of it is only what your plan&rsquo;s recovery ' +
+    'weeks already say.' +
+    (R.estimated ? ' ' + R.estimated + ' of the last ' + R.totalSessions + ' sessions had no ' +
+      'rating and were stood in for from their effort, so those figures are approximate.' : '') +
+    '</div></div>';
+  return h;
+}
+
+/* The morning readings over time. Resting rate gets the chart, because its
+   shape is the point; sleep and weight are read as recent averages, which is
+   how they are actually useful. */
+function morningStatsHTML(){
+  var rhr = dailySeries("rhr"), sleep = dailySeries("sleepH"), kg = dailySeries("kg");
+  var h = '<div class="card" style="margin-top:12px"><div class="label">Morning readings</div>';
+
+  if (!rhr.length && !sleep.length && !kg.length)
+    return h + '<div class="empty" style="padding:22px 8px">Record a resting heart rate, ' +
+      'hours slept or a weight and it builds up here.</div></div>';
+
+  if (rhr.length > 1){
+    var vv = rhr.map(function(x){ return x.v; });
+    var lo = Math.floor(Math.min.apply(null, vv) - 2), hi = Math.ceil(Math.max.apply(null, vv) + 2);
+    if (hi - lo < 8){ lo -= 4; hi += 4; }
+    var CW = 340, CH = 130, cl = 28, cb = 16, cw = CW - cl - 8, ch = CH - cb - 8;
+    var xf = function(i){ return rhr.length < 2 ? cl + cw/2 : cl + cw * (i / (rhr.length - 1)); };
+    var yf = function(v){ return 8 + ch * (1 - (v - lo) / (hi - lo)); };
+    var svg = '<svg class="chart" style="height:140px" viewBox="0 0 ' + CW + ' ' + CH +
+              '" preserveAspectRatio="xMidYMid meet">';
+    [lo, (lo+hi)/2, hi].forEach(function(g){
+      svg += '<line x1="' + cl + '" y1="' + yf(g) + '" x2="' + (cl+cw) + '" y2="' + yf(g) +
+             '" stroke="#2b333f" stroke-width="1"/>' +
+             '<text x="' + (cl-5) + '" y="' + (yf(g)+3.5) + '" fill="#6b7688" font-size="9" ' +
+             'text-anchor="end">' + Math.round(g) + '</text>';
+    });
+    // Lower is the good direction here, so the fill hangs from the top rather
+    // than growing from the floor: a falling line should read as progress.
+    svg += '<polyline fill="none" stroke="#5ea8ff" stroke-width="2" stroke-linejoin="round" ' +
+           'stroke-linecap="round" points="' +
+           rhr.map(function(x, i){ return xf(i) + "," + yf(x.v); }).join(" ") + '"/>';
+    var lastR = rhr[rhr.length-1];
+    svg += '<circle cx="' + xf(rhr.length-1) + '" cy="' + yf(lastR.v) + '" r="4" fill="#5ea8ff" ' +
+           'stroke="#151920" stroke-width="2"/>';
+    svg += '</svg>';
+    var first = rhr[0].v, delta = Math.round((lastR.v - first) * 10) / 10;
+    h += svg + '<div class="legend"><span>Latest <b style="color:var(--text)">' + lastR.v + '</b></span>' +
+      '<span>Change <b style="color:' + (delta <= 0 ? "var(--accent)" : "var(--warn)") + '">' +
+        (delta > 0 ? "+" : "") + n1(delta) + '</b></span>' +
+      '<span>' + rhr.length + ' morning' + (rhr.length === 1 ? '' : 's') + '</span></div>';
+  }
+
+  var mean = function(a, n){
+    var t = a.slice(-n);
+    return t.length ? t.reduce(function(p, q){ return p + q.v; }, 0) / t.length : null;
+  };
+  var bits = [];
+  if (rhr.length) bits.push('<em>' + n1(mean(rhr, 7)) + ' <i>resting, 7-day mean</i></em>');
+  if (sleep.length){
+    bits.push('<em>' + n1(mean(sleep, 7)) + ' <i>h slept, 7-day mean</i></em>');
+    var shortN = sleep.slice(-7).filter(function(x){ return x.v < SLEEP_SHORT_H; }).length;
+    if (shortN) bits.push('<em class="over">' + shortN + ' <i>night' + (shortN === 1 ? '' : 's') +
+      ' under ' + SLEEP_SHORT_H + ' h</i></em>');
+  }
+  if (kg.length){
+    bits.push('<em>' + n1(kg[kg.length-1].v) + ' <i>kg, latest</i></em>');
+    if (kg.length > 1){
+      var kd = Math.round((kg[kg.length-1].v - kg[0].v) * 10) / 10;
+      bits.push('<em>' + (kd > 0 ? "+" : "") + n1(kd) + ' <i>kg since ' +
+        fmtDate(parseISO(kg[0].date)) + '</i></em>');
+    }
+  }
+  if (bits.length) h += '<div class="readout" style="margin-top:12px"><div class="mets">' +
+    bits.join("") + '</div></div>';
+
+  h += '<div class="tiny">Resting rate is charted because its shape is what matters &mdash; ' +
+    'the direction over weeks, not any one morning. It also scales each run&rsquo;s ' +
+    'VO<sub>2</sub> estimate, using the reading that stood on the day of that run, so a ' +
+    'resting rate that falls across the build no longer rewrites the runs behind it. ' +
+    'Weight is worth watching for unintended loss during heavy weeks rather than for its ' +
+    'own sake.</div></div>';
+  return h;
 }
 
 /* Whether the block is being run as written, and what this phase in particular
@@ -2670,6 +4083,22 @@ function readinessHTML(){
     h += '<div class="phasebox"><div class="pn">Phase ' + r.phase.n + ' &middot; ' +
       esc(r.phase.name) + '</div><div class="pf">' + esc(r.phase.focus) + '</div>' +
       (pc ? '<div class="pchk ' + pc.k + '">' + pc.t + '</div>' : '') + '</div>';
+  }
+
+  /* The doctor check, once it is relevant: a live prompt while outstanding,
+     a quiet line once done, and nothing at all before it matters. */
+  var doc = doctorState();
+  if (doc && (doc.done || doc.due)){
+    h += '<div class="chk ' + (doc.done ? "done" : doc.overdue ? "late" : "due") + '">' +
+      '<span class="tick">' + (doc.done ? "&#10003;" : "") + '</span><div>' +
+      '<b>See a doctor before Phase 2</b>' +
+      (doc.done
+        ? 'Done ' + fmtLong(parseISO(doc.rec.date)) + ' ' + parseISO(doc.rec.date).getFullYear() +
+          (doc.rec.note ? ' &mdash; ' + esc(doc.rec.note) : '') +
+          '<button class="lnk" data-act="doctor-undo">Undo</button>'
+        : (doc.overdue ? 'Phase 2 has already started.' : 'Phase 2 starts week ' + doc.week + '.') +
+          '<button class="lnk" data-act="doctor-done">Mark it done</button>') +
+      '</div></div>';
   }
 
   h += '<div class="tiny">Measured only against runs that have already come due, so ' +
@@ -2809,27 +4238,121 @@ function render(){
     tab === "today" ? fmtLong(t) : "Week " + (currentWeekIndex()+1) + " of " + planLen();
 
   var view = document.getElementById("view");
+  /* Saving anything re-renders the whole view, and scrolling to the top after
+     every save means losing your place — on Stats, which is a long page, that
+     is most of the page. Arriving at a tab should start at the top; staying on
+     one and saving something should not move at all. */
+  var here = tab + (tab === "stats" ? ":" + statsSection : "");
+  var sameTab = (here === lastTab);
+  var keepY = sameTab ? (window.pageYOffset || document.documentElement.scrollTop || 0) : 0;
+
   view.innerHTML =
     tab === "today" ? viewToday() : tab === "plan" ? viewPlan() : viewStats();
 
   // Entrance is for arriving at a tab. Replaying it every time a run is saved
   // turns a nicety into a stutter.
-  view.classList.toggle("anim", tab !== lastTab);
-  lastTab = tab;
+  view.classList.toggle("anim", !sameTab);
+  lastTab = here;
 
   Array.prototype.forEach.call(document.querySelectorAll(".tabbar button"), function(b){
     b.classList.toggle("on", b.dataset.tab === tab);
   });
-  if (tab === "plan"){
+  if (tab === "plan" && !sameTab){
     var cur = document.querySelector(".wk.current");
     if (cur) cur.scrollIntoView({ block:"center" });
-  } else {
+  } else if (!sameTab){
     window.scrollTo(0, 0);
+  } else if (keepY){
+    // Never past the end: the page may have got shorter, and a scroll beyond it
+    // lands on blank space.
+    window.scrollTo(0, Math.min(keepY, Math.max(0, document.body.scrollHeight - window.innerHeight)));
   }
 }
 
 /* ============================ LOG SHEET ============================ */
 var scrim = document.getElementById("scrim"), sheet = document.getElementById("sheet");
+var dlg = document.getElementById("dlg"), dscrim = document.getElementById("dscrim");
+
+/* ---------- dialogs ----------
+   The browser's own confirm(), prompt() and alert() are modal, unstyleable and,
+   in a home-screen web app, visibly not part of it — prompt() worst of all. The
+   app already knows how to put a panel on the screen, so it puts its own up.
+
+   Callbacks rather than promises: the rest of this file is written in the same
+   plain style, and a dialog that resolves later reads no better than one that
+   calls back. */
+var dlgState = null;
+
+function closeDialog(){
+  dscrim.classList.remove("on");
+  dlg.classList.remove("on");
+  dlgState = null;
+}
+function openDialog(html, st){
+  dlgState = st || {};
+  dlg.innerHTML = html;
+  dscrim.classList.add("on");
+  dlg.classList.add("on");
+  var first = dlg.querySelector("input, textarea");
+  // A beat, so the panel is on screen before the keyboard comes up over it.
+  if (first) setTimeout(function(){
+    try { first.focus(); if (first.select) first.select(); } catch(e){}
+  }, 80);
+}
+function dlgHead(o){
+  return '<h3>' + esc(o.title || "") + '</h3>' +
+    (o.body ? '<div class="dbody">' + esc(o.body) + '</div>' : '');
+}
+/* A notice. One way out, and nothing to decide. */
+function say(o, onClose){
+  if (typeof o === "string") o = { body:o };
+  openDialog(dlgHead({ title:o.title || "", body:o.body }) +
+    '<div class="dacts"><button class="btn primary" data-dlg="yes">' +
+    esc(o.ok || "OK") + '</button></div>',
+    { onYes: onClose || null });
+}
+/* A question with consequences. The affirmative carries the weight, so it
+   names what it will do rather than saying "OK". */
+function ask(o, onYes){
+  openDialog(dlgHead(o) +
+    '<div class="dacts">' +
+      '<button class="btn primary' + (o.danger ? " danger" : "") + '" data-dlg="yes">' +
+        esc(o.yes || "Continue") + '</button>' +
+      '<button class="btn ghost" data-dlg="no">' + esc(o.no || "Cancel") + '</button>' +
+    '</div>', { onYes:onYes });
+}
+/* One or more values, asked together. Two prompts back to back for a name and
+   a number was two chances to change your mind halfway through. */
+function askFields(o, onDone){
+  var fields = o.fields || [];
+  openDialog(dlgHead(o) +
+    fields.map(function(f){
+      var id = 'dlg-' + f.k;
+      return '<div class="dfield"><label for="' + id + '">' + esc(f.label) + '</label>' +
+        (f.multiline
+          ? '<textarea id="' + id + '" placeholder="' + esc(f.placeholder || "") + '">' +
+            esc(f.value == null ? "" : String(f.value)) + '</textarea>'
+          : '<input id="' + id + '" type="' + (f.type || "text") + '"' +
+            (f.type === "number" ? ' inputmode="decimal" step="any"' : '') +
+            ' placeholder="' + esc(f.placeholder || "") + '" value="' +
+            esc(f.value == null ? "" : String(f.value)) + '">') +
+        '</div>';
+    }).join("") +
+    '<div class="derr" id="dlg-err" style="display:none"></div>' +
+    '<div class="dacts">' +
+      '<button class="btn primary" data-dlg="yes">' + esc(o.yes || "Save") + '</button>' +
+      '<button class="btn ghost" data-dlg="no">' + esc(o.no || "Cancel") + '</button>' +
+    '</div>',
+    { fields:fields, onYes:onDone, validate:o.validate });
+}
+/* Text to be copied out by hand, when the clipboard route is unavailable. */
+function showText(o){
+  openDialog(dlgHead(o) +
+    '<div class="dfield"><textarea id="dlg-text" readonly style="min-height:150px">' +
+    esc(o.text || "") + '</textarea></div>' +
+    '<div class="dacts"><button class="btn primary" data-dlg="yes">Done</button></div>',
+    {});
+}
 var draft = null;
 
 function openSheet(w, d){
@@ -2847,6 +4370,16 @@ function openSheet(w, d){
     strideReps: (typeof l.strideReps === "number") ? String(l.strideReps) : "",
     splits: splitsToText(l.splits),
     effort: l.effort || "moderate",
+    rpe: (typeof l.rpe === "number") ? String(l.rpe) : "",
+    feel: (typeof l.feel === "number") ? String(l.feel) : "",
+    carbG: (l.fuel && l.fuel.carbG > 0) ? l.fuel.carbG : "",
+    gut: (l.fuel && l.fuel.gut) || null,
+    shoeId: l.shoeId || (defaultShoe() ? defaultShoe().id : null),
+    /* Fourteen fields is too many to scroll past to log a Tuesday easy run.
+       The rest fold away — but not when there is already something in them, and
+       not when the plan is asking this particular run for strides or fuelling. */
+    detail: logHasDetail(l) ||
+            (stridesOn() && runHasStrides(w, d)) || fuelApplies(w, d),
     painOn: !!(l.pain && l.pain.area),
     area: l.pain ? l.pain.area : null,
     painNote: l.pain ? (l.pain.note || "") : "",
@@ -2865,7 +4398,7 @@ function openSheet(w, d){
 }
 function closeSheet(){
   scrim.classList.remove("on"); sheet.classList.remove("on");
-  draft = null; editW = null; strDraft = null; xtDraft = null;
+  draft = null; editW = null; strDraft = null; xtDraft = null; rsDraft = null;
 }
 /* Position of a run inside its week, by id — indices move when days change. */
 function indexOfRun(w, id){
@@ -2875,6 +4408,46 @@ function indexOfRun(w, id){
 }
 
 var EFFORT_LABEL = { easy:"Easy", moderate:"Moderate", hard:"Hard" };
+
+/* Whether a run already carries anything beyond distance and time. Read off
+   the stored log rather than the draft, because the draft fills in defaults
+   the moment it opens and would answer yes to everything. */
+function logHasDetail(l){
+  if (!l) return false;
+  return !!(l.hr || l.kcal || (l.splits && l.splits.length) || l.effort ||
+            l.rpe || l.feel || l.note || l.cond || l.fuel ||
+            typeof l.strideReps === "number");
+}
+
+/* Ten buttons in a row, on a phone, means small ones — so the number carries
+   the choice and the descriptor for whatever is selected is spelled out
+   underneath, rather than trying to label all ten at once. */
+function rpeFieldHTML(val, field){
+  var sel = parseInt(val, 10);
+  var desc = RPE_SCALE.filter(function(x){ return x.v === sel; })[0];
+  return '<div class="field"><span class="label">Effort out of 10</span>' +
+    '<div class="scale">' + RPE_SCALE.map(function(x){
+      return '<button data-field="' + field + '" data-v="' + x.v + '" data-toggleable="1"' +
+             (sel === x.v ? ' class="on r' + x.v + '"' : '') + '>' + x.v + '</button>';
+    }).join("") + '</div>' +
+    '<div class="tiny" style="margin-top:7px">' +
+      (desc ? '<b style="color:var(--text)">' + desc.t + '</b> &middot; how hard it felt while ' +
+              'you were doing it, not how far it was. Effort times minutes is what lets a ' +
+              'tempo, a bike ride and a strength session be added together.'
+            : 'Unrated. Tap a number \u2014 how hard it felt while you were doing it.') +
+    '</div></div>';
+}
+function feelFieldHTML(val, field){
+  var sel = parseInt(val, 10);
+  return '<div class="field"><span class="label">And how it felt</span>' +
+    '<div class="seg feel">' + FEEL_SCALE.map(function(x){
+      return '<button data-field="' + field + '" data-v="' + x.v + '" data-toggleable="1"' +
+             (sel === x.v ? ' class="on"' : '') + '>' + x.t + '</button>';
+    }).join("") + '</div>' +
+    '<div class="tiny" style="margin-top:6px">Separate from the effort above, and the gap ' +
+    'between them is the signal: hard that felt strong is fitness arriving, easy that felt ' +
+    'rough is fatigue banking up.</div></div>';
+}
 
 function drawViewSheet(){
   var w = draft.w, d = draft.d, p = wk(w), r = runAt(w, d), dt = runDate(w, d);
@@ -2901,6 +4474,21 @@ function drawViewSheet(){
     if (l.effort) mets.push('<em>' + (EFFORT_LABEL[l.effort] || l.effort) + '</em>');
     if (typeof l.strideReps === "number")
       mets.push('<em class="strd">' + (l.strideReps || "no") + ' <i>strides</i></em>');
+    if (l.rpe) mets.push('<em>' + l.rpe + ' <i>RPE</i></em>');
+    if (l.feel){
+      var fl = FEEL_SCALE.filter(function(x){ return x.v === l.feel; })[0];
+      if (fl) mets.push('<em>' + fl.t + ' <i>felt</i></em>');
+    }
+    var ld = rpeOf(l, "run");
+    if (ld && l.durSec) mets.push('<em class="load">' + Math.round(ld * l.durSec / 60) +
+      ' <i>load' + (rpeIsEstimated(l) ? ", est" : "") + '</i></em>');
+    var fr = fuelRate(l);
+    if (fr !== null) mets.push('<em>' + fr + ' <i>g/hr</i></em>');
+    else if (l.fuel && l.fuel.carbG) mets.push('<em>' + l.fuel.carbG + ' <i>g carb</i></em>');
+    if (l.fuel && l.fuel.gut) mets.push('<em>' + gutLabel(l.fuel.gut) + ' <i>gut</i></em>');
+    var wornSh = l.shoeId ? shoeById(l.shoeId) : null;
+    if (wornSh && activeShoes().length + retiredShoes().length > 1)
+      mets.push('<em>' + esc(wornSh.name) + '</em>');
     h += '<div class="readout" style="margin-top:14px"><div class="mets">' +
       (mets.length ? mets.join("") : '<em>Distance only</em>') + '</div></div>';
 
@@ -2984,6 +4572,17 @@ function drawSheet(){
       '<div class="inp"><input id="f-sec" type="number" inputmode="numeric" min="0" max="59" placeholder="00" value="' + draft.sec + '"><span class="u">sec</span></div>' +
       '</div></div><div class="pace" id="pace"></div>';
 
+    /* Pain stays out of the fold. Something you are burying is something you
+       stop logging, and this is the one field that exists to catch a pattern. */
+    h += painFieldsHTML();
+
+    h += '<button class="disc' + (draft.detail ? " on" : "") + '" data-act="toggle-detail">' +
+      '<span>' + (draft.detail ? "Hide detail" : "Add detail") + '</span>' +
+      '<span class="ds">' + (draft.detail ? "" :
+        "heart rate, splits, effort, shoes, conditions") + '</span>' +
+      '<span class="dc">' + (draft.detail ? "&minus;" : "+") + '</span></button>';
+
+    if (draft.detail){
     h += '<div class="field"><span class="label">Heart rate &amp; energy</span><div class="inputs">' +
       '<div class="inp"><input id="f-hr" type="number" inputmode="numeric" min="60" max="230" placeholder="&mdash;" value="' + draft.hr + '"><span class="u">avg bpm</span></div>' +
       '<div class="inp"><input id="f-kcal" type="number" inputmode="numeric" min="0" max="9999" placeholder="&mdash;" value="' + draft.kcal + '"><span class="u">kcal</span></div>' +
@@ -3010,6 +4609,49 @@ function drawSheet(){
       seg("effort","easy","Easy") + seg("effort","moderate","Moderate") + seg("effort","hard","Hard") +
       '</div></div>';
 
+    var actSh = activeShoes();
+    if (actSh.length > 1){
+      h += '<div class="field"><span class="label">Shoes</span><div class="chips cond">' +
+        actSh.map(function(sh){
+          var st3 = shoeState(sh);
+          return '<button data-field="shoeId" data-v="' + esc(sh.id) + '"' +
+                 (draft.shoeId === sh.id ? ' class="on"' : '') + '>' + esc(sh.name) +
+                 ' <span style="opacity:.65">' + n1(st3.km) + ' km</span></button>';
+        }).join("") + '</div>' +
+        '<div class="tiny" style="margin-top:6px">Which pair you ran in. Only the pair named ' +
+        'here takes the distance, so a rotation keeps honest mileage on each.</div></div>';
+    }
+
+    h += rpeFieldHTML(draft.rpe, "rpe") + feelFieldHTML(draft.feel, "feel");
+
+    /* Fuelling, on the long runs the plan asks it for. */
+    if (fuelApplies(w, d)){
+      var hrsF = draftSec() / 3600;
+      var rateF = (draft.carbG > 0 && hrsF > 0.25) ? Math.round(draft.carbG / hrsF) : null;
+      var bandF = fuelBand(rateF);
+      h += '<div class="field"><span class="label">Fuelling &mdash; carbohydrate taken</span>' +
+        '<div class="inputs">' +
+          '<div class="inp"><input id="f-carb" type="number" inputmode="numeric" min="0" max="600" ' +
+            'placeholder="&mdash;" value="' + draft.carbG + '"><span class="u">grams total</span></div>' +
+        '</div>' +
+        '<div class="pace" id="fuelrate" style="margin-top:8px">' +
+          (rateF !== null
+            ? 'That is <b>' + rateF + ' g/hr</b> &middot; <span class="fb ' + bandF.k + '">' +
+              bandF.t + '</span>'
+            : '<span style="color:var(--dim)">Enter the total and the time, and the rate ' +
+              'works itself out</span>') +
+        '</div>' +
+        '<div class="chips cond" style="margin-top:4px">' +
+          GUT_SCALE.map(function(g){
+            return '<button data-field="gut" data-v="' + g.v + '" data-toggleable="1"' +
+                   (draft.gut === g.v ? ' class="on"' : '') + '>' + g.t + '</button>';
+          }).join("") + '</div>' +
+        '<div class="tiny" style="margin-top:7px">The plan asks for ' + FUEL_TARGET_LO +
+        '&ndash;' + FUEL_TARGET_HI + ' g of carbohydrate an hour from week ' + fuelFromWeek() +
+        '. Count what you actually took &mdash; gels, drink, chews &mdash; and how the gut ' +
+        'handled it. This is the rehearsal; race day is not the place to find out.</div></div>';
+    }
+
     /* Conditions. Tapping a chip that is already on clears it, so "I did not
        record the weather" stays different from "it was clear". */
     var chip = function(field, val){
@@ -3031,14 +4673,35 @@ function drawSheet(){
       '</div>' +
       '<div class="tiny" style="margin-top:8px">None of this touches the plan maths. It is ' +
       'here so a slow week has an explanation attached to it a year from now.</div></div>';
+
+    h += runNoteFieldHTML();
+    }                                    /* end of the detail block */
+  } else {
+    /* Skipped. Why it did not happen is the whole of what is worth recording,
+       so both of these stay in plain sight. */
+    h += painFieldsHTML() + runNoteFieldHTML();
   }
 
-  h += '<div class="field"><span class="label">Pain</span><div class="seg">' +
+  h += '<div class="sheet-actions">' +
+    '<button class="btn primary" data-act="save">Save</button>' +
+    (draft.existing
+      ? '<div class="btn-row" style="margin-top:8px">' +
+        '<button class="btn ghost danger" data-act="clear">Clear this log</button>' +
+        '<button class="btn ghost" data-act="cancel">Cancel</button></div>'
+      : '<button class="btn ghost" data-act="cancel" style="margin-top:8px">Cancel</button>') +
+    '</div>';
+
+  sheet.innerHTML = h;
+  syncPace();
+}
+
+/* Pain, and where and how if there was any. Shared by both statuses. */
+function painFieldsHTML(){
+  var h = '<div class="field"><span class="label">Pain</span><div class="seg">' +
     '<button data-field="painOn" data-v="0"' + (!draft.painOn ? ' class="on"' : '') + '>None</button>' +
     '<button data-field="painOn" data-v="1"' + (draft.painOn ? ' class="on"' : '') +
       ' style="' + (draft.painOn ? 'background:var(--danger);color:#2a0000;border-color:var(--danger)' : '') + '">Had pain</button>' +
     '</div></div>';
-
   if (draft.painOn){
     h += '<div class="field"><span class="label">Where</span><div class="chips">' +
       AREAS.map(function(a){
@@ -3047,22 +4710,14 @@ function drawSheet(){
       '<div class="field"><span class="label">Note</span>' +
       '<textarea id="f-painnote" placeholder="Sharp on downhills, eased after 2 km&hellip;">' + esc(draft.painNote) + '</textarea></div>';
   }
-
-  /* Outside the completed block on purpose: why a run was skipped is exactly
-     the kind of thing worth a sentence. */
-  h += '<div class="field"><span class="label">Note</span>' +
+  return h;
+}
+function runNoteFieldHTML(){
+  return '<div class="field"><span class="label">Note</span>' +
     '<textarea id="f-runnote" style="min-height:70px" placeholder="' +
     (draft.status === "skipped" ? "Why it did not happen&hellip;"
                                 : "Legs heavy from Thursday. Held back on the hills&hellip;") +
     '">' + esc(draft.note) + '</textarea></div>';
-
-  h += '<button class="btn primary" data-act="save" style="margin-bottom:10px">Save</button>';
-  if (draft.existing)
-    h += '<button class="btn ghost danger" data-act="clear" style="margin-bottom:10px">Clear this log</button>';
-  h += '<button class="btn ghost" data-act="cancel">Cancel</button>';
-
-  sheet.innerHTML = h;
-  syncPace();
 }
 
 function readInputs(){
@@ -3071,7 +4726,7 @@ function readInputs(){
       hr = document.getElementById("f-hr"), sp = document.getElementById("f-splits"),
       kc = document.getElementById("f-kcal"), nt = document.getElementById("f-painnote"),
       rn = document.getElementById("f-runnote"), tp = document.getElementById("f-temp"),
-      rt = document.getElementById("f-route");
+      rt = document.getElementById("f-route"), cg = document.getElementById("f-carb");
   if (km) draft.km  = km.value === "" ? 0 : parseFloat(km.value);
   if (ho) draft.hours = ho.value === "" ? "" : parseInt(ho.value, 10);
   if (mi) draft.min = mi.value === "" ? "" : parseInt(mi.value, 10);
@@ -3083,6 +4738,7 @@ function readInputs(){
   if (rn) draft.note = rn.value;
   if (rt) draft.route = rt.value;
   if (tp) draft.temp = tp.value === "" ? "" : parseFloat(tp.value);
+  if (cg) draft.carbG = cg.value === "" ? "" : parseInt(cg.value, 10);
 }
 function draftSec(){
   return (parseInt(draft.hours, 10) || 0) * 3600 +
@@ -3097,10 +4753,21 @@ function syncPace(){
 
   var vel = document.getElementById("vo2");
   if (vel){
-    var v = vo2for({ done:true, km:draft.km, durSec:sec, hr:parseInt(draft.hr, 10) });
+    var v = vo2for({ done:true, km:draft.km, durSec:sec, hr:parseInt(draft.hr, 10),
+                     date: toISO(runDate(draft.w, draft.d)) });
     vel.innerHTML = v ? "Estimated VO<sub>2</sub> max <b>" + v + "</b>"
       : (draft.hr ? '<span style="color:var(--dim)">Need distance and time too</span>'
                   : '<span style="color:var(--dim)">Add heart rate for a VO<sub>2</sub> estimate</span>');
+  }
+
+  var fel = document.getElementById("fuelrate");
+  if (fel){
+    var hrsR = sec / 3600;
+    var rateR = (draft.carbG > 0 && hrsR > 0.25) ? Math.round(draft.carbG / hrsR) : null;
+    var bR = fuelBand(rateR);
+    fel.innerHTML = rateR !== null
+      ? 'That is <b>' + rateR + ' g/hr</b> &middot; <span class="fb ' + bR.k + '">' + bR.t + '</span>'
+      : '<span style="color:var(--dim)">Enter the total and the time, and the rate works itself out</span>';
   }
 
   var sel = document.getElementById("splitsum");
@@ -3133,25 +4800,13 @@ function saveDraft(){
   }
 
   var km = parseFloat(draft.km);
-  if (!(km > 0)) { alert("Enter a distance greater than zero, or mark the run skipped."); return; }
-  if (draft.painOn && !draft.area) { alert("Pick where the pain was."); return; }
+  if (!(km > 0)) { say({ body:"Enter a distance greater than zero, or mark the run skipped." }); return; }
+  if (draft.painOn && !draft.area) { say({ body:"Pick where the pain was." }); return; }
 
   var sec = draftSec();
 
-  /* Recovery-week guard: warn before saving a run longer than planned. */
-  if (p.tag === "RECOVERY"){
-    var prev = getLog(w, d);
-    var others = weekActual(w) - (prev && prev.done ? prev.km : 0);
-    var wtot = weekTotal(w);
-    var msgs = [];
-    if (km > pkm) msgs.push("This run is " + n1(km) + " km against " + n1(pkm) + " km planned.");
-    if (others + km > wtot) msgs.push("The week would reach " + n1(others + km) + " km against " + n1(wtot) + " km planned.");
-    if (msgs.length && !confirm(
-        "Week " + (w+1) + " is a recovery week.\n\n" + msgs.join("\n") +
-        "\n\nRecovery weeks are what let the build weeks work. Save anyway?")) return;
-  }
-
   var hr = parseInt(draft.hr, 10), kc = parseInt(draft.kcal, 10);
+  var commit = function(){
   setLog(w, d, {
     done:true, skipped:false,
     km:km, durSec:sec, effort:draft.effort,
@@ -3159,6 +4814,12 @@ function saveDraft(){
     kcal: (kc > 0 ? kc : null),
     strideReps: (stridesOn() && runHasStrides(w, d) && draft.strideReps !== "")
                   ? (parseInt(draft.strideReps, 10) || 0) : null,
+    rpe: draft.rpe === "" || draft.rpe === null ? null : (parseInt(draft.rpe, 10) || null),
+    feel: draft.feel === "" || draft.feel === null ? null : (parseInt(draft.feel, 10) || null),
+    fuel: (draft.carbG > 0 || draft.gut)
+            ? { carbG: draft.carbG > 0 ? parseInt(draft.carbG, 10) : null, gut: draft.gut || null }
+            : null,
+    shoeId: draft.shoeId || null,
     splits: parseSplits(draft.splits),
     date:toISO(runDate(w, d)), ts:Date.now(),
     pain: draft.painOn && draft.area ? { area:draft.area, note:draft.painNote } : null,
@@ -3166,6 +4827,28 @@ function saveDraft(){
     cond: draftCond()
   });
   save(); closeSheet(); render();
+  };
+
+  /* Recovery-week guard: ask before saving a run longer than planned. The
+     commit above is a closure so the answer can arrive later without the rest
+     of this function having to be written twice. */
+  if (p.tag === "RECOVERY"){
+    var prev = getLog(w, d);
+    var others = weekActual(w) - (prev && prev.done ? prev.km : 0);
+    var wtot = weekTotal(w);
+    var msgs = [];
+    if (km > pkm) msgs.push("This run is " + n1(km) + " km against " + n1(pkm) + " km planned.");
+    if (others + km > wtot)
+      msgs.push("The week would reach " + n1(others + km) + " km against " + n1(wtot) + " km planned.");
+    if (msgs.length){
+      ask({ title:"Week " + (w+1) + " is a recovery week",
+            yes:"Save it anyway", no:"Go back",
+            body:msgs.join("\n") + "\n\nRecovery weeks are what let the build weeks work." },
+          commit);
+      return;
+    }
+  }
+  commit();
 }
 
 /* A history run answers to no plan slot, so the log sheet cannot edit it.
@@ -3214,7 +4897,8 @@ var strDraft = null;
 function openStrengthSheet(w, i){
   var l = getStrength(w, i) || {};
   draft = null; editW = null;
-  strDraft = { w:w, i:i, items:{}, mins: l.mins || "", existing: !!l.done };
+  strDraft = { w:w, i:i, items:{}, mins: l.mins || "", existing: !!l.done,
+               rpe: (typeof l.rpe === "number") ? String(l.rpe) : "" };
   STRENGTH.forEach(function(x){ strDraft.items[x.k] = !!(l.items && l.items[x.k]); });
   drawStrengthSheet();
   scrim.classList.add("on"); sheet.classList.add("on");
@@ -3246,6 +4930,7 @@ function drawStrengthSheet(){
       STRENGTH_MINUTES + '" value="' + strDraft.mins + '"><span class="u">min</span></div>' +
     '</div></div>';
 
+  h += rpeFieldHTML(strDraft.rpe, "rpe");
   h += '<button class="btn primary" data-act="str-save" style="margin-bottom:10px">Save</button>';
   if (strDraft.existing)
     h += '<button class="btn ghost danger" data-act="str-clear" style="margin-bottom:10px">Clear this session</button>';
@@ -3260,12 +4945,13 @@ function saveStrength(){
   if (el) strDraft.mins = el.value === "" ? "" : parseInt(el.value, 10);
   var any = false;
   STRENGTH.forEach(function(x){ if (strDraft.items[x.k]) any = true; });
-  if (!any){ alert("Tick at least one exercise, or cancel."); return; }
+  if (!any){ say({ body:"Tick at least one exercise, or cancel." }); return; }
   var mins = parseInt(strDraft.mins, 10);
   setStrength(strDraft.w, strDraft.i, {
     done: true,
     items: strDraft.items,
     mins: mins > 0 ? mins : STRENGTH_MINUTES,
+    rpe: strDraft.rpe === "" || strDraft.rpe === null ? null : (parseInt(strDraft.rpe, 10) || null),
     date: toISO(strengthDate(strDraft.w, strDraft.i)),
     ts: Date.now()
   });
@@ -3278,7 +4964,8 @@ var xtDraft = null;
 function openCrossSheet(w, i){
   var l = getCross(w, i) || {};
   draft = null; editW = null; strDraft = null;
-  xtDraft = { w:w, i:i, kind: l.kind || XT_TYPES[0], mins: l.mins || "", existing: !!l.done };
+  xtDraft = { w:w, i:i, kind: l.kind || XT_TYPES[0], mins: l.mins || "", existing: !!l.done,
+              rpe: (typeof l.rpe === "number") ? String(l.rpe) : "" };
   drawCrossSheet();
   scrim.classList.add("on"); sheet.classList.add("on");
 }
@@ -3300,6 +4987,7 @@ function drawCrossSheet(){
       XT_DEFAULT_MIN + '" value="' + xtDraft.mins + '"><span class="u">min</span></div>' +
     '</div></div>';
 
+  h += rpeFieldHTML(xtDraft.rpe, "rpe");
   h += '<button class="btn primary" data-act="xt-save" style="margin-bottom:10px">Save</button>';
   if (xtDraft.existing)
     h += '<button class="btn ghost danger" data-act="xt-clear" style="margin-bottom:10px">Clear this session</button>';
@@ -3317,6 +5005,7 @@ function saveCross(){
   setCross(xtDraft.w, xtDraft.i, {
     done: true, kind: xtDraft.kind,
     mins: mins > 0 ? mins : XT_DEFAULT_MIN,
+    rpe: xtDraft.rpe === "" || xtDraft.rpe === null ? null : (parseInt(xtDraft.rpe, 10) || null),
     date: toISO(crossDate(xtDraft.w, xtDraft.i)), ts: Date.now()
   });
   save(); closeSheet(); render();
@@ -3324,6 +5013,114 @@ function saveCross(){
 
 /* ============================ WEEK EDIT SHEET ============================ */
 var editW = null;
+
+/* Bulk edits, previewed in words before they happen. */
+var rsDraft = null;
+function openReshapeSheet(){
+  draft = null; editW = null; strDraft = null; xtDraft = null;
+  var c = currentWeekIndex();
+  rsDraft = { op:"scale", from:c + 1, to:planLen(), pct:100, which:"long", target:5 };
+  drawReshapeSheet();
+  scrim.classList.add("on"); sheet.classList.add("on");
+}
+function drawReshapeSheet(){
+  var r = rsDraft, from = Math.max(1, Math.min(r.from, planLen()));
+  var to = Math.max(from, Math.min(r.to, planLen()));
+  var seg = function(field, val, label){
+    return '<button data-rs="' + field + '" data-v="' + val + '"' +
+           (String(r[field]) === String(val) ? ' class="on"' : '') + '>' + label + '</button>';
+  };
+
+  var h = '<div class="grab"></div><h2>Reshape several weeks</h2>' +
+    '<div class="sub">Edits the plan in place. Nothing you have logged is touched, ' +
+    'and there is an undo afterwards.</div>';
+
+  h += '<div class="field"><span class="label">What to change</span><div class="seg">' +
+    seg("op","scale","Distances") + seg("op","move","A day") + '</div></div>';
+
+  h += '<div class="field"><span class="label">Weeks</span><div class="inputs">' +
+    '<div class="inp"><input id="rs-from" type="number" inputmode="numeric" min="1" max="' +
+      planLen() + '" value="' + from + '"><span class="u">from</span></div>' +
+    '<div class="inp"><input id="rs-to" type="number" inputmode="numeric" min="1" max="' +
+      planLen() + '" value="' + to + '"><span class="u">to</span></div>' +
+    '</div><div class="tiny" style="margin-top:6px">Week ' + from + ' is ' +
+    fmtDate(weekStart(from-1)) + '; week ' + to + ' is ' + fmtDate(weekStart(to-1)) + '.</div></div>';
+
+  if (r.op === "scale"){
+    h += '<div class="field"><span class="label">Scale to</span><div class="inputs">' +
+      '<div class="inp"><input id="rs-pct" type="number" inputmode="numeric" min="25" max="200" ' +
+      'value="' + r.pct + '"><span class="u">per cent</span></div></div>' +
+      '<div class="seg" style="margin-top:8px">' +
+        seg("pct","90","\u221210%") + seg("pct","100","Same") +
+        seg("pct","110","+10%") + seg("pct","120","+20%") + '</div>';
+    var tot = 0, after = 0;
+    for (var w = from-1; w <= to-1; w++){ tot += weekTotal(w); }
+    after = Math.round(tot * (r.pct/100) * 10) / 10;
+    h += '<div class="pace" style="margin-top:12px">' + n1(tot) + ' km across those weeks ' +
+      'becomes about <b>' + n1(after) + ' km</b></div>' +
+      '<div class="tiny">Rounded to the half-kilometre per run, so the total lands near ' +
+      'rather than exactly on that.</div></div>';
+  } else {
+    h += '<div class="field"><span class="label">Move</span><div class="chips cond">' +
+      '<button data-rs="which" data-v="long"' + (r.which === "long" ? ' class="on"' : '') +
+        '>The long run</button>' +
+      WD_SHORT.map(function(nm, off){
+        return '<button data-rs="which" data-v="' + off + '"' +
+               (String(r.which) === String(off) ? ' class="on"' : '') + '>' + nm + '</button>';
+      }).join("") + '</div></div>';
+    h += '<div class="field"><span class="label">To</span><div class="days">' +
+      WD_SHORT.map(function(nm, off){
+        return '<button data-rs="target" data-v="' + off + '"' +
+               (r.target === off ? ' class="on"' : '') + '>' + nm + '</button>';
+      }).join("") + '</div>' +
+      '<div class="tiny" style="margin-top:6px">A week that already has a run on the target ' +
+      'day is left alone rather than made to hold two, and you are told how many.</div></div>';
+  }
+
+  h += '<div class="sheet-actions">' +
+    '<button class="btn primary" data-act="rs-apply">Apply to weeks ' + from +
+      '\u2013' + to + '</button>' +
+    '<button class="btn ghost" data-act="cancel" style="margin-top:8px">Cancel</button>' +
+    '</div>';
+  sheet.innerHTML = h;
+}
+function readReshape(){
+  var f = document.getElementById("rs-from"), t = document.getElementById("rs-to"),
+      pc = document.getElementById("rs-pct");
+  if (f) rsDraft.from = parseInt(f.value, 10) || 1;
+  if (t) rsDraft.to = parseInt(t.value, 10) || planLen();
+  if (pc) rsDraft.pct = parseInt(pc.value, 10) || 100;
+}
+function applyReshape(){
+  readReshape();
+  var r = rsDraft;
+  var from = Math.max(1, Math.min(r.from, planLen()));
+  var to = Math.max(from, Math.min(r.to, planLen()));
+
+  if (r.op === "scale"){
+    if (!(r.pct >= 25 && r.pct <= 200)){
+      say({ body:"Scale between 25 and 200 per cent." }); return;
+    }
+    if (r.pct === 100){ closeSheet(); return; }
+    snapshot("Scale weeks " + from + "\u2013" + to + " to " + r.pct + "%");
+    var n = scaleWeeks(from-1, to-1, r.pct/100);
+    save(); closeSheet(); render();
+    say({ title:"Weeks " + from + "\u2013" + to + " scaled to " + r.pct + "%",
+          body:n + " run" + (n === 1 ? "" : "s") + " changed. Stats has an undo." });
+    return;
+  }
+
+  var which = r.which === "long" ? "long" : parseInt(r.which, 10);
+  snapshot("Move a day in weeks " + from + "\u2013" + to);
+  var res = moveWeekday(from-1, to-1, which, r.target);
+  save(); closeSheet(); render();
+  say({ title:res.moved + " run" + (res.moved === 1 ? "" : "s") + " moved to " +
+          WD_SHORT[r.target],
+        body:(res.blocked
+          ? res.blocked + " week" + (res.blocked === 1 ? " was" : "s were") +
+            " left alone, already having a run on that day.\n\n"
+          : "") + "Stats has an undo." });
+}
 
 function openWeekSheet(w){
   editW = w;
@@ -3404,20 +5201,35 @@ function doCopy(){
   var txt = exportBlob();
   if (navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(txt).then(
-      function(){ alert("Copied. Paste it somewhere safe."); },
+      function(){ say({ title:"Copied", body:"Paste it somewhere safe." }); },
       function(){ promptFallback(txt); }
     );
   } else promptFallback(txt);
 }
-function promptFallback(txt){ window.prompt("Copy your data:", txt); }
+function promptFallback(txt){
+  showText({ title:"Copy your data",
+             body:"Select all of this and copy it somewhere safe.", text:txt });
+}
 function doImport(){
-  var txt = window.prompt("Paste an exported JSON backup:");
-  if (!txt) return;
-  var data;
-  try { data = JSON.parse(txt); }
-  catch(e){ alert("That is not valid JSON."); return; }
-  if (!data || typeof data !== "object" || !data.logs){ alert("No logs found in that file."); return; }
-  if (!confirm("Replace everything currently stored with this backup?")) return;
+  askFields({ title:"Restore a backup", yes:"Read it",
+    body:"Paste the JSON from an export.",
+    fields:[{ k:"json", label:"Backup", multiline:true, placeholder:'{"logs":\u2026}' }],
+    validate:function(v){
+      if (!v.json) return "Nothing pasted.";
+      var d;
+      try { d = JSON.parse(v.json); } catch(e){ return "That does not parse as JSON."; }
+      if (!d || typeof d !== "object" || !d.logs) return "No logs section in that backup.";
+      return null;
+    } }, function(v){
+      var data = JSON.parse(v.json);
+      ask({ title:"Replace everything with this backup?", danger:true, yes:"Replace it all",
+            body:"Everything currently on the device is swapped for what is in the file. " +
+                 "This can be undone afterwards." },
+        function(){ applyBackup(data); });
+    });
+}
+function applyBackup(data){
+  snapshot("Restore a backup");
   state.logs = data.logs;
   if (planOK(data.plan)){
     state.plan = data.plan;                       // v2 backup: plan travels with the logs
@@ -3433,18 +5245,25 @@ function doImport(){
   if (Array.isArray(data.shoes) && data.shoes.length) state.shoes = data.shoes;
   if (data.settings && data.settings.hrMax > 0) state.settings = data.settings;
   save(); render();
-  alert("Restored.");
+  say({ title:"Restored", body:"Everything is back from that backup. Stats has an undo if it was the wrong one." });
 }
 function doReset(){
-  if (!confirm("Erase every logged run and put the plan back to its original 12 weeks?\n\nThis cannot be undone. Export first if you want a copy.")) return;
-  if (!confirm("Really erase everything?")) return;
-  state.logs = {};
-  state.extras = [];
-  state.strength = {};
-  state.cross = {};
-  state.plan = freshPlan();
-  state.seq = maxSeq(state.plan);
-  save(); render();
+  ask({ title:"Erase everything and start over?", danger:true, yes:"Erase it all",
+        body:"Every logged run goes, and the plan returns to its original " +
+             DEFAULT_PLAN.length + " weeks.\n\nExport first if you want a copy off the " +
+             "device. There is one step of undo afterwards." }, function(){
+    ask({ title:"Really erase everything?", danger:true, yes:"Yes, erase it",
+          body:"Last check." }, function(){
+      snapshot("Erase logs and reset the plan");
+      state.logs = {};
+      state.extras = [];
+      state.strength = {};
+      state.cross = {};
+      state.plan = freshPlan();
+      state.seq = maxSeq(state.plan);
+      save(); render();
+    });
+  });
 }
 
 /* ============================ IMPORT RUNS ============================
@@ -3997,9 +5816,10 @@ function readFile(f){
     var fr = new FileReader();
     fr.onload = function(){ tryParse(String(fr.result)); };
     fr.onerror = function(){
-      alert(f.size >= STREAM_THRESHOLD
-        ? "That file is too large for this browser to read in one go."
-        : "Could not read that file.");
+      say({ title:"Could not read that file",
+             body: f.size >= STREAM_THRESHOLD
+               ? "It is too large for this browser to read in one go."
+               : "The file could not be opened." });
     };
     fr.readAsText(f);
     return;
@@ -4007,14 +5827,15 @@ function readFile(f){
 
   peekFile(f).then(function(head){
     if (!/<HealthData|HKWorkoutActivityType/i.test(head)){
-      alert("That file is " + Math.round(f.size / 1048576) + " MB, which is too large to read " +
-            "unless it is an Apple Health export.");
+      say({ title:"That file is too large",
+             body: Math.round(f.size / 1048576) + " MB can only be read if it is an " +
+                   "Apple Health export, which this does not look like." });
       return;
     }
     showScanning(0, 0);
     return streamHealthWorkouts(f, showScanning).then(function(acts){
       if (!acts.length){
-        alert("No running workouts found in that Health export.");
+        say({ title:"No runs in that export", body:"Nothing in the file reads as a running workout." });
         drawImport();
         return;
       }
@@ -4022,7 +5843,8 @@ function readFile(f){
       drawImport();
     });
   }).catch(function(err){
-    alert("Could not read that file. " + (err && err.message ? err.message : ""));
+    say({ title:"Could not read that file",
+           body:(err && err.message) ? err.message : "" });
   });
 }
 
@@ -4040,7 +5862,7 @@ function tryParse(text){
   try {
     importRows = buildImportRows(parseActivities(text));
   } catch (err){
-    alert(err && err.message ? err.message : "Could not read that.");
+    say({ title:"Could not read that", body:(err && err.message) || "" });
     return;
   }
   drawImport();
@@ -4062,7 +5884,8 @@ function applyImport(){
         effort: null,
         date: r.act.date, ts: Date.now(),
         imported: true, extra: true,
-        pain: null
+        pain: null,
+        shoeId: defaultShoe() ? defaultShoe().id : null
       });
       x++;
       return;
@@ -4081,7 +5904,13 @@ function applyImport(){
       // A file carries none of these, so what was written by hand survives it.
       pain: prev.pain || null,
       note: prev.note || null,
-      cond: prev.cond || null
+      cond: prev.cond || null,
+      rpe: prev.rpe || null,
+      feel: prev.feel || null,
+      fuel: prev.fuel || null,
+      // A file does not say what you wore, so the pair on record stands, and a
+      // new import lands on whichever pair is currently default.
+      shoeId: prev.shoeId || (defaultShoe() ? defaultShoe().id : null)
     });
     n++;
   });
@@ -4090,18 +5919,58 @@ function applyImport(){
   var msg = [];
   if (n) msg.push(n + " onto the plan");
   if (x) msg.push(x + " as history");
-  alert("Imported " + (n + x) + " run" + ((n + x) === 1 ? "" : "s") +
-    (msg.length > 1 ? " — " + msg.join(", ") : "") + ".\n\n" +
-    (n ? "Effort and pain are not in the file — tap any run to add them." :
-         "History shows in the monthly table and the VO₂ trend."));
+  say({ title:"Imported " + (n + x) + " run" + ((n + x) === 1 ? "" : "s") +
+          (msg.length > 1 ? " \u2014 " + msg.join(", ") : ""),
+        body:(n ? "Effort, RPE and pain are not in a file \u2014 tap any run to add them."
+                : "History shows in the monthly table and the VO\u2082 trend.") });
 }
 
 /* ============================ EVENTS ============================ */
 document.addEventListener("click", function(e){
   var el;
 
+  /* First, so a dialog button can never fall through to whatever it is
+     covering. */
+  el = e.target.closest("[data-dlg]");
+  if (el){
+    var kind = el.dataset.dlg, st = dlgState, vals = null;
+    if (kind === "yes" && st && st.fields){
+      vals = {};
+      st.fields.forEach(function(f){
+        var inp = document.getElementById("dlg-" + f.k);
+        vals[f.k] = inp ? inp.value.trim() : "";
+      });
+      // A rejected value keeps the dialog open, with what was typed still in it.
+      if (st.validate){
+        var err = st.validate(vals);
+        if (err){
+          var eEl = document.getElementById("dlg-err");
+          if (eEl){ eEl.textContent = err; eEl.style.display = "block"; }
+          return;
+        }
+      }
+    }
+    var cb = (kind === "yes" && st) ? st.onYes : null;
+    closeDialog();
+    if (cb) cb(vals || true);
+    return;
+  }
+
   el = e.target.closest("[data-tab]");
   if (el){ tab = el.dataset.tab; render(); return; }
+
+  el = e.target.closest("[data-stats]");
+  if (el){ statsSection = el.dataset.stats; render(); return; }
+
+  el = e.target.closest("[data-rs]");
+  if (el && rsDraft){
+    readReshape();                        // keep the typed week range
+    rsDraft[el.dataset.rs] = el.dataset.v;
+    if (el.dataset.rs === "pct") rsDraft.pct = parseInt(el.dataset.v, 10);
+    if (el.dataset.rs === "target") rsDraft.target = parseInt(el.dataset.v, 10);
+    drawReshapeSheet();
+    return;
+  }
 
   el = e.target.closest("[data-xt]");
   if (el){
@@ -4181,14 +6050,25 @@ document.addEventListener("click", function(e){
   if (el){ el.parentNode.classList.toggle("open"); return; }
 
   el = e.target.closest("[data-field]");
-  if (el && draft){
+  if (el){
     var f = el.dataset.field, v = el.dataset.v;
-    readInputs();
-    draft[f] = (f === "painOn") ? (v === "1")
-             : (el.dataset.toggleable && draft[f] === v) ? null      // tap again to unset
-             : v;
-    if (f === "painOn" && !draft.painOn){ draft.area = null; draft.painNote = ""; }
-    drawSheet();
+    // The same picker markup serves all three sheets, so it sets whichever
+    // draft is open rather than assuming the run one.
+    var D = draft || strDraft || xtDraft;
+    if (!D) return;
+    if (D === draft) readInputs();
+    else {
+      // keep the minutes box, which is not a data-field, from being lost
+      var mEl = document.getElementById(D === strDraft ? "f-strmin" : "f-xtmin");
+      if (mEl) D.mins = mEl.value === "" ? "" : parseInt(mEl.value, 10);
+    }
+    D[f] = (f === "painOn") ? (v === "1")
+         : (el.dataset.toggleable && String(D[f]) === String(v)) ? null   // tap again to unset
+         : v;
+    if (f === "painOn" && !D.painOn){ D.area = null; D.painNote = ""; }
+    if (D === draft) drawSheet();
+    else if (D === strDraft) drawStrengthSheet();
+    else drawCrossSheet();
     return;
   }
 
@@ -4196,6 +6076,12 @@ document.addEventListener("click", function(e){
   if (el){
     var a = el.dataset.act;
     if (a === "edit-run"){ draft.mode = "edit"; drawSheet(); return; }
+    else if (a === "toggle-detail"){
+      readInputs();                       // keep whatever is already typed
+      draft.detail = !draft.detail;
+      drawSheet();
+      return;
+    }
     else if (a === "save")   saveDraft();
     else if (a === "cancel") closeSheet();
     else if (a === "clear"){
@@ -4205,26 +6091,47 @@ document.addEventListener("click", function(e){
     else if (a === "adopt-plan") adoptNewPlan();
     else if (a === "strides-yes"){ state.settings.strides = true;  save(); render(); }
     else if (a === "strides-no"){  state.settings.strides = false; save(); render(); }
-    else if (a === "new-shoes"){
-      var cur2 = activeShoe();
-      if (!confirm("Retire " + (cur2 ? cur2.name : "these shoes") +
-          " at " + n1(shoeKm(cur2)) + " km and start a new pair?\n\n" +
-          "Runs from today onward count towards the new pair.")) return;
-      var nm = window.prompt("Name for the new pair:", "Pair " + (state.shoes.length + 1));
-      if (nm === null) return;
-      retireShoe(nm.trim());
+    else if (a === "shoe-add"){
+      askFields({ title:"Add a pair", yes:"Add them",
+        body:"They go into service today and are offered when you log a run.",
+        fields:[
+          { k:"name", label:"Name", value:"Pair " + (state.shoes.length + 1),
+            placeholder:"Trail pair" },
+          { k:"km", label:"Kilometres already on them", type:"number", value:"0" }
+        ] }, function(v){ addShoe(v.name, parseFloat(v.km)); });
     }
-    else if (a === "edit-shoe"){
-      var sh2 = activeShoe();
-      if (!sh2) return;
-      var nm2 = window.prompt("Name for this pair:", sh2.name);
-      if (nm2 === null) return;
-      var km2 = window.prompt("Kilometres already on them when first recorded:", String(sh2.startKm || 0));
-      if (km2 === null) return;
-      var v2 = parseFloat(km2);
-      sh2.name = nm2.trim() || sh2.name;
-      if (isFinite(v2) && v2 >= 0) sh2.startKm = Math.round(v2 * 10) / 10;
+    else if (a === "shoe-retire"){
+      var shR = shoeById(el.dataset.id);
+      if (!shR) return;
+      ask({ title:"Retire " + shR.name + "?", yes:"Retire them",
+            body:"At " + n1(shoeKm(shR)) + " km.\n\nRuns already logged against them keep " +
+                 "their mileage, and the pair stays in the retired list. It just stops being " +
+                 "offered when you log a run." },
+        function(){ retireShoe(shR.id); });
+    }
+    else if (a === "shoe-unretire"){
+      var shU = shoeById(el.dataset.id);
+      if (!shU) return;
+      shU.retired = null;
       save(); render();
+    }
+    else if (a === "shoe-default") setDefaultShoe(el.dataset.id);
+    else if (a === "shoe-edit"){
+      var sh2 = shoeById(el.dataset.id);
+      if (!sh2) return;
+      askFields({ title:"Edit " + sh2.name, yes:"Save",
+        body:"Starting kilometres are what the pair had already run when you first " +
+             "recorded them, on top of everything logged since.",
+        fields:[
+          { k:"name", label:"Name", value:sh2.name },
+          { k:"km", label:"Kilometres when first recorded", type:"number",
+            value:String(sh2.startKm || 0) }
+        ] }, function(v){
+          var v2 = parseFloat(v.km);
+          sh2.name = v.name || sh2.name;
+          if (isFinite(v2) && v2 >= 0) sh2.startKm = Math.round(v2 * 10) / 10;
+          save(); render();
+        });
     }
     else if (a === "xt-save") saveCross();
     else if (a === "xt-clear"){
@@ -4244,6 +6151,24 @@ document.addEventListener("click", function(e){
     }
     else if (a === "shift") shiftFrom(+el.dataset.w);
     /* ---- plan editing ---- */
+    else if (a === "reshape") openReshapeSheet();
+    else if (a === "rs-apply") applyReshape();
+    else if (a === "plan-restore") restoreShippedPlan();
+    else if (a === "plan-load"){
+      askFields({ title:"Load a plan", yes:"Read it",
+        body:"CSV with a date and a km column per run is the simplest. " +
+             "A JSON backup or plan array works too.",
+        fields:[
+          { k:"name", label:"Call it", value:"", placeholder:"Coach\u2019s plan" },
+          { k:"text", label:"The plan", multiline:true,
+            placeholder:"date,km,type\n2026-08-11,7,easy\n2026-08-13,8,easy\n2026-08-16,9,long" }
+        ],
+        validate:function(v){
+          if (!v.text) return "Nothing pasted.";
+          try { parsePlanText(v.text); } catch(e){ return e.message; }
+          return null;
+        } }, function(v){ loadPlanFromText(v.text, v.name || null); });
+    }
     else if (a === "edit-week") openWeekSheet(+el.dataset.w);
     else if (a === "add-week") addWeek();
     else if (a === "del-week"){ closeSheet(); deleteWeek(+el.dataset.w); }
@@ -4258,19 +6183,52 @@ document.addEventListener("click", function(e){
         drawSheet(); render();
       }
     }
-    else if (a === "import-runs") openImport();
-    else if (a === "pick-file") document.getElementById("fileIn").click();
+    else if (a === "import-runs"){ fileIntent = "runs"; openImport(); }
+    else if (a === "pick-file"){ fileIntent = "runs"; document.getElementById("fileIn").click(); }
+    else if (a === "plan-file"){ fileIntent = "plan"; document.getElementById("fileIn").click(); }
     else if (a === "parse-text") tryParse(document.getElementById("imp-text").value);
     else if (a === "imp-row"){
       var row = importRows[+el.dataset.i];
       if (row.slot){ row.on = !row.on; drawImport(); }
     }
     else if (a === "apply-import") applyImport();
+    else if (a === "doctor-done"){
+      askFields({ title:"See a doctor before Phase 2", yes:"Mark it done",
+        fields:[
+          { k:"date", label:"Date of the check-up", type:"date", value:toISO(today()) },
+          { k:"note", label:"Anything worth keeping (optional)", multiline:true,
+            placeholder:"All clear. Blood pressure fine." }
+        ],
+        validate:function(v){
+          // A date input will not hand back a malformed value, but one that has
+          // degraded to a text box can, and an empty one is reachable either way.
+          if (!v.date) return "Pick a date.";
+          return /^\d{4}-\d{2}-\d{2}$/.test(v.date) ? null : "Use the form 2026-11-20.";
+        } }, function(v){
+          state.checks.doctor = { done:true, date:v.date, note:v.note || null };
+          save(); render();
+        });
+    }
+    else if (a === "doctor-undo"){
+      delete state.checks.doctor;
+      save(); render();
+    }
+    else if (a === "save-morning"){
+      var num = function(id, lo, hi){
+        var el = document.getElementById(id);
+        if (!el || el.value === "") return null;
+        var v = parseFloat(el.value);
+        return (isFinite(v) && v >= lo && v <= hi) ? Math.round(v * 10) / 10 : null;
+      };
+      var rhrV = num("m-rhr", 25, 140), slV = num("m-sleep", 0, 16), kgV = num("m-kg", 30, 200);
+      setDay(toISO(today()), { rhr:rhrV, sleepH:slV, kg:kgV });
+      save(); render();
+    }
     else if (a === "save-hr"){
       var mx = parseInt(document.getElementById("s-hrmax").value, 10);
       var rs = parseInt(document.getElementById("s-hrrest").value, 10);
       if (!(mx > 0) || !(rs > 0) || mx <= rs){
-        alert("Max heart rate has to be above resting."); return;
+        say({ body:"Max heart rate has to be above resting." }); return;
       }
       state.settings.hrMax = mx; state.settings.hrRest = rs;
       save(); render();
@@ -4284,11 +6242,17 @@ document.addEventListener("click", function(e){
       save(); render();
     }
     else if (a === "clear-extras"){
-      if (!confirm("Remove all " + state.extras.length + " runs kept as history?\n\n" +
-                   "Runs logged against the plan are not touched.")) return;
-      state.extras = [];
-      save(); render();
+      var nEx = state.extras.length;
+      ask({ title:"Remove all " + nEx + " history runs?", danger:true, yes:"Remove them",
+            body:"Runs logged against the plan are not touched. This can be undone." },
+        function(){
+          snapshot("Remove " + nEx + " history runs");
+          state.extras = [];
+          save(); render();
+        });
     }
+    else if (a === "undo") doUndo();
+    else if (a === "rescue-history") rescueHistory();
     else if (a === "export") doExport();
     else if (a === "copy")   doCopy();
     else if (a === "import") doImport();
@@ -4298,11 +6262,34 @@ document.addEventListener("click", function(e){
 });
 
 scrim.addEventListener("click", closeSheet);
+dscrim.addEventListener("click", closeDialog);
+document.addEventListener("keydown", function(e){
+  if (e.key === "Escape" && dlgState) closeDialog();
+});
 
+/* The file picker is shared between importing runs and loading a plan, so it
+   has to be told which was asked for. */
+var fileIntent = "runs";
 document.getElementById("fileIn").addEventListener("change", function(e){
   var f = e.target.files && e.target.files[0];
-  if (f) readFile(f);
   e.target.value = "";        // so the same file can be picked again
+  if (!f) return;
+  if (fileIntent === "plan"){
+    fileIntent = "runs";
+    if (f.size > 2 * 1024 * 1024){
+      say({ title:"That file is too large for a plan",
+            body:"A season's plan is a few kilobytes. This looks like something else." });
+      return;
+    }
+    var fr = new FileReader();
+    fr.onload = function(){
+      loadPlanFromText(String(fr.result), f.name.replace(/\.[a-z0-9]+$/i, ""));
+    };
+    fr.onerror = function(){ say({ title:"Could not read that file" }); };
+    fr.readAsText(f);
+    return;
+  }
+  readFile(f);
 });
 /* Search redraws only the browse body. A full render would rebuild the input
    and hand the keyboard back to the page mid-word. */
@@ -4314,7 +6301,7 @@ document.getElementById("view").addEventListener("input", function(e){
 });
 
 sheet.addEventListener("input", function(e){
-  if (/^f-(km|hours|min|sec|hr|kcal|splits|temp)$/.test(e.target.id || "")){
+  if (/^f-(km|hours|min|sec|hr|kcal|splits|temp|carb)$/.test(e.target.id || "")){
     readInputs(); syncPace();
     return;
   }

@@ -48,8 +48,8 @@ Service workers need `http://localhost` or HTTPS — opening `index.html` as a
 ## What it tracks
 
 Per run: completed or skipped, actual distance and duration, average heart rate,
-calories, effort (easy / moderate / hard), and any pain with a body-area tag and
-a note. Pace and the VO<sub>2</sub> estimate are derived and shown as you type.
+calories, effort (easy / moderate / hard), an RPE out of ten, how it felt, which
+shoes, and any pain with a body-area tag and a note. Pace and the VO<sub>2</sub> estimate are derived and shown as you type.
 
 Duration is entered as **hours, minutes and seconds** — a three-hour long run is
 3 h 12, not 192 minutes. The hours box is left blank for anything under an hour.
@@ -102,15 +102,83 @@ the base phase and **required from phase 2**, which is the plan's own wording.
 Pick what you did — bike, swim, row, elliptical or other — and how long. Like
 strength, it adds no running distance and cannot trip the volume guards.
 
-**Shoes** — the plan replaces at 700 km. A pair counts every run dated between
-the day it went into service and the day it was retired, on top of whatever it
-had already run when first recorded. A warning appears at 85% and again past
-700. Retiring a pair starts the next one: the retirement day is the old pair's
-last day and the new pair starts the day after, so a run on the changeover day
-counts once, not twice.
+**Morning readings** — resting heart rate, hours slept and body weight, one
+number each. The card asks at the top of Today on a morning with nothing
+recorded and steps down the page once answered, because a daily prompt that
+stays put after it has been answered stops being read.
+
+Resting rate carries most of the value. A sustained rise over *your own*
+baseline — the mean of the last 14 mornings, once there are at least five of
+them — is the oldest cheap sign that the build is outrunning the recovery, and
+it is flagged at 5 bpm with the plain warning that one morning is noise. It also
+anchors the VO<sub>2</sub> estimate; see below.
+
+**Session RPE and training load** — every guard in this app counts kilometres,
+which means a 14 km tempo and a 14 km easy run are indistinguishable to all of
+them, and from week 22 the plan has you doing one of each most weeks. Rating a
+session 1–10 and multiplying by its minutes gives a number that works for a run,
+a bike hour and twenty minutes of calf raises alike, so total load can be seen
+rather than inferred from mileage. Sessions logged before RPE existed fall back
+to a stand-in from their effort rating and are marked as estimated wherever the
+figures appear.
+
+Stats shows the last 7 days against the weekly average of the last 28, load per
+week, and the split across running, cross-training and strength — a split
+distance cannot show, since it counts only the first of the three. The ratio
+stays blank until there are four weeks behind it rather than reporting a number
+that only means the week is being compared with itself, and it is framed as a
+trend to read rather than a rule: the method has had fair criticism, and the
+sound part of it is what the plan's own recovery weeks already say.
+
+Paired with it, a separate **how it felt** tap. The gap between the two is the
+signal — hard that felt strong is fitness arriving, easy that felt rough is
+fatigue banking up.
+
+**Fuelling practice** — *"Begin fueling practice: 30-60g carb/hr"* is the only
+numeric prescription in the plan that had nowhere to be answered. Long runs of
+16 km and over from phase 3 now carry a carbohydrate field: you enter the total
+grams, because gels are countable and a rate is not, and the app derives g/hr
+from the run's own duration and marks it against the plan's band. A gut-tolerance
+tap goes with it. Read from the plan's phase and distance rather than a fixed
+week, so reshaping the plan moves which runs ask.
+
+**See a doctor before Phase 2** — the plan's other untracked instruction, said
+once in one week's note and then never again, which is exactly how a sentence
+like that gets missed. A banner appears four weeks before phase 2 starts and
+escalates once phase 2 has begun without it; ticking it records the date and an
+optional note, and it shows as done in Readiness. The week comes from the plan's
+phase field, so it moves with edits.
+
+**Shoes** — several pairs can be in service at once, each with its own name and
+mileage. The plan replaces at 700 km, with a warning at 85% and again past 700,
+per pair.
+
+Mileage keys on the pair a run names, not on dates. With one pair the service
+window told you everything; with a rotation two windows overlap and the dates
+decide nothing. Runs logged before rotation existed were assigned to their pair
+once, at load, using the old window rule — so every existing total reads exactly
+as it did rather than resetting to zero on an update. Runs that end up naming no
+pair are counted and surfaced rather than having their distance quietly vanish
+from every total.
+
+The log sheet only offers a picker when more than one pair is in service, and
+one pair is marked default so a single-pair setup carries on needing no thought.
 
 Per week: actual against planned with a percentage, rolling 4-week volume, and
 a streak of consecutive completed runs.
+
+The VO<sub>2</sub> estimate scales by heart-rate reserve, so it needs a resting
+rate. It used to read one global setting for every run, which meant the whole
+historical trend was scaled by whatever that setting said *today* — correcting a
+stale 55 down to 48 silently lifted every VO<sub>2</sub> the app had ever shown.
+Over a 42-week base build the resting rate is supposed to fall, so the value now
+travels with the run: each estimate uses the most recent morning reading on or
+before that run's date, falling back to the setting when there is none that old.
+
+Stats is in four sections — **Training**, **Body**, **Records** and
+**History** — because fourteen cards on one scroll is not a page anybody reads
+to the end. Training is how the block is going, Body is what you are doing,
+Records is what you have achieved, History is what is stored.
 
 Stats breaks the block down **week by week** — planned against done, run count,
 total time, average pace, heart rate and calories, with the current week
@@ -207,6 +275,26 @@ splits. Kept out of the list on purpose: a 400 m split is not comparable with a
 1 km one, and letting it in would hand "fastest split" to whatever fraction the
 run happened to finish on.
 
+## Logging a run
+
+The sheet opens short: status, distance and time, pain, Save. Everything
+else — heart rate, splits, effort, RPE, how it felt, shoes, conditions, the
+note — is behind **Add detail**, which opens itself when the run already
+carries any of it, or when the plan is asking that particular run for strides
+or fuelling. Pain stays out of the fold on purpose: something you bury is
+something you stop logging, and it is the one field that exists to catch a
+pattern. Save is pinned to the bottom of the sheet however long it gets.
+
+A skipped run shows pain and the note in plain sight instead, since why it did
+not happen is the whole of what is worth recording.
+
+Every question the app asks is its own — no browser `confirm()`, `prompt()` or
+`alert()` anywhere. They are unstyleable, and in a home-screen app visibly not
+part of it. The replacements can also ask for more than one thing at a time, so
+naming a pair of shoes and saying what they have already run is one dialog
+rather than two prompts back to back, and a rejected value keeps the panel open
+with what you typed still in it.
+
 ## Changing the plan
 
 - **A run you cannot make.** Tap it and pick another day of that week. Moving a
@@ -217,11 +305,58 @@ run happened to finish on.
   recovery or peak. Week totals are always summed from the runs, never stored,
   so they cannot drift.
 - **Switching plans.** When the plan in the app is newer than the one on your
-  device, it offers to load it. Accepting moves every run you have already
-  logged into history first, so changing plans never costs you a run you did.
+  device, it offers to load it — and runs you have already logged **come with
+  you**. Logs key on run ids, which is what makes editing a plan safe; replacing
+  one gives every run a new id, so the old behaviour swept every log into
+  history. Safe, but it emptied the week table, the streak and every adherence
+  figure of a block you had actually run.
+
+  A date is the thing that survives a plan change. A run done on 25 August is
+  still a run done on 25 August whatever the new plan calls that day, so logs
+  are re-pointed onto whichever run in the new plan falls on their date, within
+  three days. Strength and cross-training sessions move the same way. Only what
+  genuinely has no home goes to history, and you are told the split — how many
+  move across, how many do not — before anything happens.
+
+  If an earlier plan change already stranded runs in history, Stats offers to
+  **re-attach** them: the same matcher, run against the plan you are on now.
+
+- **Undo.** A plan change, a restore, a reset or a history wipe takes a snapshot
+  first, and Stats offers one step back for as long as it is there. If storage
+  is too tight to hold both, the snapshot is dropped rather than the save
+  failing — losing the ability to go back beats losing the thing itself.
 - **Length of the block.** *Add a week at the end* extends it, copying the shape
   of the final week; *Delete week* shortens it and pulls the later weeks back so
   the calendar stays tight.
+
+- **Many weeks at once.** Plan → *Reshape several weeks* does over a range what
+  editing does to one: scale the distances by a percentage, or move a weekday —
+  every long run to Saturday, say — across weeks 12 to 30 in a single action. It
+  edits in place, so run ids never change and not one log is touched. Distances
+  round to the half-kilometre, because a plan reading 12.37 km is a plan nobody
+  follows, and a week that already has a run on the target day is left alone
+  rather than made to hold two, with the count reported back.
+
+- **A plan from somewhere else.** Plan → *Paste a plan* or *From a file* reads
+  one in and swaps it for the block you are on, keeping every run the dates can
+  account for. Three shapes are accepted, because a plan arrives in whatever
+  form its author had to hand:
+
+  | Shape | What it needs |
+  |---|---|
+  | CSV or TSV | A `date` column and a `km` column, one row per run. `type`, `note`, `tag`, `phase`, `cap`, `tempo`, `mp` and `strides` are read if present. |
+  | JSON plan | The array this app stores, or a whole backup with a `plan` in it. |
+  | JSON seed | The `{s, t, p, n, r}` shape at the top of `index.html`. |
+
+  Columns are found by header name, so their order does not matter and a
+  coach's extra columns are ignored. Rows missing a date or a distance are
+  skipped and counted rather than being fatal. Week starts snap to the Monday,
+  since the whole app reckons days as offsets from one. Nothing is written until
+  the file has parsed, and a refusal says which part failed.
+
+- **Putting the shipped plan back.** *Restore Marathon Build* returns the
+  original 42 weeks without erasing a run. It used to be that **Erase logs and
+  reset the plan** was the only route back, and it took everything with it.
 - **Slipping the whole thing.** The per-week controls move that week and
   everything after it a week earlier or later.
 
