@@ -51,6 +51,12 @@ Per run: completed or skipped, actual distance and duration, average heart rate,
 calories, effort (easy / moderate / hard), an RPE out of ten, how it felt, which
 shoes, and any pain with a body-area tag and a note. Pace and the VO<sub>2</sub> estimate are derived and shown as you type.
 
+Distances take **two decimal places**, because a watch says 9.42 km and not 9.4,
+and a number you typed should be the number you are shown. Trailing zeros are
+trimmed, so 9.42, 9.4 and 9 all read as themselves. Planned distances take them
+too; only the bulk *scale* operation rounds, to the half-kilometre, since a plan
+reading 12.37 km is a plan nobody follows.
+
 Duration is entered as **hours, minutes and seconds** — a three-hour long run is
 3 h 12, not 192 minutes. The hours box is left blank for anything under an hour.
 Everything is stored as seconds, so old logs read back into the three boxes

@@ -2410,7 +2410,14 @@ function esc(s){
     return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
   });
 }
-function n1(x){ return (Math.round(x * 10) / 10).toString(); }
+/* Distances are entered to the hundredth, because a watch says 9.42 km and not
+   9.4, and a number you typed should be the number you are shown. Trailing
+   zeros are trimmed, so 9.42, 9.4 and 9 all read as themselves.
+
+   The few quantities where a second decimal is noise rather than information
+   round themselves to a tenth before they get here. */
+function n1(x){ return (Math.round(x * 100) / 100).toString(); }
+function n1r(x){ return (Math.round(x * 10) / 10).toString(); }
 /* 12,400 kcal will not fit a stat tile; 12.4k will. */
 function fmtK(x){
   return x >= 10000 ? (Math.round(x / 100) / 10) + "k" : String(Math.round(x));
@@ -2513,7 +2520,8 @@ function planFromRows(rows){
     if (!byWeek[mon]){ byWeek[mon] = { start:mon, tag:null, phase:1, note:null, runs:[] }; order.push(mon); }
     var wk2 = byWeek[mon];
     var off = dayDiff(parseISO(mon), parseISO(iso));
-    var run = { off:off, km:r.km, type:PLAN_TYPES.indexOf(r.type) >= 0 ? r.type : "easy" };
+    var run = { off:off, km:Math.round(r.km * 100) / 100,
+                type:PLAN_TYPES.indexOf(r.type) >= 0 ? r.type : "easy" };
     if (r.cap > 0) run.cap = r.cap;
     if (r.tempo > 0) run.tempo = r.tempo;
     if (r.mp > 0) run.mp = r.mp;
@@ -2927,7 +2935,7 @@ function setWeekTag(w, tag){
 
 function setRunKm(w, d, km){
   if (!(km >= 0)) return;
-  runAt(w, d).km = Math.round(km * 10) / 10;
+  runAt(w, d).km = Math.round(km * 100) / 100;
   save();
 }
 
@@ -3031,7 +3039,8 @@ function bannersHTML(){
       '<b>A new plan is available</b>' +
       esc(PLAN_NAME) + ' &mdash; ' + DEFAULT_PLAN.length + ' weeks to ' +
       fmtDate(parseISO(RACE_DATE)) + '. Loading it replaces the plan you are on. ' +
-      'Runs you have already logged are kept as history, not discarded.' +
+      'Runs you have already logged come with it, matched onto the new plan by date, ' +
+      'and you are shown the split before anything happens.' +
       '<button class="act" data-act="adopt-plan">Load the marathon plan</button>' +
       '</div></div>';
   }
@@ -3437,7 +3446,7 @@ function statsOverviewHTML(){
     h += '<div class="stats-row" style="margin-top:12px">' +
       '<div class="stat"><div class="v">' + st.done + '<span style="font-size:15px;color:var(--muted)"> / ' +
         st.planned + '</span></div><div class="k">Strength sessions</div></div>' +
-      '<div class="stat"><div class="v">' + (st.mins ? n1(st.mins / 60) : "&mdash;") +
+      '<div class="stat"><div class="v">' + (st.mins ? n1r(st.mins / 60) : "&mdash;") +
         '</div><div class="k">Hours of strength</div></div>' +
       '</div>';
   }
@@ -3445,7 +3454,7 @@ function statsOverviewHTML(){
     h += '<div class="stats-row" style="margin-top:12px">' +
       '<div class="stat"><div class="v">' + (allKcal ? fmtK(allKcal) : "&mdash;") +
         '</div><div class="k">kcal burned</div></div>' +
-      '<div class="stat"><div class="v">' + (allSec ? n1(allSec / 3600) : "&mdash;") +
+      '<div class="stat"><div class="v">' + (allSec ? n1r(allSec / 3600) : "&mdash;") +
         '</div><div class="k">hours running</div></div>' +
       '</div>';
   };
@@ -4028,9 +4037,9 @@ function morningStatsHTML(){
     return t.length ? t.reduce(function(p, q){ return p + q.v; }, 0) / t.length : null;
   };
   var bits = [];
-  if (rhr.length) bits.push('<em>' + n1(mean(rhr, 7)) + ' <i>resting, 7-day mean</i></em>');
+  if (rhr.length) bits.push('<em>' + n1r(mean(rhr, 7)) + ' <i>resting, 7-day mean</i></em>');
   if (sleep.length){
-    bits.push('<em>' + n1(mean(sleep, 7)) + ' <i>h slept, 7-day mean</i></em>');
+    bits.push('<em>' + n1r(mean(sleep, 7)) + ' <i>h slept, 7-day mean</i></em>');
     var shortN = sleep.slice(-7).filter(function(x){ return x.v < SLEEP_SHORT_H; }).length;
     if (shortN) bits.push('<em class="over">' + shortN + ' <i>night' + (shortN === 1 ? '' : 's') +
       ' under ' + SLEEP_SHORT_H + ' h</i></em>');
@@ -4566,7 +4575,7 @@ function drawSheet(){
 
   if (draft.status === "done"){
     h += '<div class="field"><span class="label">Distance &amp; time</span><div class="inputs">' +
-      '<div class="inp"><input id="f-km" type="number" inputmode="decimal" step="0.1" min="0" value="' + draft.km + '"><span class="u">km</span></div>' +
+      '<div class="inp"><input id="f-km" type="number" inputmode="decimal" step="0.01" min="0" value="' + draft.km + '"><span class="u">km</span></div>' +
       '<div class="inp" style="flex:.72"><input id="f-hours" type="number" inputmode="numeric" min="0" max="23" placeholder="0" value="' + draft.hours + '"><span class="u">h</span></div>' +
       '<div class="inp"><input id="f-min" type="number" inputmode="numeric" min="0" max="59" placeholder="0" value="' + draft.min + '"><span class="u">min</span></div>' +
       '<div class="inp"><input id="f-sec" type="number" inputmode="numeric" min="0" max="59" placeholder="00" value="' + draft.sec + '"><span class="u">sec</span></div>' +
@@ -4799,7 +4808,7 @@ function saveDraft(){
     save(); closeSheet(); render(); return;
   }
 
-  var km = parseFloat(draft.km);
+  var km = Math.round(parseFloat(draft.km) * 100) / 100;
   if (!(km > 0)) { say({ body:"Enter a distance greater than zero, or mark the run skipped." }); return; }
   if (draft.painOn && !draft.area) { say({ body:"Pick where the pain was." }); return; }
 
@@ -5157,7 +5166,7 @@ function drawWeekSheet(){
                  (taken ? ' disabled' : '') + '>' + nm + '</option>';
         }).join("") +
       '</select>' +
-      '<div class="inp"><input type="number" inputmode="decimal" step="0.5" min="0" value="' + r.km +
+      '<div class="inp"><input type="number" inputmode="decimal" step="0.01" min="0" value="' + r.km +
         '" data-act="set-km" data-w="' + w + '" data-d="' + d + '"><span class="u">km</span></div>' +
       '<button class="x" data-act="del-run" data-w="' + w + '" data-d="' + d + '" title="Remove">&times;</button>' +
       (logged ? '<span class="lg" title="Logged">&#9679;</span>' : '') +
