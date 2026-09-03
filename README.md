@@ -51,7 +51,16 @@ Per run: completed or skipped, actual distance and duration, average heart rate,
 calories, effort (easy / moderate / hard), an RPE out of ten, how it felt, which
 shoes, and any pain with a body-area tag and a note. Pace and the VO<sub>2</sub> estimate are derived and shown as you type.
 
-Distances take **two decimal places**, because a watch says 9.42 km and not 9.4,
+Distances take **two decimal places**, entered with either separator — `9.42`
+or `9,42`. iOS puts the decimal separator its *locale* uses on the numeric
+keypad, so a phone set to most of Europe offers a comma and no full stop at all,
+and an `<input type="number">` accepts only a full stop: the HTML value
+sanitiser discards anything else and the field reads back empty. Every field
+that takes a decimal is therefore a plain text input with a decimal keypad, and
+both separators are read. Whole-number fields keep `type="number"`, which has no
+such problem.
+
+Two decimals, because a watch says 9.42 km and not 9.4,
 and a number you typed should be the number you are shown. Trailing zeros are
 trimmed, so 9.42, 9.4 and 9 all read as themselves. Planned distances take them
 too; only the bulk *scale* operation rounds, to the half-kilometre, since a plan
