@@ -1513,7 +1513,7 @@ function tailOf(l){
 /* Built from the draft, and null when nothing was filled in, so an untouched
    run does not carry an empty object around forever. */
 function draftCond(){
-  var t = parseFloat(draft.temp);
+  var t = numVal(draft.temp);
   var c = {};
   if (draft.weather) c.weather = draft.weather;
   if (draft.surface) c.surface = draft.surface;
@@ -2417,6 +2417,32 @@ function esc(s){
    The few quantities where a second decimal is noise rather than information
    round themselves to a tenth before they get here. */
 function n1(x){ return (Math.round(x * 100) / 100).toString(); }
+
+/* ---------- reading a typed number ----------
+   iOS puts the decimal separator its *locale* uses on the numeric keypad, so a
+   phone set to most of Europe offers a comma and no full stop at all. An
+   <input type="number"> only accepts a full stop — the HTML value sanitiser
+   discards anything that is not a valid floating-point number, and the field
+   then reads back as empty — so on those phones a decimal simply could not be
+   typed, and the value vanished without saying so.
+
+   Every field that takes a decimal is therefore a plain text input with a
+   decimal keypad, and both separators are read here. Whole-number fields keep
+   type="number", which has no such problem. */
+function numVal(v){
+  if (v == null) return NaN;
+  v = String(v).trim().replace(/\s/g, "");
+  if (v === "") return NaN;
+  // A comma is a decimal point on most of the world's keyboards.
+  v = v.replace(",", ".");
+  return parseFloat(v);
+}
+/* The markup for one of those fields, so the four of them cannot drift apart. */
+function decInput(id, extra){
+  return '<input ' + (id ? 'id="' + id + '" ' : '') +
+    'type="text" inputmode="decimal" autocomplete="off" autocorrect="off" ' +
+    'autocapitalize="off" spellcheck="false"' + (extra || "") + '>';
+}
 function n1r(x){ return (Math.round(x * 10) / 10).toString(); }
 /* 12,400 kcal will not fit a stat tile; 12.4k will. */
 function fmtK(x){
@@ -3718,10 +3744,12 @@ function morningCardHTML(){
     '<div class="inputs" style="margin-top:12px">' +
       '<div class="inp"><input id="m-rhr" type="number" inputmode="numeric" min="25" max="140" ' +
         'placeholder="&mdash;" value="' + (rec.rhr || "") + '"><span class="u">resting bpm</span></div>' +
-      '<div class="inp"><input id="m-sleep" type="number" inputmode="decimal" step="0.25" min="0" max="16" ' +
-        'placeholder="&mdash;" value="' + (rec.sleepH || "") + '"><span class="u">hours slept</span></div>' +
-      '<div class="inp"><input id="m-kg" type="number" inputmode="decimal" step="0.1" min="30" max="200" ' +
-        'placeholder="&mdash;" value="' + (rec.kg || "") + '"><span class="u">kg</span></div>' +
+      '<div class="inp">' + decInput("m-sleep",
+          ' placeholder="&mdash;" value="' + (rec.sleepH || "") + '"') +
+        '<span class="u">hours slept</span></div>' +
+      '<div class="inp">' + decInput("m-kg",
+          ' placeholder="&mdash;" value="' + (rec.kg || "") + '"') +
+        '<span class="u">kg</span></div>' +
     '</div>' +
     '<button class="btn" data-act="save-morning" style="margin-top:12px">' +
       (has ? "Update this morning" : "Save this morning") + '</button>';
@@ -4341,10 +4369,12 @@ function askFields(o, onDone){
         (f.multiline
           ? '<textarea id="' + id + '" placeholder="' + esc(f.placeholder || "") + '">' +
             esc(f.value == null ? "" : String(f.value)) + '</textarea>'
-          : '<input id="' + id + '" type="' + (f.type || "text") + '"' +
-            (f.type === "number" ? ' inputmode="decimal" step="any"' : '') +
-            ' placeholder="' + esc(f.placeholder || "") + '" value="' +
-            esc(f.value == null ? "" : String(f.value)) + '">') +
+          : f.type === "number"
+            ? decInput(id, ' placeholder="' + esc(f.placeholder || "") + '" value="' +
+                           esc(f.value == null ? "" : String(f.value)) + '"')
+            : '<input id="' + id + '" type="' + (f.type || "text") + '"' +
+              ' placeholder="' + esc(f.placeholder || "") + '" value="' +
+              esc(f.value == null ? "" : String(f.value)) + '">') +
         '</div>';
     }).join("") +
     '<div class="derr" id="dlg-err" style="display:none"></div>' +
@@ -4575,7 +4605,8 @@ function drawSheet(){
 
   if (draft.status === "done"){
     h += '<div class="field"><span class="label">Distance &amp; time</span><div class="inputs">' +
-      '<div class="inp"><input id="f-km" type="number" inputmode="decimal" step="0.01" min="0" value="' + draft.km + '"><span class="u">km</span></div>' +
+      '<div class="inp">' + decInput("f-km", ' value="' + esc(String(draft.km)) + '"') +
+        '<span class="u">km</span></div>' +
       '<div class="inp" style="flex:.72"><input id="f-hours" type="number" inputmode="numeric" min="0" max="23" placeholder="0" value="' + draft.hours + '"><span class="u">h</span></div>' +
       '<div class="inp"><input id="f-min" type="number" inputmode="numeric" min="0" max="59" placeholder="0" value="' + draft.min + '"><span class="u">min</span></div>' +
       '<div class="inp"><input id="f-sec" type="number" inputmode="numeric" min="0" max="59" placeholder="00" value="' + draft.sec + '"><span class="u">sec</span></div>' +
@@ -4673,8 +4704,8 @@ function drawSheet(){
       '<div class="chips cond" style="margin-top:8px">' +
         SURFACES.map(function(v){ return chip("surface", v); }).join("") + '</div>' +
       '<div class="inputs" style="margin-top:10px">' +
-        '<div class="inp"><input id="f-temp" type="number" inputmode="decimal" step="0.5" ' +
-          'min="-60" max="60" placeholder="&mdash;" value="' + draft.temp + '">' +
+        '<div class="inp">' + decInput("f-temp",
+            ' placeholder="&mdash;" value="' + esc(String(draft.temp)) + '"') +
           '<span class="u">&deg;C</span></div>' +
         '<div class="inp" style="flex:2"><input id="f-route" type="text" class="txt" ' +
           'placeholder="Where you ran" value="' + esc(draft.route) + '">' +
@@ -4736,7 +4767,7 @@ function readInputs(){
       kc = document.getElementById("f-kcal"), nt = document.getElementById("f-painnote"),
       rn = document.getElementById("f-runnote"), tp = document.getElementById("f-temp"),
       rt = document.getElementById("f-route"), cg = document.getElementById("f-carb");
-  if (km) draft.km  = km.value === "" ? 0 : parseFloat(km.value);
+  if (km) draft.km  = km.value === "" ? 0 : numVal(km.value);
   if (ho) draft.hours = ho.value === "" ? "" : parseInt(ho.value, 10);
   if (mi) draft.min = mi.value === "" ? "" : parseInt(mi.value, 10);
   if (se) draft.sec = se.value === "" ? "" : parseInt(se.value, 10);
@@ -4746,7 +4777,7 @@ function readInputs(){
   if (nt) draft.painNote = nt.value;
   if (rn) draft.note = rn.value;
   if (rt) draft.route = rt.value;
-  if (tp) draft.temp = tp.value === "" ? "" : parseFloat(tp.value);
+  if (tp) draft.temp = tp.value === "" ? "" : numVal(tp.value);
   if (cg) draft.carbG = cg.value === "" ? "" : parseInt(cg.value, 10);
 }
 function draftSec(){
@@ -4808,7 +4839,7 @@ function saveDraft(){
     save(); closeSheet(); render(); return;
   }
 
-  var km = Math.round(parseFloat(draft.km) * 100) / 100;
+  var km = Math.round(numVal(draft.km) * 100) / 100;
   if (!(km > 0)) { say({ body:"Enter a distance greater than zero, or mark the run skipped." }); return; }
   if (draft.painOn && !draft.area) { say({ body:"Pick where the pain was." }); return; }
 
@@ -5138,7 +5169,18 @@ function openWeekSheet(w){
   scrim.classList.add("on"); sheet.classList.add("on");
 }
 
+/* The week's total, kept current in the open sheet without rebuilding it. */
+function refreshWeekSub(){
+  var sub = document.getElementById("wk-sub");
+  if (sub && editW !== null && wk(editW)) sub.textContent = weekSheetSub(editW);
+}
+function weekSheetSub(w){
+  var start = weekStart(w);
+  return fmtDate(start) + " \u2013 " + fmtDate(addDays(start, 6)) +
+         " \u00b7 " + n1(weekTotal(w)) + " km planned";
+}
 function drawWeekSheet(){
+  if (editW === null || !wk(editW)) return;     // the sheet has since been closed
   var w = editW, p = wk(w), start = weekStart(w);
   var tagBtn = function(val, label){
     return '<button data-act="set-tag" data-w="' + w + '" data-tag="' + val + '"' +
@@ -5147,8 +5189,7 @@ function drawWeekSheet(){
 
   var h = '<div class="grab"></div>' +
     '<h2>Week ' + (w+1) + '</h2>' +
-    '<div class="sub">' + fmtDate(start) + ' &ndash; ' + fmtDate(addDays(start, 6)) +
-    ' &middot; ' + n1(weekTotal(w)) + ' km planned</div>';
+    '<div class="sub" id="wk-sub">' + esc(weekSheetSub(w)) + '</div>';
 
   h += '<div class="field"><span class="label">Week type</span><div class="seg">' +
     tagBtn("", "Normal") + tagBtn("RECOVERY", "Recovery") + tagBtn("PEAK", "Peak") +
@@ -5166,8 +5207,9 @@ function drawWeekSheet(){
                  (taken ? ' disabled' : '') + '>' + nm + '</option>';
         }).join("") +
       '</select>' +
-      '<div class="inp"><input type="number" inputmode="decimal" step="0.01" min="0" value="' + r.km +
-        '" data-act="set-km" data-w="' + w + '" data-d="' + d + '"><span class="u">km</span></div>' +
+      '<div class="inp">' + decInput(null, ' value="' + r.km +
+        '" data-act="set-km" data-w="' + w + '" data-d="' + d + '"') +
+        '<span class="u">km</span></div>' +
       '<button class="x" data-act="del-run" data-w="' + w + '" data-d="' + d + '" title="Remove">&times;</button>' +
       (logged ? '<span class="lg" title="Logged">&#9679;</span>' : '') +
       '</div>';
@@ -6107,7 +6149,7 @@ document.addEventListener("click", function(e){
           { k:"name", label:"Name", value:"Pair " + (state.shoes.length + 1),
             placeholder:"Trail pair" },
           { k:"km", label:"Kilometres already on them", type:"number", value:"0" }
-        ] }, function(v){ addShoe(v.name, parseFloat(v.km)); });
+        ] }, function(v){ addShoe(v.name, numVal(v.km)); });
     }
     else if (a === "shoe-retire"){
       var shR = shoeById(el.dataset.id);
@@ -6136,7 +6178,7 @@ document.addEventListener("click", function(e){
           { k:"km", label:"Kilometres when first recorded", type:"number",
             value:String(sh2.startKm || 0) }
         ] }, function(v){
-          var v2 = parseFloat(v.km);
+          var v2 = numVal(v.km);
           sh2.name = v.name || sh2.name;
           if (isFinite(v2) && v2 >= 0) sh2.startKm = Math.round(v2 * 10) / 10;
           save(); render();
@@ -6226,7 +6268,7 @@ document.addEventListener("click", function(e){
       var num = function(id, lo, hi){
         var el = document.getElementById(id);
         if (!el || el.value === "") return null;
-        var v = parseFloat(el.value);
+        var v = numVal(el.value);
         return (isFinite(v) && v >= lo && v <= hi) ? Math.round(v * 10) / 10 : null;
       };
       var rhrV = num("m-rhr", 25, 140), slV = num("m-sleep", 0, 16), kgV = num("m-kg", 30, 200);
@@ -6316,8 +6358,11 @@ sheet.addEventListener("input", function(e){
   }
   // live-edit a planned distance without redrawing, so the field keeps focus
   if (e.target.dataset && e.target.dataset.act === "set-km"){
-    var v = parseFloat(e.target.value);
-    if (isFinite(v) && v >= 0) setRunKm(+e.target.dataset.w, +e.target.dataset.d, v);
+    var v = numVal(e.target.value);
+    if (isFinite(v) && v >= 0){
+      setRunKm(+e.target.dataset.w, +e.target.dataset.d, v);
+      refreshWeekSub();               // the total tracks what you are typing
+    }
   }
 });
 
@@ -6327,7 +6372,13 @@ sheet.addEventListener("change", function(e){
     setRunDay(+e.target.dataset.w, +e.target.dataset.d, +e.target.value);
     drawWeekSheet(); render();
   } else if (a === "set-km"){
-    drawWeekSheet(); render();      // on blur, refresh the week total
+    /* This fires on blur, and blur happens on the way down of the tap that
+       caused it. Rebuilding the sheet here replaced the very button being
+       pressed, so the first tap after typing a distance was swallowed and you
+       had to tap twice. Only the week total needs refreshing, so only the week
+       total is refreshed. */
+    refreshWeekSub();
+    render();
   }
 });
 
