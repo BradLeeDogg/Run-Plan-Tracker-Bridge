@@ -432,6 +432,53 @@ exports still work.
 
 ## Getting runs in without typing
 
+The importer reads TCX, GPX, an Apple Health export, JSON and CSV. Every file is
+parsed on the device; nothing is uploaded, and the app makes no network calls.
+
+### Strava
+
+Strava gives the best record of what a run actually was: distance, elapsed and
+moving time, and every kilometre split. Export one activity from the web —
+open the activity, **⋯ → Export Original** (or **Export TCX** if the original is
+not a TCX), save the file, then **Import from a file** here. The splits come
+across whole; they land in the split table, the fastest-window personal bests
+and the trailing partial.
+
+A Strava TCX from a phone recording carries no heart rate and no calories,
+because the phone never measured them. That is what the watch is for.
+
+### Two sources, one run
+
+No single file has everything. A phone or a GPS watch knows the distance, the
+time and the splits; a wrist strap knows the heart rate and the calories.
+
+So import both for the same run. The second file **fills in what the first left
+out and never blanks what is already there**: every field it does not carry
+survives untouched.
+
+Order does not matter either, because splits decide who is the finer record. A
+file that carries per-kilometre splits measured the run more closely than one
+that does not, so when the run already has splits and the new file has none,
+that file's heart rate and calories are taken and its distance and time are
+left on the floor. Strava first then the strap, or the strap first then Strava,
+lands on the same run: Strava's distance, time and splits, the strap's heart
+rate and calories.
+
+A second Strava export — a corrected distance, a re-cropped activity — does
+carry splits, so it is not the coarser record and it overwrites as you would
+expect.
+
+The import list says so before you commit to it. A row that lands on a run
+already on record reads *"will add heart rate, calories"* — naming exactly which
+fields change — or *"nothing new in this file"* when the import would be a
+no-op, and those rows arrive unticked. A file landing on a run you typed in by
+hand also arrives unticked: that one is yours to confirm.
+
+Notes, conditions, RPE, feel, fuel, pain, effort and the shoe on record are
+never in a file, so an import never touches them.
+
+### Apple Health
+
 Bridge already syncs the Galaxy Watch into Apple Health, and this app can read
 what lands there — via a Shortcut for routine use, or Health's own "Export All
 Health Data" as the always-works fallback. Both give distance, duration and
