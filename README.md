@@ -392,9 +392,28 @@ Editing the plan never disturbs runs you have already logged — see below.
 
 ## Your data
 
-**Stats → Export JSON** downloads a backup; **Copy** puts the same JSON on the
-clipboard when the download route is awkward on iOS. **Import** restores from
-either. Clearing Safari website data erases everything, so export occasionally.
+**Stats → History → Your data → Export JSON** downloads a backup; **Copy** puts
+the same JSON on the clipboard when the download route is awkward. Restore it
+either **From a file** or by pasting it. The file route shows you what the file
+holds — runs, plan weeks, mornings, shoes — before anything is written, and
+there is an undo afterwards.
+
+### Moving to a new phone
+
+Nothing follows you on its own. Everything is in one browser's `localStorage`,
+which no phone transfer touches, and which is as tied to iOS Safari as it is to
+Chrome on Android.
+
+1. On the old phone, open the app **with signal** so it picks up the current
+   version, then **Export JSON**.
+2. Send yourself the file — email, Drive, anything.
+3. On the new phone, open the site, **Add to Home Screen**, then
+   **Restore a backup → From a file**.
+4. Check a couple of weeks and your shoe mileage against the old phone before
+   you wipe it.
+
+Do it while the old phone still has the data. Clearing website data erases
+everything, and so does leaving the device behind.
 
 ### How logs stay attached
 

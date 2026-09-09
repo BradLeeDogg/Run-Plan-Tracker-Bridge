@@ -3695,10 +3695,19 @@ function yourDataHTML(){
       '<button class="btn" data-act="export">Export JSON</button>' +
       '<button class="btn" data-act="copy">Copy</button>' +
     '</div>' +
-    '<button class="btn ghost" data-act="import" style="margin-bottom:10px">Restore a backup</button>' +
+    '<div class="label" style="margin:16px 0 8px">Restore a backup</div>' +
+    '<div class="btn-row" style="margin-bottom:10px">' +
+      '<button class="btn ghost" data-act="import-file">From a file</button>' +
+      '<button class="btn ghost" data-act="import">Paste it</button>' +
+    '</div>' +
+    '<div class="tiny" style="margin-bottom:14px">Moving to a new phone: export on the old one, ' +
+    'send yourself the file, then read it here. Nothing is written until you have seen what ' +
+    'the file holds, and there is an undo afterwards.</div>' +
     '<button class="btn ghost danger" data-act="reset">Erase logs and reset the plan</button>' +
-    '<div class="tiny">Everything lives in this browser only &mdash; no account, no server, no network calls. ' +
-    'Clearing Safari website data will wipe it, so export now and again.</div></div>';
+    '<div class="tiny">Everything lives in this browser only &mdash; no account, no server, no ' +
+    'network calls. That also means nothing follows you to a new phone on its own: clearing the ' +
+    'browser\u2019s website data wipes it, and so does leaving the device behind. Export now and ' +
+    'again, and before you switch phones.</div></div>';
   return h;
 }
 
@@ -5231,11 +5240,20 @@ function drawWeekSheet(){
 }
 
 /* ============================ DATA I/O ============================ */
+/* Everything the device holds, apart from the undo snapshot — restoring a
+   step-back into a fresh device would mean nothing, and it doubles the file.
+
+   This list has to be kept level with load(). It was not: morning readings and
+   the doctor check were added later and never reached the export, so a backup
+   silently left them behind. Since the resting rate anchors every VO2 estimate,
+   losing it did not merely drop a number, it changed the ones that remained. */
 function exportBlob(){
   return JSON.stringify({
     app:"run-plan-tracker", version:2, exported:new Date().toISOString(),
     plan:state.plan, logs:state.logs, extras:state.extras,
     strength:state.strength, cross:state.cross, shoes:state.shoes,
+    daily:state.daily, checks:state.checks,
+    planId:state.planId, planName:state.planName, shoesRotation:state.shoesRotation,
     seq:state.seq, settings:state.settings
   }, null, 2);
 }
@@ -5261,23 +5279,54 @@ function promptFallback(txt){
   showText({ title:"Copy your data",
              body:"Select all of this and copy it somewhere safe.", text:txt });
 }
+/* What is wrong with a backup, in words, or null if nothing is. Shared by the
+   paste route and the file route so the two cannot disagree about what counts
+   as a backup. */
+function backupProblem(text){
+  if (!text || !String(text).trim()) return "Nothing to read.";
+  var d;
+  try { d = JSON.parse(text); } catch(e){ return "That does not parse as JSON."; }
+  if (!d || typeof d !== "object" || !d.logs) return "No logs section in that backup.";
+  return null;
+}
+/* What a restore is about to do, counted from the file rather than promised. */
+function backupSummary(d){
+  var runs = 0, skipped = 0;
+  Object.keys(d.logs || {}).forEach(function(k){
+    var l = d.logs[k];
+    if (l && l.done) runs++; else if (l && l.skipped) skipped++;
+  });
+  var bits = [];
+  bits.push(runs + " logged run" + (runs === 1 ? "" : "s"));
+  if (skipped) bits.push(skipped + " skipped");
+  if (Array.isArray(d.extras) && d.extras.length) bits.push(d.extras.length + " in history");
+  if (planOK(d.plan)) bits.push(d.plan.length + " plan weeks");
+  if (d.daily && Object.keys(d.daily).length)
+    bits.push(Object.keys(d.daily).length + " mornings");
+  if (Array.isArray(d.shoes) && d.shoes.length)
+    bits.push(d.shoes.length + " pair" + (d.shoes.length === 1 ? "" : "s") + " of shoes");
+  return bits.join(", ") + ".";
+}
+function confirmRestore(text, from){
+  var problem = backupProblem(text);
+  if (problem){
+    say({ title:"That is not a backup this app can read", body:problem });
+    return;
+  }
+  var data = JSON.parse(text);
+  ask({ title:"Replace everything with this backup?", danger:true, yes:"Replace it all",
+        body:(from ? "From " + from + ".\n\n" : "") + backupSummary(data) +
+             "\n\nEverything currently on this device is swapped for that. " +
+             "This can be undone afterwards." },
+    function(){ applyBackup(data); });
+}
 function doImport(){
   askFields({ title:"Restore a backup", yes:"Read it",
-    body:"Paste the JSON from an export.",
+    body:"Paste the JSON from an export. Moving between phones is easier from the " +
+         "file itself \u2014 use \u201cFrom a file\u201d instead.",
     fields:[{ k:"json", label:"Backup", multiline:true, placeholder:'{"logs":\u2026}' }],
-    validate:function(v){
-      if (!v.json) return "Nothing pasted.";
-      var d;
-      try { d = JSON.parse(v.json); } catch(e){ return "That does not parse as JSON."; }
-      if (!d || typeof d !== "object" || !d.logs) return "No logs section in that backup.";
-      return null;
-    } }, function(v){
-      var data = JSON.parse(v.json);
-      ask({ title:"Replace everything with this backup?", danger:true, yes:"Replace it all",
-            body:"Everything currently on the device is swapped for what is in the file. " +
-                 "This can be undone afterwards." },
-        function(){ applyBackup(data); });
-    });
+    validate:function(v){ return backupProblem(v.json); } },
+    function(v){ confirmRestore(v.json, null); });
 }
 function applyBackup(data){
   snapshot("Restore a backup");
@@ -5293,8 +5342,15 @@ function applyBackup(data){
   state.extras = Array.isArray(data.extras) ? data.extras : [];
   state.strength = (data.strength && typeof data.strength === "object") ? data.strength : {};
   state.cross = (data.cross && typeof data.cross === "object") ? data.cross : {};
+  // Absent from a backup written before these existed, which load() then fills in.
+  state.daily = (data.daily && typeof data.daily === "object") ? data.daily : {};
+  state.checks = (data.checks && typeof data.checks === "object") ? data.checks : {};
+  if (typeof data.planId === "string") state.planId = data.planId;
+  state.planName = (typeof data.planName === "string" && data.planName) ? data.planName : null;
+  if (data.shoesRotation) state.shoesRotation = data.shoesRotation;
   if (Array.isArray(data.shoes) && data.shoes.length) state.shoes = data.shoes;
   if (data.settings && data.settings.hrMax > 0) state.settings = data.settings;
+  _rhrIdx = null;                       // the morning readings have all changed
   save(); render();
   say({ title:"Restored", body:"Everything is back from that backup. Stats has an undo if it was the wrong one." });
 }
@@ -6237,6 +6293,7 @@ document.addEventListener("click", function(e){
     else if (a === "import-runs"){ fileIntent = "runs"; openImport(); }
     else if (a === "pick-file"){ fileIntent = "runs"; document.getElementById("fileIn").click(); }
     else if (a === "plan-file"){ fileIntent = "plan"; document.getElementById("fileIn").click(); }
+    else if (a === "import-file"){ fileIntent = "backup"; document.getElementById("fileIn").click(); }
     else if (a === "parse-text") tryParse(document.getElementById("imp-text").value);
     else if (a === "imp-row"){
       var row = importRows[+el.dataset.i];
@@ -6325,6 +6382,14 @@ document.getElementById("fileIn").addEventListener("change", function(e){
   var f = e.target.files && e.target.files[0];
   e.target.value = "";        // so the same file can be picked again
   if (!f) return;
+  if (fileIntent === "backup"){
+    fileIntent = "runs";
+    var fb = new FileReader();
+    fb.onload = function(){ confirmRestore(String(fb.result), f.name); };
+    fb.onerror = function(){ say({ title:"Could not read that file" }); };
+    fb.readAsText(f);
+    return;
+  }
   if (fileIntent === "plan"){
     fileIntent = "runs";
     if (f.size > 2 * 1024 * 1024){
