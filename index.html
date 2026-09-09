@@ -704,9 +704,21 @@ textarea:focus{outline:none;border-color:var(--accent)}
                      strides  4-6 x 20s at the end, full recovery
    Distances and dates are the supplied plan's, unchanged. Totals verified
    against its own plannedTotalKm for every week. */
+/* Bumped with the service worker cache, so the two always name the same
+   release. The page reports this; the shell reports whatever it actually has
+   stored, and the two disagreeing is the whole point — that is how you tell
+   "the new page loaded" from "the new page loaded and the shell caught up". */
+var APP_VERSION = "v27";
 var PLAN_ID = "marathon-2027-05-30";
 var PLAN_NAME = "Marathon Build \u2014 May 30, 2027";
 var RACE_DATE = "2027-05-30";
+/* Ids this app has stamped devices with and then moved on from. Correcting
+   race day to the Sunday came with a deliberate id bump, so that anyone still
+   on the Saturday version would be offered the fix. It lives up here with the
+   rest of the plan's identity because load() reads it, and load() runs at
+   `var state = load()` further down this file — a `var` below that point is
+   hoisted but not yet assigned, and planIdFor would read undefined. */
+var PLAN_ID_PRIOR = ["marathon-2027-05-29"];
 var RACE_KM = 42.2;
 var LONG_RUN_CAP_MIN = 210;
 var SHOE_KM = 700;
@@ -1020,8 +1032,31 @@ function planOK(p){
    it was built from — scaleWeeks alone rounds to the half-kilometre, so a
    42.2 km race becomes 42. A device that had been edited that way would go on
    being offered the plan it was already running, forever. */
-function planIdFor(id){
-  return (typeof id === "string" && id && id !== "legacy") ? id : PLAN_ID;
+/* Race day as this plan actually schedules it, read off the plan rather than
+   the constant, and without touching global state — this runs during load,
+   before there is any. */
+function planRaceISO(plan){
+  if (!Array.isArray(plan)) return null;
+  for (var w = plan.length - 1; w >= 0; w--){
+    var rs = plan[w].runs || [];
+    for (var d = rs.length - 1; d >= 0; d--)
+      if (rs[d].type === "race" && typeof plan[w].start === "string")
+        return toISO(addDays(parseISO(plan[w].start), rs[d].off));
+  }
+  return null;
+}
+
+function planIdFor(id, plan){
+  if (typeof id !== "string" || !id || id === "legacy") return PLAN_ID;
+  /* A device carrying an earlier id of this same plan, whose plan has since
+     been rebuilt from the current source, is already on the current plan and
+     should not be offered it. migrateV1 does exactly that rebuild and leaves
+     the stored id alone, so the two can disagree. Race day is what the id
+     names and what the bump corrected, so race day settles it — a device
+     genuinely still on the Saturday version fails this and is still offered
+     the fix, which is the whole point of the bump. */
+  if (PLAN_ID_PRIOR.indexOf(id) >= 0 && planRaceISO(plan) === RACE_DATE) return PLAN_ID;
+  return id;
 }
 
 function maxSeq(p){
@@ -1061,7 +1096,7 @@ function load(){
   if (!s.logs || typeof s.logs !== "object") s.logs = {};
   if (!planOK(s.plan)){ s = migrateV1(s); s.migrated = true; }
   if (!s.settings || typeof s.settings !== "object") s.settings = {};
-  s.planId = planIdFor(s.planId);
+  s.planId = planIdFor(s.planId, s.plan);
   // A plan read from outside carries its own name; the shipped one uses PLAN_NAME.
   if (typeof s.planName !== "string" || !s.planName) s.planName = null;
   if (!(s.settings.hrMax > 0))  s.settings.hrMax  = 190;   // edit in Stats
@@ -3711,6 +3746,39 @@ function putBackHTML(){
   return h;
 }
 
+/* Which release is on the phone, and which plan it is on.
+
+   Without this the only way to answer "did the update land?" is to hunt for a
+   symptom, and the only way to answer "why is it still offering me the plan I
+   am on?" is to guess. Both are one glance now. */
+function versionHTML(){
+  var cur = planIsCurrent();
+  var bits = [
+    '<em>' + APP_VERSION + ' <i>this page</i></em>',
+    '<em id="v-shell">&hellip; <i>stored copy</i></em>',
+    '<em' + (cur ? '' : ' class="over"') + '>' + esc(state.planId) + ' <i>plan</i></em>'
+  ];
+  return '<div class="card"><div class="label" style="margin-bottom:4px">Version</div>' +
+    '<div class="mets">' + bits.join("") + '</div>' +
+    '<div class="tiny" style="margin-top:12px">' +
+    (cur ? 'You are on the plan this release ships. '
+         : 'This is not the plan this release ships (' + esc(PLAN_ID) + '), which is why ' +
+           'Today offers to load it. ') +
+    'The stored copy is what the service worker kept for opening without signal. When it ' +
+    'trails this page, open the app once more with signal and it catches up.</div></div>';
+}
+
+/* The stored shell names itself, so it is read rather than assumed. */
+function fillShellVersion(){
+  var el = document.getElementById("v-shell");
+  if (!el || !window.caches) return;
+  caches.keys().then(function(keys){
+    var k = keys.filter(function(x){ return /^runplan-/.test(x); })[0];
+    var e = document.getElementById("v-shell");
+    if (e) e.innerHTML = esc(k ? k.replace("runplan-", "") : "none") + ' <i>stored copy</i>';
+  }).catch(function(){});
+}
+
 /* Export, restore, reset. Everything that leaves or replaces the device. */
 function yourDataHTML(){
   var h = "";
@@ -3733,6 +3801,7 @@ function yourDataHTML(){
     'network calls. That also means nothing follows you to a new phone on its own: clearing the ' +
     'browser\u2019s website data wipes it, and so does leaving the device behind. Export now and ' +
     'again, and before you switch phones.</div></div>';
+  h += versionHTML();
   return h;
 }
 
@@ -4338,6 +4407,7 @@ function render(){
     // lands on blank space.
     window.scrollTo(0, Math.min(keepY, Math.max(0, document.body.scrollHeight - window.innerHeight)));
   }
+  fillShellVersion();
 }
 
 /* ============================ LOG SHEET ============================ */
@@ -5373,7 +5443,7 @@ function applyBackup(data){
   // A backup written on a device the stamping bug had mislabelled carries that
   // label with it, so without this the restored device is asked the same
   // question all over again.
-  state.planId = planIdFor(data.planId);
+  state.planId = planIdFor(data.planId, state.plan);
   state.planName = (typeof data.planName === "string" && data.planName) ? data.planName : null;
   if (data.shoesRotation) state.shoesRotation = data.shoesRotation;
   if (Array.isArray(data.shoes) && data.shoes.length) state.shoes = data.shoes;

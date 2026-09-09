@@ -430,6 +430,18 @@ Chrome on Android.
 Do it while the old phone still has the data. Clearing website data erases
 everything, and so does leaving the device behind.
 
+### Which version you are on
+
+**Stats → History → Your data → Version** names three things: the release this
+page is, the release the service worker has stored for opening without signal,
+and the plan the device is on.
+
+The first two disagreeing is not a fault — it means the new page has loaded and
+the stored shell has not caught up yet. Open the app once more with signal and
+it will. The third is what the "a new plan is available" banner on Today reads:
+when it is not the id this release ships, the card says so and names the one it
+expects.
+
 ### How logs stay attached
 
 Every run carries an id, and logs are stored against that id rather than against
