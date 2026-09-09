@@ -5724,18 +5724,61 @@ function parseActivities(t){
   return parseCSV(t);
 }
 
-/* Same day and within 50 m — re-importing an overlapping export is the normal
-   case, not an error, so those rows arrive already unticked. */
-function haveExtra(date, km){
-  return state.extras.some(function(l){
-    return l && l.date === date && Math.abs((l.km || 0) - km) < 0.05;
+/* Two files can describe the same run. A phone or a watch with GPS knows the
+   distance, the time and the splits; a wrist strap knows the heart rate and
+   the calories. Neither carries the other's fields, so a second import fills
+   the gaps instead of blanking them — while anything the new file does carry
+   still wins, so re-importing a corrected export still corrects it. */
+function mergeAct(prev, a){
+  /* A file carrying per-kilometre splits measured the run more finely than one
+     that does not. So when the run on record has splits and this file has
+     none, this file is the coarser account of the same distance — its heart
+     rate and calories are taken, its distance and time are not. That is the
+     watch-and-phone case exactly, and it makes the import order stop
+     mattering. */
+  var coarse = !!(prev.splits && prev.splits.length) && !(a.splits && a.splits.length);
+  return {
+    km: (!coarse && a.km > 0) ? a.km : (prev.km || a.km || 0),
+    sec: (!coarse && a.sec > 0) ? a.sec : (prev.durSec || a.sec || 0),
+    hr: a.hr || prev.hr || null,
+    kcal: a.kcal || prev.kcal || null,
+    splits: (a.splits && a.splits.length) ? a.splits : (prev.splits || null)
+  };
+}
+
+/* Which fields this file would actually change, read off the merge itself so
+   the two can never disagree. An import that changes nothing is not worth
+   ticking. */
+function mergeAdds(prev, a){
+  var m = mergeAct(prev, a), out = [];
+  var ps = prev.splits || [], ms = m.splits || [];
+  if (Math.abs(m.km - (prev.km || 0)) >= 0.01) out.push("distance");
+  if (m.sec !== (prev.durSec || 0)) out.push("time");
+  if (m.hr !== (prev.hr || null)) out.push("heart rate");
+  if (m.kcal !== (prev.kcal || null)) out.push("calories");
+  if (ps.length !== ms.length || ps.some(function(v, i){ return v !== ms[i]; }))
+    out.push("splits");
+  return out;
+}
+
+/* The run already in your history that this activity describes: the same day,
+   and near enough in distance that it is not a second run. Two sources of one
+   run disagree by more than 50 m — a watch and a phone rarely agree that
+   closely — so the tolerance grows with the distance. */
+function extraMatch(date, km, taken){
+  var tol = Math.max(0.05, km * 0.03), best = null, bd = 1e9;
+  state.extras.forEach(function(l){
+    if (!l || l.date !== date || (taken && taken[l.id])) return;
+    var d = Math.abs((l.km || 0) - km);
+    if (d <= tol && d < bd){ bd = d; best = l; }
   });
+  return best;
 }
 
 /* Pair each activity with the nearest free slot within 3 days. */
 function buildImportRows(acts){
   acts = acts.slice().sort(function(a, b){ return a.date < b.date ? -1 : 1; });
-  var taken = {};
+  var taken = {}, takenX = {};
   return acts.map(function(a){
     var best = null, bestGap = 999, w, d;
     for (w = 0; w < planLen(); w++){
@@ -5750,9 +5793,15 @@ function buildImportRows(acts){
     var clash = !!(ex && (ex.done || ex.skipped));
     // No slot within 3 days means this is history, or a run outside the block.
     // It is still worth keeping — it just does not answer to the plan.
-    var dupe = !best && haveExtra(a.date, a.km);
-    return { act:a, slot:best, conflict:clash, extra: !best, duplicate: dupe,
-             on: best ? !clash : !dupe };
+    var into = best ? null : extraMatch(a.date, a.km, takenX);
+    if (into) takenX[into.id] = true;
+    var adds = clash ? mergeAdds(ex, a) : (into ? mergeAdds(into, a) : null);
+    /* A file landing on a file merges without asking. A file landing on a run
+       you typed in yourself does not — that one is yours to confirm. */
+    var on = best ? (!clash || (!!ex.imported && adds.length > 0))
+                  : (into ? adds.length > 0 : true);
+    return { act:a, slot:best, conflict:clash, extra: !best,
+             mergeId: into ? into.id : null, duplicate: !!into, adds: adds, on: on };
   });
 }
 
@@ -5766,10 +5815,13 @@ function drawImport(){
   var h = '<div class="grab"></div><h2>Import runs</h2>';
 
   if (!importRows){
-    h += '<div class="sub">Anything your watch or phone can produce: TCX, GPX, an Apple Health ' +
-         'export, JSON or CSV. It is read here on the device &mdash; nothing is uploaded.<br>' +
-         '<span style="color:var(--dim)">Health gives distance, time and heart rate but never ' +
-         'splits &mdash; it has nowhere to keep them.</span></div>' +
+    h += '<div class="sub">Anything your watch, phone or Strava can produce: TCX, GPX, an Apple ' +
+         'Health export, JSON or CSV. It is read here on the device &mdash; nothing is uploaded.<br>' +
+         '<span style="color:var(--dim)">No one file has everything. Strava\'s TCX carries the ' +
+         'distance, the time and every split; a wrist strap carries the heart rate and the ' +
+         'calories. Import both for the same run and the second fills in what the first left ' +
+         'out &mdash; nothing already on record is blanked.<br>Health gives distance, time and ' +
+         'heart rate but never splits &mdash; it has nowhere to keep them.</span></div>' +
          '<div class="drop" id="drop">Drop a file here<br><span style="font-size:12px">or use the button below</span></div>' +
          '<button class="btn" data-act="pick-file" style="margin-bottom:14px">Choose a file</button>' +
          '<div class="field"><span class="label">Or paste it</span>' +
@@ -5800,15 +5852,18 @@ function drawImport(){
   importRows.forEach(function(r, i){
     var a = r.act;
     var line2, cls = "imp" + (r.on ? " on" : "") + (r.conflict ? " conflict" : "");
+    var add = (r.adds && r.adds.length) ? r.adds.join(", ") : "";
     if (r.extra){
       line2 = '<div class="b' + (r.duplicate ? ' warnt' : '') + '">' +
-              (r.duplicate ? '&rarr; Already in your history &middot; will add a second copy'
+              (r.duplicate ? '&rarr; Already in your history &middot; ' +
+                             (add ? 'will add ' + add : 'nothing new in this file')
                            : '&rarr; Outside the plan &middot; kept as history') + '</div>';
     } else {
       var p = runAt(r.slot.w, r.slot.d).km;
       line2 = '<div class="b' + (r.conflict ? ' warnt' : '') + '">&rarr; Week ' + (r.slot.w+1) + ' ' +
               dayName(r.slot.w, r.slot.d) + ' &middot; ' + n1(p) + ' km planned' +
-              (r.conflict ? ' &middot; already logged, will overwrite' : '') + '</div>';
+              (r.conflict ? ' &middot; already logged &middot; ' +
+                            (add ? 'will add ' + add : 'nothing new in this file') : '') + '</div>';
     }
     h += '<button class="' + cls + '" data-act="imp-row" data-i="' + i + '">' +
       '<span class="tick">' + (r.on ? "&#10003;" : "") + '</span>' +
@@ -5980,31 +6035,40 @@ function applyImport(){
   importRows.forEach(function(r){
     if (!r.on) return;
     if (r.extra){
-      state.extras.push({
-        id: newId(),
-        done:true, skipped:false,
-        km: Math.round(r.act.km * 100) / 100,
-        durSec: r.act.sec || 0,
-        hr: r.act.hr || null,
-        kcal: r.act.kcal || null,
-        splits: r.act.splits || null,
-        effort: null,
-        date: r.act.date, ts: Date.now(),
-        imported: true, extra: true,
-        pain: null,
-        shoeId: defaultShoe() ? defaultShoe().id : null
-      });
+      var old = r.mergeId ? state.extras.filter(function(l){ return l && l.id === r.mergeId; })[0] : null;
+      var em = mergeAct(old || {}, r.act);
+      if (old){
+        old.km = Math.round(em.km * 100) / 100;
+        old.durSec = em.sec; old.hr = em.hr; old.kcal = em.kcal; old.splits = em.splits;
+        old.ts = Date.now(); old.imported = true;
+      } else {
+        state.extras.push({
+          id: newId(),
+          done:true, skipped:false,
+          km: Math.round(em.km * 100) / 100,
+          durSec: em.sec,
+          hr: em.hr,
+          kcal: em.kcal,
+          splits: em.splits,
+          effort: null,
+          date: r.act.date, ts: Date.now(),
+          imported: true, extra: true,
+          pain: null,
+          shoeId: defaultShoe() ? defaultShoe().id : null
+        });
+      }
       x++;
       return;
     }
     var prev = getLog(r.slot.w, r.slot.d) || {};
+    var mg = mergeAct(prev, r.act);
     setLog(r.slot.w, r.slot.d, {
       done:true, skipped:false,
-      km: Math.round(r.act.km * 100) / 100,
-      durSec: r.act.sec || 0,
-      hr: r.act.hr || null,
-      kcal: r.act.kcal || prev.kcal || null,
-      splits: r.act.splits || prev.splits || null,
+      km: Math.round(mg.km * 100) / 100,
+      durSec: mg.sec,
+      hr: mg.hr,
+      kcal: mg.kcal,
+      splits: mg.splits,
       effort: prev.effort || null,        // not in the data — left for you to set
       date: r.act.date, ts: Date.now(),
       imported: true,
@@ -6028,7 +6092,8 @@ function applyImport(){
   if (x) msg.push(x + " as history");
   say({ title:"Imported " + (n + x) + " run" + ((n + x) === 1 ? "" : "s") +
           (msg.length > 1 ? " \u2014 " + msg.join(", ") : ""),
-        body:(n ? "Effort, RPE and pain are not in a file \u2014 tap any run to add them."
+        body:(n ? "Effort, RPE and pain are not in a file \u2014 tap any run to add them. A second "
+                + "file for the same run adds what this one did not carry."
                 : "History shows in the monthly table and the VO\u2082 trend.") });
 }
 
