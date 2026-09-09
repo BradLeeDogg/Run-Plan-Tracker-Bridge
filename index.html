@@ -999,6 +999,36 @@ function planOK(p){
       });
   });
 }
+/* What a plan is, ignoring what it is called and when it was scheduled. Ids
+   are assigned on build and week starts move when the block is shifted, so
+   neither says anything about which plan this is; the sequence of runs does. */
+function planShape(p){
+  return (p || []).map(function(w){
+    return (w.runs || []).map(function(r){
+      return r.off + ":" + r.km + ":" + (r.type || "");
+    }).join(",");
+  }).join("|");
+}
+
+/* Which plan the device is on.
+
+   The first load of an empty device builds the shipped plan and must be
+   stamped with it. That used to read `planOK(s.plan) ? "legacy" : PLAN_ID`,
+   which asks its question after migrateV1 has already filled the plan in — so
+   the answer was always "legacy", and every fresh install was told from its
+   first minute that "a new plan is available", offering the plan it was
+   already on. s.migrated records what actually happened, so ask that instead.
+
+   Devices already stamped "legacy" by that bug are repaired here rather than
+   left to nag: an unedited shipped plan is the shipped plan whatever the
+   label says. An edited one is left alone — at that point the label is the
+   only claim anyone has about where the plan came from. */
+function planIdFor(id, plan, builtFromShipped){
+  if (typeof id !== "string" || !id) id = builtFromShipped ? PLAN_ID : "legacy";
+  if (id === "legacy" && planShape(plan) === planShape(freshPlan())) id = PLAN_ID;
+  return id;
+}
+
 function maxSeq(p){
   var m = 0;
   (p || []).forEach(function(w){
@@ -1036,7 +1066,7 @@ function load(){
   if (!s.logs || typeof s.logs !== "object") s.logs = {};
   if (!planOK(s.plan)){ s = migrateV1(s); s.migrated = true; }
   if (!s.settings || typeof s.settings !== "object") s.settings = {};
-  if (typeof s.planId !== "string") s.planId = planOK(s.plan) ? "legacy" : PLAN_ID;
+  s.planId = planIdFor(s.planId, s.plan, s.migrated);
   // A plan read from outside carries its own name; the shipped one uses PLAN_NAME.
   if (typeof s.planName !== "string" || !s.planName) s.planName = null;
   if (!(s.settings.hrMax > 0))  s.settings.hrMax  = 190;   // edit in Stats
@@ -5331,6 +5361,7 @@ function doImport(){
 function applyBackup(data){
   snapshot("Restore a backup");
   state.logs = data.logs;
+  var rebuilt = false;
   if (planOK(data.plan)){
     state.plan = data.plan;                       // v2 backup: plan travels with the logs
     state.seq = Math.max(data.seq || 0, maxSeq(data.plan));
@@ -5338,6 +5369,7 @@ function applyBackup(data){
     // v1 backup: rebuild the default plan and re-point its "w-d" keys
     var m = migrateV1({ logs:data.logs, weekStarts:data.weekStarts });
     state.plan = m.plan; state.logs = m.logs; state.seq = maxSeq(m.plan);
+    rebuilt = true;                               // so it is the shipped plan
   }
   state.extras = Array.isArray(data.extras) ? data.extras : [];
   state.strength = (data.strength && typeof data.strength === "object") ? data.strength : {};
@@ -5345,7 +5377,10 @@ function applyBackup(data){
   // Absent from a backup written before these existed, which load() then fills in.
   state.daily = (data.daily && typeof data.daily === "object") ? data.daily : {};
   state.checks = (data.checks && typeof data.checks === "object") ? data.checks : {};
-  if (typeof data.planId === "string") state.planId = data.planId;
+  // A backup written on a device the stamping bug had mislabelled carries that
+  // label with it, so without this the restored device is asked the same
+  // question all over again.
+  state.planId = planIdFor(data.planId, state.plan, rebuilt);
   state.planName = (typeof data.planName === "string" && data.planName) ? data.planName : null;
   if (data.shoesRotation) state.shoesRotation = data.shoesRotation;
   if (Array.isArray(data.shoes) && data.shoes.length) state.shoes = data.shoes;
