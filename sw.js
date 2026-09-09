@@ -1,6 +1,6 @@
 /* Run Plan Tracker service worker.
    Bump CACHE when any shell file changes so installed copies pick it up. */
-var CACHE = "runplan-v23";
+var CACHE = "runplan-v24";
 
 var SHELL = [
   "./",
@@ -8,7 +8,9 @@ var SHELL = [
   "./manifest.json",
   "./icon.svg",
   "./icon-180.png",
-  "./icon-512.png"
+  "./icon-192.png",
+  "./icon-512.png",
+  "./icon-maskable-512.png"
 ];
 
 self.addEventListener("install", function(e){
