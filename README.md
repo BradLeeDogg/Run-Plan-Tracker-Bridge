@@ -27,13 +27,27 @@ will feel wrong — this is normal"*.
 
 ## Install
 
-Open the page in Safari on iPhone, then **Share → Add to Home Screen**. It
-launches full screen with its own icon and works with no signal.
+The app is a web page that installs itself. There is no store listing and no
+APK — open the site once, install it from the browser, and it runs full screen
+with its own icon and no signal.
+
+**Android (Chrome):** open the site, then **⋮ → Add to Home screen** (Chrome
+may offer **Install app** instead — either one does it). Confirm **Install**.
+
+**iPhone (Safari):** open the site, then **Share → Add to Home Screen**. It has
+to be Safari; Chrome on iOS cannot install a web app.
+
+Once installed it works offline: the service worker keeps a copy of the page,
+so the only time you need signal is the first load and whenever you want a new
+version. To pick one up, open it **with signal** and leave it a moment — the
+worker fetches the update in the background and it is live the next time you
+open the app.
 
 ## Deploy
 
 Push to GitHub and turn on Pages (Settings → Pages → deploy from branch,
-`main`, root). Every path in the app is relative, so it works from a project
+`main`, root). That page then lists the live URL, which for this repository is
+`https://bradleedogg.github.io/Run-Plan-Tracker-Bridge/`. Every path in the app is relative, so it works from a project
 subpath like `/Run-Plan-Tracker-Bridge/` without changes.
 
 To try it locally:
@@ -407,7 +421,8 @@ Chrome on Android.
 1. On the old phone, open the app **with signal** so it picks up the current
    version, then **Export JSON**.
 2. Send yourself the file — email, Drive, anything.
-3. On the new phone, open the site, **Add to Home Screen**, then
+3. On the new phone, open the site, install it (**⋮ → Add to Home screen** in
+   Chrome on Android, **Share → Add to Home Screen** in Safari on iPhone), then
    **Restore a backup → From a file**.
 4. Check a couple of weeks and your shoe mileage against the old phone before
    you wipe it.
@@ -517,7 +532,12 @@ manifest.json       PWA metadata
 sw.js               service worker, offline shell cache
 icon.svg            source icon
 icon-180.png        apple-touch-icon (iOS ignores SVG here)
+icon-192.png        manifest icon, the size Android asks for
 icon-512.png        manifest icon
+icon-maskable-512.png  Android launcher icon: full-bleed, mark inside the
+                    80% safe circle, so the launcher's own mask cuts the
+                    shape rather than boxing the icon on white
+icon-maskable.svg   its source
 .nojekyll           serve files verbatim, no Jekyll pass
 samsung-watch-sync/ the Wear OS recorder and its iOS/Shortcuts clients
 ```
