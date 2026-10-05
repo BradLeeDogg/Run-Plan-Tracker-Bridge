@@ -4,38 +4,46 @@ A single-file PWA for tracking a run block. Add it to the iPhone home screen and
 it behaves like an app: opens offline, no account, no network calls, no
 analytics. Everything is stored in `localStorage` on the device.
 
-It ships with **Half May 30 → Marathon Oct 31, 2027**: 64 weeks, 2,062 km, from
+It ships with **Half May 30 → Marathon Oct 31, 2027**: 64 weeks, 2,224 km, from
 Monday 10 August 2026 through a half marathon on Sunday 30 May 2027 to the
 marathon on Sunday 31 October 2027. The plan is editable in the app —
 distances, which day each run falls on, which run carries the tempo and the
 strides, and how many weeks there are.
 
-Weeks 1–38 are the plan as it was already being run, edits included. From
-week 39 it is built on from there rather than replaced: weekly volume rises by
-about 10% at most between build weeks, with a lighter week every third or
-fourth week.
+Weeks 1–11 are the plan as it was already being run. From 26 October 2026
+every week is four runs — Tuesday easy, Thursday quality, Saturday easy
+recovery, Sunday long — and every long run is Zone 2. Volume holds flat at
+24–25 km for the first three four-run weeks, then builds three weeks on and one
+week about 20% back.
 
 | Phase | Weeks | Focus |
 |---|---|---|
-| 1 Base Building | 1–16 | All easy. No speed work. |
-| 2 Winter Base | 17–29 | Cross-training mandatory. One tempo per week. |
-| 3 Half Specific | 30–39 | Long runs and half-marathon pace finishes. |
-| 4 Half Taper | 40–42 | Volume down into the half on May 30. |
-| 5 Post-Half Recovery | 43–45 | Easy weeks. Let the half clear before rebuilding. |
-| 6 Marathon Build | 46–58 | Volume up. Long runs lengthen past 30 km. |
-| 7 Marathon Specific | 59–61 | Peak long runs with marathon-pace finishes. |
-| 8 Marathon Taper | 62–64 | Volume down into October 31. |
+| 1 Base Building | 1–16 | All easy. Four runs a week from week 12. |
+| 2 Winter Base | 17–29 | Cross-training mandatory. Thursday tempo from week 22. |
+| 3 Half Specific | 30–39 | Thursday at half-marathon goal pace. Long runs stay Zone 2. |
+| 4 Half Taper | 40–42 | Three weeks down into the half on May 30. |
+| 5 Post-Half Recovery | 43–46 | Easy weeks. Let the half clear before rebuilding. |
+| 6 Marathon Build | 47–58 | Volume up, three weeks on and one back. Long runs stay Zone 2. |
+| 7 Marathon Specific | 59–61 | Longest runs, Zone 2. Thursday at marathon goal pace. |
+| 8 Marathon Taper | 62–64 | Three weeks down into October 31. |
 
-Three runs a week (Tue / Thu / Sun) to start, four from week 12 (Tue / Thu /
-Fri / Sun), Sunday long, weeks start Monday. Sessions are typed: easy, long,
-tempo and race. Strength and cross-training follow the run days rather than
-fixed weekdays.
-Strides begin week 8, the Friday tempo begins week 22, and race-pace finishes
-begin week 35. Week 33 is a half-marathon tune-up, week 39 the 19 km peak
-before the half, and week 42 the half. Tempo returns in week 46,
-marathon-pace finishes begin in week 55, and week 61 is the 32 km peak. Weekly
-volume runs from about 25 km in October 2026 to 37 km before the half, and
-55 km at the marathon peak.
+| Month | Weekly km | Long run |
+|---|---|---|
+| Nov 2026 | 25–26 | 12 |
+| Dec 2026 | 27–28 | 12.5–13 |
+| Jan 2027 | 29–32 | 13.5–14 |
+| Feb 2027 | 33–35 | 15 |
+| Mar 2027 | 36–39 | 16–17 |
+| Apr 2027 | 40–43 | 17–18 |
+| Week of 3 May — half peak | 45 | 19 |
+| Jun 2027 | 18–30 | 6–10 |
+| Jul 2027 | 36–48 | 14–20 |
+| Aug 2027 | 50–56 | 21–25 |
+| Sep 2027 | 58–62 | 26–29 |
+| Week of 4 Oct — marathon peak | 64.5 | 30.5 |
+
+Strength sits on Tuesday and Thursday and cross-training on Wednesday and
+Friday, so nothing extra lands the day before the long run.
 
 Long runs carry a 3½-hour time cap, and weeks that came with a note keep it —
 *"Do not make up missed distance"*, *"See a doctor before Phase 2"*, *"Taper
