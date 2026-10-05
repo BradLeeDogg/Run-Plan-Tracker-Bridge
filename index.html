@@ -277,6 +277,8 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
 .field{margin-bottom:16px}
 .field>.label{display:block;margin-bottom:8px}
 .seg{display:flex;gap:8px}
+.seg.qseg{gap:6px}
+.seg.qseg button{min-height:46px;padding:0 4px;font-size:15px;flex:1 1 0;min-width:0}
 .seg button{
   flex:1;min-height:var(--tap);border-radius:13px;border:1.5px solid var(--line);
   background:var(--surface2);font-weight:700;font-size:16px;
@@ -708,27 +710,30 @@ textarea:focus{outline:none;border-color:var(--accent)}
    release. The page reports this; the shell reports whatever it actually has
    stored, and the two disagreeing is the whole point — that is how you tell
    "the new page loaded" from "the new page loaded and the shell caught up". */
-var APP_VERSION = "v27";
-var PLAN_ID = "marathon-2027-05-30";
-var PLAN_NAME = "Marathon Build \u2014 May 30, 2027";
-var RACE_DATE = "2027-05-30";
+var APP_VERSION = "v28";
+var PLAN_ID = "half-2027-05-30-marathon-2027-10-31";
+var PLAN_NAME = "Half May 30 \u2192 Marathon Oct 31, 2027";
+var RACE_DATE = "2027-10-31";
 /* Ids this app has stamped devices with and then moved on from. Correcting
    race day to the Sunday came with a deliberate id bump, so that anyone still
    on the Saturday version would be offered the fix. It lives up here with the
    rest of the plan's identity because load() reads it, and load() runs at
    `var state = load()` further down this file — a `var` below that point is
    hoisted but not yet assigned, and planIdFor would read undefined. */
-var PLAN_ID_PRIOR = ["marathon-2027-05-29"];
+var PLAN_ID_PRIOR = ["marathon-2027-05-29", "marathon-2027-05-30"];
 var RACE_KM = 42.2;
 var LONG_RUN_CAP_MIN = 210;
 var SHOE_KM = 700;
-var CROSS_TRAIN_DAYS = ["Wed","Fri"];
 
 var PHASES = [
   { n:1, name:"Base Building", from:1, to:16, focus:"All easy. No speed work." },
   { n:2, name:"Winter Base", from:17, to:29, focus:"Cross-training mandatory. One tempo per week." },
-  { n:3, name:"Marathon Specific", from:30, to:39, focus:"Long runs and marathon-pace work." },
-  { n:4, name:"Taper", from:40, to:42, focus:"Volume down. Long runs rehearse race day." }
+  { n:3, name:"Half Specific", from:30, to:39, focus:"Long runs and half-marathon pace work." },
+  { n:4, name:"Half Taper", from:40, to:42, focus:"Volume down into the half on May 30." },
+  { n:5, name:"Post-Half Recovery", from:43, to:45, focus:"Easy weeks. Let the half clear before rebuilding." },
+  { n:6, name:"Marathon Build", from:46, to:58, focus:"Volume up. Long runs lengthen past 30 km." },
+  { n:7, name:"Marathon Specific", from:59, to:61, focus:"Peak long runs with marathon-pace finishes." },
+  { n:8, name:"Marathon Taper", from:62, to:64, focus:"Volume down into October 31." }
 ];
 
 var DEFAULT_PLAN = [
@@ -746,83 +751,127 @@ var DEFAULT_PLAN = [
     r:[[1,9,"easy"],[3,10,"easy"],[6,11,"long",{cap:210}]] },
   { s:"2026-09-21", t:"RECOVERY", p:1, n:null,
     r:[[1,7,"easy"],[3,7,"easy"],[6,8,"long",{cap:210}]] },
-  { s:"2026-09-28", t:null, p:1, n:"Strides begin on Tuesday",
-    r:[[1,9,"easy",{strides:1}],[3,10,"easy"],[6,11,"long",{cap:210}]] },
+  { s:"2026-09-28", t:null, p:1, n:"Strides begin on Thursday, the run before the long run",
+    r:[[1,9,"easy"],[3,10,"easy",{strides:1}],[6,11,"long",{cap:210}]] },
   { s:"2026-10-05", t:null, p:1, n:null,
-    r:[[1,10,"easy",{strides:1}],[3,10,"easy"],[6,12,"long",{cap:210}]] },
+    r:[[1,10,"easy"],[3,10,"easy",{strides:1}],[6,12,"long",{cap:210}]] },
   { s:"2026-10-12", t:null, p:1, n:null,
-    r:[[1,10,"easy",{strides:1}],[3,11,"easy"],[6,13,"long",{cap:210}]] },
+    r:[[1,10,"easy"],[3,11,"easy",{strides:1}],[6,13,"long",{cap:210}]] },
   { s:"2026-10-19", t:"RECOVERY", p:1, n:null,
-    r:[[1,8,"easy",{strides:1}],[3,8,"easy"],[6,9,"long",{cap:210}]] },
-  { s:"2026-10-26", t:null, p:1, n:null,
-    r:[[1,10,"easy",{strides:1}],[3,11,"easy"],[6,13,"long",{cap:210}]] },
+    r:[[1,8,"easy"],[3,8,"easy",{strides:1}],[6,9,"long",{cap:210}]] },
+  { s:"2026-10-26", t:null, p:1, n:"Four runs a week from here. Strides move midweek",
+    r:[[1,7,"easy"],[2,7,"easy",{strides:1}],[4,7,"easy"],[6,13,"long",{cap:210}]] },
   { s:"2026-11-02", t:null, p:1, n:null,
-    r:[[1,11,"easy",{strides:1}],[3,11,"easy"],[6,14,"long",{cap:210}]] },
+    r:[[1,8,"easy"],[2,7,"easy",{strides:1}],[4,7,"easy"],[6,14,"long",{cap:210}]] },
   { s:"2026-11-09", t:null, p:1, n:null,
-    r:[[1,11,"easy",{strides:1}],[3,12,"easy"],[6,15,"long",{cap:210}]] },
+    r:[[1,8,"easy"],[2,7,"easy",{strides:1}],[4,8,"easy"],[6,15,"long",{cap:210}]] },
   { s:"2026-11-16", t:"RECOVERY", p:1, n:null,
-    r:[[1,9,"easy",{strides:1}],[3,9,"easy"],[6,10,"long",{cap:210}]] },
+    r:[[1,6,"easy"],[2,6,"easy",{strides:1}],[4,6,"easy"],[6,10,"long",{cap:210}]] },
   { s:"2026-11-23", t:null, p:1, n:"See a doctor before Phase 2",
-    r:[[1,11,"easy",{strides:1}],[3,12,"easy"],[6,15,"long",{cap:210}]] },
+    r:[[1,8,"easy"],[2,7,"easy",{strides:1}],[4,8,"easy"],[6,15,"long",{cap:210}]] },
   { s:"2026-11-30", t:null, p:2, n:"Cross-training now mandatory",
-    r:[[1,12,"easy",{strides:1}],[3,12,"easy"],[6,16,"long",{cap:210}]] },
+    r:[[1,8,"easy"],[2,8,"easy",{strides:1}],[4,8,"easy"],[6,16,"long",{cap:210}]] },
   { s:"2026-12-07", t:null, p:2, n:null,
-    r:[[1,12,"easy",{strides:1}],[3,13,"easy"],[6,17,"long",{cap:210}]] },
+    r:[[1,9,"easy"],[2,8,"easy",{strides:1}],[4,8,"easy"],[6,17,"long",{cap:210}]] },
   { s:"2026-12-14", t:"RECOVERY", p:2, n:null,
-    r:[[1,10,"easy",{strides:1}],[3,10,"easy"],[6,11,"long",{cap:210}]] },
+    r:[[1,7,"easy"],[2,6,"easy",{strides:1}],[4,7,"easy"],[6,11,"long",{cap:210}]] },
   { s:"2026-12-21", t:"HOLD", p:2, n:"Holiday week - hold volume",
-    r:[[1,12,"easy",{strides:1}],[3,12,"easy"],[6,16,"long",{cap:210}]] },
+    r:[[1,8,"easy"],[2,8,"easy",{strides:1}],[4,8,"easy"],[6,16,"long",{cap:210}]] },
   { s:"2026-12-28", t:null, p:2, n:null,
-    r:[[1,12,"easy",{strides:1}],[3,13,"easy"],[6,17,"long",{cap:210}]] },
-  { s:"2027-01-04", t:null, p:2, n:"Thursday tempo begins: 15-20 min",
-    r:[[1,13,"easy",{strides:1}],[3,13,"tempo",{tempo:20}],[6,18,"long",{cap:210}]] },
+    r:[[1,9,"easy"],[2,8,"easy",{strides:1}],[4,8,"easy"],[6,17,"long",{cap:210}]] },
+  { s:"2027-01-04", t:null, p:2, n:"Tuesday tempo begins: 15-20 min",
+    r:[[1,9,"tempo",{tempo:20}],[2,8,"easy",{strides:1}],[4,9,"easy"],[6,18,"long",{cap:210}]] },
   { s:"2027-01-11", t:"RECOVERY", p:2, n:null,
-    r:[[1,10,"easy",{strides:1}],[3,11,"tempo",{tempo:20}],[6,12,"long",{cap:210}]] },
+    r:[[1,7,"tempo",{tempo:20}],[2,7,"easy",{strides:1}],[4,7,"easy"],[6,12,"long",{cap:210}]] },
   { s:"2027-01-18", t:null, p:2, n:null,
-    r:[[1,13,"easy",{strides:1}],[3,13,"tempo",{tempo:20}],[6,18,"long",{cap:210}]] },
+    r:[[1,9,"tempo",{tempo:20}],[2,8,"easy",{strides:1}],[4,9,"easy"],[6,18,"long",{cap:210}]] },
   { s:"2027-01-25", t:null, p:2, n:null,
-    r:[[1,13,"easy",{strides:1}],[3,14,"tempo",{tempo:20}],[6,19,"long",{cap:210}]] },
+    r:[[1,9,"tempo",{tempo:20}],[2,9,"easy",{strides:1}],[4,9,"easy"],[6,19,"long",{cap:210}]] },
   { s:"2027-02-01", t:null, p:2, n:null,
-    r:[[1,14,"easy",{strides:1}],[3,14,"tempo",{tempo:30}],[6,20,"long",{cap:210}]] },
+    r:[[1,10,"tempo",{tempo:30}],[2,9,"easy",{strides:1}],[4,9,"easy"],[6,20,"long",{cap:210}]] },
   { s:"2027-02-08", t:"RECOVERY", p:2, n:null,
-    r:[[1,11,"easy",{strides:1}],[3,11,"tempo",{tempo:30}],[6,14,"long",{cap:210}]] },
+    r:[[1,8,"tempo",{tempo:30}],[2,7,"easy",{strides:1}],[4,7,"easy"],[6,14,"long",{cap:210}]] },
   { s:"2027-02-15", t:null, p:2, n:null,
-    r:[[1,13,"easy",{strides:1}],[3,14,"tempo",{tempo:30}],[6,19,"long",{cap:210}]] },
+    r:[[1,9,"tempo",{tempo:30}],[2,9,"easy",{strides:1}],[4,9,"easy"],[6,19,"long",{cap:210}]] },
   { s:"2027-02-22", t:null, p:2, n:"Tempo now 30 min",
-    r:[[1,14,"easy",{strides:1}],[3,15,"tempo",{tempo:30}],[6,21,"long",{cap:210}]] },
+    r:[[1,10,"tempo",{tempo:30}],[2,9,"easy",{strides:1}],[4,10,"easy"],[6,21,"long",{cap:210}]] },
   { s:"2027-03-01", t:"RECOVERY", p:3, n:null,
-    r:[[1,12,"easy",{strides:1}],[3,12,"tempo",{tempo:30}],[6,14,"long",{cap:210}]] },
+    r:[[1,8,"tempo",{tempo:30}],[2,8,"easy",{strides:1}],[4,8,"easy"],[6,14,"long",{cap:210}]] },
   { s:"2027-03-08", t:null, p:3, n:"Begin fueling practice: 30-60g carb/hr",
-    r:[[1,14,"easy",{strides:1}],[3,14,"tempo",{tempo:30}],[6,20,"long",{cap:210}]] },
+    r:[[1,10,"tempo",{tempo:30}],[2,9,"easy",{strides:1}],[4,9,"easy"],[6,20,"long",{cap:210}]] },
   { s:"2027-03-15", t:null, p:3, n:null,
-    r:[[1,15,"easy",{strides:1}],[3,15,"tempo",{tempo:30}],[6,22,"long",{cap:210}]] },
+    r:[[1,10,"tempo",{tempo:30}],[2,10,"easy",{strides:1}],[4,10,"easy"],[6,22,"long",{cap:210}]] },
   { s:"2027-03-22", t:"RACE", p:3, n:"HALF MARATHON tune-up - hard effort, not a PB attempt",
-    r:[[1,9,"easy",{strides:1}],[3,10,"tempo",{tempo:30}],[6,21.1,"race",{cap:210}]] },
+    r:[[1,7,"tempo",{tempo:30}],[2,6,"easy",{strides:1}],[4,6,"easy"],[6,21.1,"race",{cap:210}]] },
   { s:"2027-03-29", t:"RECOVERY", p:3, n:"Post-race recovery",
-    r:[[1,13,"easy",{strides:1}],[3,13,"tempo",{tempo:30}],[6,16,"long",{cap:210}]] },
-  { s:"2027-04-05", t:null, p:3, n:"Marathon-pace finish begins",
-    r:[[1,14,"easy",{strides:1}],[3,14,"tempo",{tempo:30}],[6,24,"long",{cap:210,mp:6}]] },
+    r:[[1,9,"tempo",{tempo:30}],[2,8,"easy",{strides:1}],[4,9,"easy"],[6,16,"long",{cap:210}]] },
+  { s:"2027-04-05", t:null, p:3, n:"Half-marathon pace finish begins",
+    r:[[1,10,"tempo",{tempo:30}],[2,9,"easy",{strides:1}],[4,9,"easy"],[6,24,"long",{cap:210,mp:6}]] },
   { s:"2027-04-12", t:null, p:3, n:null,
-    r:[[1,15,"easy",{strides:1}],[3,15,"tempo",{tempo:30}],[6,25,"long",{cap:210,mp:7}]] },
+    r:[[1,10,"tempo",{tempo:30}],[2,10,"easy",{strides:1}],[4,10,"easy"],[6,25,"long",{cap:210,mp:7}]] },
   { s:"2027-04-19", t:"RECOVERY", p:3, n:null,
-    r:[[1,13,"easy",{strides:1}],[3,13,"tempo",{tempo:30}],[6,16,"long",{cap:210}]] },
+    r:[[1,9,"tempo",{tempo:30}],[2,8,"easy",{strides:1}],[4,9,"easy"],[6,16,"long",{cap:210}]] },
   { s:"2027-04-26", t:null, p:3, n:null,
-    r:[[1,14,"easy",{strides:1}],[3,14,"tempo",{tempo:30}],[6,28,"long",{cap:210,mp:8}]] },
-  { s:"2027-05-03", t:"PEAK", p:3, n:"PEAK - longest run of the plan",
-    r:[[1,14,"easy",{strides:1}],[3,14,"tempo",{tempo:30}],[6,30,"long",{cap:210,mp:8}]] },
+    r:[[1,10,"tempo",{tempo:30}],[2,9,"easy",{strides:1}],[4,9,"easy"],[6,28,"long",{cap:210,mp:8}]] },
+  { s:"2027-05-03", t:"PEAK", p:3, n:"PEAK - longest run before the half",
+    r:[[1,10,"tempo",{tempo:30}],[2,9,"easy",{strides:1}],[4,9,"easy"],[6,30,"long",{cap:210,mp:8}]] },
   { s:"2027-05-10", t:"TAPER", p:4, n:"Volume comes down. Long run stays on Sunday, as race day is Sunday",
-    r:[[1,13,"easy",{strides:1}],[3,13,"easy"],[6,20,"long",{cap:210,mp:5}]] },
+    r:[[1,9,"easy"],[2,8,"easy",{strides:1}],[4,9,"easy"],[6,20,"long",{cap:210,mp:5}]] },
   { s:"2027-05-17", t:"TAPER", p:4, n:"Taper will feel wrong - this is normal",
-    r:[[1,10,"easy",{strides:1}],[3,10,"easy"],[6,14,"long",{cap:210}]] },
-  { s:"2027-05-24", t:"RACE WEEK", p:4, n:"RACE SUNDAY. Saturday full rest. Nothing new.",
-    r:[[1,8,"easy",{strides:1}],[3,5,"easy"],[6,42.2,"race"]] }
+    r:[[1,7,"easy"],[2,6,"easy",{strides:1}],[4,7,"easy"],[6,14,"long",{cap:210}]] },
+  { s:"2027-05-24", t:"RACE WEEK", p:4, n:"HALF MARATHON SUNDAY. Saturday full rest. Nothing new.",
+    r:[[1,5,"easy"],[2,4,"easy",{strides:1}],[4,4,"easy"],[6,21.1,"race"]] },
+  { s:"2027-05-31", t:"RECOVERY", p:5, n:"Post-half recovery. Nothing hard, nothing long",
+    r:[[1,5,"easy"],[2,4,"easy"],[4,5,"easy"],[6,10,"long",{cap:210}]] },
+  { s:"2027-06-07", t:"RECOVERY", p:5, n:"Still rebuilding. Easy effort only",
+    r:[[1,6,"easy"],[2,5,"easy"],[4,5,"easy"],[6,12,"long",{cap:210}]] },
+  { s:"2027-06-14", t:null, p:5, n:"Strides return midweek",
+    r:[[1,7,"easy"],[2,6,"easy",{strides:1}],[4,7,"easy"],[6,14,"long",{cap:210}]] },
+  { s:"2027-06-21", t:null, p:6, n:"Marathon build begins. Tempo returns Tuesday",
+    r:[[1,8,"tempo",{tempo:20}],[2,7,"easy",{strides:1}],[4,7,"easy"],[6,16,"long",{cap:210}]] },
+  { s:"2027-06-28", t:null, p:6, n:null,
+    r:[[1,8,"tempo",{tempo:20}],[2,8,"easy",{strides:1}],[4,8,"easy"],[6,18,"long",{cap:210}]] },
+  { s:"2027-07-05", t:"RECOVERY", p:6, n:null,
+    r:[[1,6,"tempo",{tempo:20}],[2,6,"easy",{strides:1}],[4,6,"easy"],[6,14,"long",{cap:210}]] },
+  { s:"2027-07-12", t:null, p:6, n:null,
+    r:[[1,8,"tempo",{tempo:25}],[2,8,"easy",{strides:1}],[4,8,"easy"],[6,20,"long",{cap:210}]] },
+  { s:"2027-07-19", t:null, p:6, n:null,
+    r:[[1,8,"tempo",{tempo:25}],[2,8,"easy",{strides:1}],[4,8,"easy"],[6,22,"long",{cap:210}]] },
+  { s:"2027-07-26", t:null, p:6, n:"Long run past two hours. Fuel every 30-45 min",
+    r:[[1,8,"tempo",{tempo:30}],[2,8,"easy",{strides:1}],[4,8,"easy"],[6,24,"long",{cap:210}]] },
+  { s:"2027-08-02", t:"RECOVERY", p:6, n:null,
+    r:[[1,7,"tempo",{tempo:30}],[2,6,"easy",{strides:1}],[4,7,"easy"],[6,16,"long",{cap:210}]] },
+  { s:"2027-08-09", t:null, p:6, n:null,
+    r:[[1,9,"tempo",{tempo:30}],[2,8,"easy",{strides:1}],[4,8,"easy"],[6,25,"long",{cap:210}]] },
+  { s:"2027-08-16", t:null, p:6, n:null,
+    r:[[1,9,"tempo",{tempo:30}],[2,8,"easy",{strides:1}],[4,9,"easy"],[6,26,"long",{cap:210}]] },
+  { s:"2027-08-23", t:null, p:6, n:"Marathon-pace finish begins",
+    r:[[1,9,"tempo",{tempo:30}],[2,8,"easy",{strides:1}],[4,9,"easy"],[6,28,"long",{cap:210,mp:6}]] },
+  { s:"2027-08-30", t:"RECOVERY", p:6, n:null,
+    r:[[1,8,"tempo",{tempo:30}],[2,7,"easy",{strides:1}],[4,7,"easy"],[6,18,"long",{cap:210}]] },
+  { s:"2027-09-06", t:null, p:6, n:null,
+    r:[[1,9,"tempo",{tempo:30}],[2,9,"easy",{strides:1}],[4,9,"easy"],[6,29,"long",{cap:210,mp:7}]] },
+  { s:"2027-09-13", t:null, p:6, n:null,
+    r:[[1,10,"tempo",{tempo:30}],[2,9,"easy",{strides:1}],[4,9,"easy"],[6,30,"long",{cap:210,mp:8}]] },
+  { s:"2027-09-20", t:"RECOVERY", p:7, n:null,
+    r:[[1,8,"tempo",{tempo:30}],[2,8,"easy",{strides:1}],[4,8,"easy"],[6,18,"long",{cap:210}]] },
+  { s:"2027-09-27", t:null, p:7, n:"Dress rehearsal: race kit, race fuel, race pace",
+    r:[[1,9,"tempo",{tempo:30}],[2,9,"easy",{strides:1}],[4,9,"easy"],[6,31,"long",{cap:210,mp:8}]] },
+  { s:"2027-10-04", t:"PEAK", p:7, n:"PEAK - longest run of the whole block",
+    r:[[1,10,"tempo",{tempo:30}],[2,9,"easy",{strides:1}],[4,9,"easy"],[6,32,"long",{cap:210,mp:8}]] },
+  { s:"2027-10-11", t:"TAPER", p:8, n:"Volume down. The work is already done",
+    r:[[1,8,"easy"],[2,7,"easy",{strides:1}],[4,7,"easy"],[6,24,"long",{cap:210,mp:5}]] },
+  { s:"2027-10-18", t:"TAPER", p:8, n:"Legs will feel flat. That is the taper, not your fitness",
+    r:[[1,6,"easy"],[2,6,"easy",{strides:1}],[4,6,"easy"],[6,16,"long",{cap:210}]] },
+  { s:"2027-10-25", t:"RACE WEEK", p:8, n:"MARATHON SUNDAY. Saturday full rest. Nothing new.",
+    r:[[1,8,"easy"],[2,5,"easy"],[4,4,"easy"],[6,42.2,"race"]] }
 ];
 
 var WEEK1_MONDAY = DEFAULT_PLAN[0].s;   // 2026-08-10
 var WD_SHORT = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];   // index = days from Monday
 var OVER_LIMIT = 1.10;                   // flag above 110% of planned week volume
 var PAIN_WINDOW_DAYS = 14;
-var MAX_WEEKS = 52;
+var MAX_WEEKS = 70;
 
 /* Strength work: twice a week, 20-25 minutes, after a run. It is the
    best-evidenced way to get through a volume build uninjured, and more so at
@@ -857,7 +906,8 @@ var SHOE_WARN_AT = 0.85;              // start warning at 85% of the way there
 var SHOE_START_KM = 200;              // what the first pair had already run
 var STRENGTH_MINUTES = 22;            // the middle of 20-25, used as the default
 
-/* Strides: 4-6 x 20 seconds at the end of the Tuesday run, from week 9.
+/* Strides: 4-6 x 20 seconds at the end of the run before the long run,
+   from week 9 - and of the midweek run once the week goes to four runs.
    Relaxed fast, not a sprint, with a full walking recovery between each.
 
    Conditional on the first eight weeks having felt genuinely comfortable. That
@@ -979,25 +1029,47 @@ if (state.migrated){ delete state.migrated; save(); }
    deleting or reordering weeks moves runs around, and under the old
    "week-day" keying every log after the edit would silently re-point to a
    different run. Ids move with the run. */
+/* Strength sits on a running day, cross-training on a day with no run. Both
+   used to be fixed at Tue/Thu and Wed/Fri, which held only while the week had
+   three runs on Tue/Thu/Sun. Once the fourth run arrives the week runs Tue,
+   Wed, Fri and Sun, and those constants would put cross-training on top of two
+   runs and strength on a rest day. Reading the week instead keeps them right
+   through the change, and through any later edit to the run days. */
+function supportOffsets(runs){
+  var isRun = {}, easy = [], xt = [], i;
+  runs.forEach(function(r){
+    isRun[r.off] = true;
+    if (r.type !== "long" && r.type !== "race") easy.push(r.off);
+  });
+  easy.sort(function(a, b){ return a - b; });
+  // the first and last of the shorter runs, so the two sessions stay apart
+  var st = easy.length > 1 ? [easy[0], easy[easy.length - 1]] : easy.slice();
+  // free days, skipping Monday: that is the day after the long run
+  for (i = 1; i <= 6 && xt.length < 2; i++) if (!isRun[i]) xt.push(i);
+  return { strength: st, cross: xt };
+}
+
 function freshPlan(){
   var out = [], n = 0;
   DEFAULT_PLAN.forEach(function(p){
+    var runs = p.r.map(function(x){
+      var o = x[3] || {};
+      var r = { id:"r" + (++n), off:x[0], km:x[1], type:x[2] };
+      if (o.cap) r.cap = o.cap;
+      if (o.tempo) r.tempo = o.tempo;
+      if (o.mp) r.mp = o.mp;
+      if (o.strides) r.strides = true;
+      return r;
+    });
+    var sup = supportOffsets(runs);
     out.push({
       start: p.s,
       tag: p.t,
       phase: p.p,
       note: p.n || null,
-      runs: p.r.map(function(x){
-        var o = x[3] || {};
-        var r = { id:"r" + (++n), off:x[0], km:x[1], type:x[2] };
-        if (o.cap) r.cap = o.cap;
-        if (o.tempo) r.tempo = o.tempo;
-        if (o.mp) r.mp = o.mp;
-        if (o.strides) r.strides = true;
-        return r;
-      }),
-      strength: STRENGTH_OFFSETS.map(function(off){ return { id:"s" + (++n), off:off }; }),
-      cross: XT_OFFSETS.map(function(off){ return { id:"x" + (++n), off:off }; })
+      runs: runs,
+      strength: sup.strength.map(function(off){ return { id:"s" + (++n), off:off }; }),
+      cross: sup.cross.map(function(off){ return { id:"x" + (++n), off:off }; })
     });
   });
   return out;
@@ -1108,11 +1180,12 @@ function load(){
   // Plans saved before strength existed have no sessions on them.
   s.seq = Math.max(s.seq || 0, maxSeq(s.plan));
   s.plan.forEach(function(w, i){
+    var sup = supportOffsets(w.runs || []);
     if (!Array.isArray(w.strength))
-      w.strength = STRENGTH_OFFSETS.map(function(off){ return { id:"s" + (++s.seq), off:off }; });
+      w.strength = sup.strength.map(function(off){ return { id:"s" + (++s.seq), off:off }; });
     if (typeof w.phase !== "number") w.phase = 1;
     if (!Array.isArray(w.cross))
-      w.cross = XT_OFFSETS.map(function(off){ return { id:"x" + (++s.seq), off:off }; });
+      w.cross = sup.cross.map(function(off){ return { id:"x" + (++s.seq), off:off }; });
   });
   // null until asked, so the "only if it felt comfortable" gate is a real gate
   if (s.settings.strides !== true && s.settings.strides !== false) s.settings.strides = null;
@@ -1259,6 +1332,20 @@ function phaseOf(w){
 /* ---------- strides ---------- */
 function stridesOn(){ return state.settings.strides === true; }
 function runHasStrides(w, d){ return !!(runAt(w, d) && runAt(w, d).strides); }
+/* Which run carries the strides, read off the week rather than assumed. It is
+   the run before the long run while the week has three runs, and the midweek
+   run once it has four, so naming a fixed weekday here would go stale the
+   moment the plan changes shape. */
+function stridesDayName(w){
+  var rs = runsOf(w), j;
+  for (j = 0; j < rs.length; j++) if (rs[j] && rs[j].strides) return WD_SHORT[rs[j].off];
+  return null;
+}
+function stridesDayPhrase(){
+  var d = stridesDayName(currentWeekIndex()), i;
+  if (!d) for (i = 0; i < planLen() && !d; i++) d = stridesDayName(i);
+  return d ? "the " + d + " run" : "the easy run";
+}
 /* Is there a strides run this week or earlier that the owner has not answered
    the gate for yet? */
 function stridesPending(){
@@ -2724,8 +2811,9 @@ function parsePlanText(text){
     });
     w.runs.sort(function(a, b){ return a.off - b.off; });
     // Sessions the plan does not mention still get their slots, as freshPlan does.
-    w.strength = STRENGTH_OFFSETS.map(function(off){ return { id:"s" + (++seq), off:off }; });
-    w.cross = XT_OFFSETS.map(function(off){ return { id:"x" + (++seq), off:off }; });
+    var sup = supportOffsets(w.runs);
+    w.strength = sup.strength.map(function(off){ return { id:"s" + (++seq), off:off }; });
+    w.cross = sup.cross.map(function(off){ return { id:"x" + (++seq), off:off }; });
   });
   weeks.sort(function(a, b){ return a.start < b.start ? -1 : a.start > b.start ? 1 : 0; });
   if (!planOK(weeks)) throw new Error("That did not come out as a plan this app can hold.");
@@ -3014,6 +3102,64 @@ function deleteWeek(w){
   });
 }
 
+/* ---------- which run carries the quality work ----------
+   The day a tempo or a set of strides falls on is a scheduling choice, not a
+   property of the session, so it can be moved without touching the distance,
+   the week total, or anything already logged against the run.
+
+   The long run and the race are not offered: moving the tempo onto the long
+   run would change what the session is, not merely when it happens. */
+function qualitySlots(w){
+  var out = [];
+  runsOf(w).forEach(function(r, d){
+    if (r.type !== "long" && r.type !== "race") out.push({ d:d, off:r.off });
+  });
+  return out;
+}
+function tempoIndex(w){
+  var rs = runsOf(w), i;
+  for (i = 0; i < rs.length; i++) if (rs[i].type === "tempo") return i;
+  return -1;
+}
+function stridesIndex(w){
+  var rs = runsOf(w), i;
+  for (i = 0; i < rs.length; i++) if (rs[i].strides) return i;
+  return -1;
+}
+/* The most recent tempo length at or before this week, so a tempo added to a
+   week that never carried one starts somewhere sensible instead of at zero. */
+function lastTempoMinutes(w){
+  var i, j, rs;
+  for (i = Math.min(w, planLen() - 1); i >= 0; i--){
+    rs = runsOf(i);
+    for (j = 0; j < rs.length; j++) if (rs[j].type === "tempo" && rs[j].tempo) return rs[j].tempo;
+  }
+  return 0;
+}
+function setTempoDay(w, d){
+  var rs = runsOf(w), i, cur = tempoIndex(w);
+  var mins = (cur >= 0 && rs[cur].tempo) ? rs[cur].tempo : (lastTempoMinutes(w) || 20);
+  for (i = 0; i < rs.length; i++)
+    if (rs[i].type === "tempo"){ rs[i].type = "easy"; delete rs[i].tempo; }
+  if (d >= 0 && rs[d] && rs[d].type !== "long" && rs[d].type !== "race"){
+    rs[d].type = "tempo";
+    rs[d].tempo = mins;
+  }
+  save(); render();
+}
+function setStridesDay(w, d){
+  var rs = runsOf(w), i;
+  for (i = 0; i < rs.length; i++) delete rs[i].strides;
+  if (d >= 0 && rs[d] && rs[d].type !== "long" && rs[d].type !== "race") rs[d].strides = true;
+  save(); render();
+}
+function setTempoMinutes(w, mins){
+  var i = tempoIndex(w);
+  if (i < 0 || !(mins > 0)) return;
+  runAt(w, i).tempo = Math.round(mins);
+  save();
+}
+
 function setWeekTag(w, tag){
   wk(w).tag = tag || null;
   save(); render();
@@ -3135,7 +3281,7 @@ function bannersHTML(){
     h += '<div class="banner info"><div class="ico">&#9889;</div><div>' +
       '<b>Week ' + stridesFromWeek() + ' &mdash; time to decide about strides</b>' +
       'The plan adds ' + STRIDES_REPS[0] + '&ndash;' + STRIDES_REPS[STRIDES_REPS.length-1] +
-      ' &times; ' + STRIDES_SECONDS + '-second strides to the end of the Tuesday run from here on, ' +
+      ' &times; ' + STRIDES_SECONDS + '-second strides to the end of ' + stridesDayPhrase() + ' from here on, ' +
       'but only if the first ' + (stridesFromWeek() - 1) + ' weeks felt genuinely comfortable. ' +
       'If they did not, skip them &mdash; that is the honest answer, not a failed one.' +
       '<button class="act" data-act="strides-yes">They felt comfortable &mdash; add strides</button>' +
@@ -3697,7 +3843,7 @@ function stridesHTML(){
       '<button class="btn" data-act="' + (stridesOn() ? "strides-no" : "strides-yes") + '">' +
         (stridesOn() ? "Turn strides off" : "Turn strides on") + '</button>' +
       '<div class="tiny">' + STRIDES_REPS[0] + '&ndash;' + STRIDES_REPS[STRIDES_REPS.length-1] +
-      ' &times; ' + STRIDES_SECONDS + ' seconds at the end of the Tuesday run, from week ' +
+      ' &times; ' + STRIDES_SECONDS + ' seconds at the end of ' + stridesDayPhrase() + ', from week ' +
       stridesFromWeek() + '. Relaxed fast, not a sprint, with a full walking recovery between ' +
       'each. Turn them off again if the legs stop feeling fresh.</div></div>';
   };
@@ -5322,6 +5468,31 @@ function drawWeekSheet(){
   h += '<div class="tiny" style="margin-top:6px">A dot marks a run you have already logged. ' +
        'Changing its distance leaves the logged result alone &mdash; only the target moves.</div></div>';
 
+  var slots = qualitySlots(w), ti = tempoIndex(w), si = stridesIndex(w);
+  if (slots.length){
+    var pick = function(act, cur){
+      return '<div class="seg qseg">' +
+        '<button data-act="' + act + '" data-w="' + w + '" data-d="-1"' +
+          (cur < 0 ? ' class="on"' : '') + '>Off</button>' +
+        slots.map(function(s){
+          return '<button data-act="' + act + '" data-w="' + w + '" data-d="' + s.d + '"' +
+            (cur === s.d ? ' class="on"' : '') + '>' + WD_SHORT[s.off] + '</button>';
+        }).join('') + '</div>';
+    };
+    h += '<div class="field"><span class="label">Tempo</span>' + pick("set-tempo", ti);
+    if (ti >= 0)
+      h += '<div class="inputs" style="margin-top:8px"><div class="inp">' +
+        '<input type="number" inputmode="numeric" min="5" max="90" value="' +
+        (runAt(w, ti).tempo || 0) + '" data-act="set-tempo-min" data-w="' + w + '">' +
+        '<span class="u">tempo minutes</span></div></div>';
+    h += '</div>';
+
+    h += '<div class="field"><span class="label">Strides</span>' + pick("set-strides", si) +
+      '<div class="tiny" style="margin-top:6px">Moving either one changes the day only. ' +
+      'Distances, the week total and anything already logged stay as they are. ' +
+      'The long run and race day are not offered.</div></div>';
+  }
+
   h += '<div class="field"><span class="label">Move this week and everything after it</span>' +
     '<div class="btn-row">' +
       '<button class="btn" data-act="nudge" data-w="' + w + '" data-n="-1">&larr; A week earlier</button>' +
@@ -6444,6 +6615,8 @@ document.addEventListener("click", function(e){
     else if (a === "del-week"){ closeSheet(); deleteWeek(+el.dataset.w); }
     else if (a === "set-tag"){ setWeekTag(+el.dataset.w, el.dataset.tag); drawWeekSheet(); }
     else if (a === "add-run"){ addRun(+el.dataset.w); drawWeekSheet(); }
+    else if (a === "set-tempo"){ setTempoDay(+el.dataset.w, +el.dataset.d); drawWeekSheet(); }
+    else if (a === "set-strides"){ setStridesDay(+el.dataset.w, +el.dataset.d); drawWeekSheet(); }
     else if (a === "del-run"){ deleteRun(+el.dataset.w, +el.dataset.d); drawWeekSheet(); }
     else if (a === "nudge"){ nudgeWeek(+el.dataset.w, +el.dataset.n); drawWeekSheet(); }
     else if (a === "move-run"){
@@ -6585,6 +6758,11 @@ sheet.addEventListener("input", function(e){
     return;
   }
   // live-edit a planned distance without redrawing, so the field keeps focus
+  if (e.target.dataset && e.target.dataset.act === "set-tempo-min"){
+    var tv = numVal(e.target.value);
+    if (isFinite(tv) && tv > 0) setTempoMinutes(+e.target.dataset.w, tv);
+    return;
+  }
   if (e.target.dataset && e.target.dataset.act === "set-km"){
     var v = numVal(e.target.value);
     if (isFinite(v) && v >= 0){

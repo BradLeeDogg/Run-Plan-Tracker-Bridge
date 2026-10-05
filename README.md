@@ -4,22 +4,31 @@ A single-file PWA for tracking a run block. Add it to the iPhone home screen and
 it behaves like an app: opens offline, no account, no network calls, no
 analytics. Everything is stored in `localStorage` on the device.
 
-It ships with **Marathon Build — May 30, 2027**: 42 weeks, 1,630 km, from
-Monday 10 August 2026 to the race on Sunday 30 May 2027. The plan is editable
-in the app — distances, which day each run falls on, and how many weeks there
-are.
+It ships with **Half May 30 → Marathon Oct 31, 2027**: 64 weeks, 2,590 km, from
+Monday 10 August 2026 through a half marathon on Sunday 30 May 2027 to the
+marathon on Sunday 31 October 2027. The plan is editable in the app —
+distances, which day each run falls on, which run carries the tempo and the
+strides, and how many weeks there are.
 
 | Phase | Weeks | Focus |
 |---|---|---|
 | 1 Base Building | 1–16 | All easy. No speed work. |
 | 2 Winter Base | 17–29 | Cross-training mandatory. One tempo per week. |
-| 3 Marathon Specific | 30–39 | Long runs and marathon-pace work. |
-| 4 Taper | 40–42 | Volume down. Long runs rehearse race day. |
+| 3 Half Specific | 30–39 | Long runs and half-marathon pace work. |
+| 4 Half Taper | 40–42 | Volume down into the half on May 30. |
+| 5 Post-Half Recovery | 43–45 | Easy weeks. Let the half clear before rebuilding. |
+| 6 Marathon Build | 46–58 | Volume up. Long runs lengthen past 30 km. |
+| 7 Marathon Specific | 59–61 | Peak long runs with marathon-pace finishes. |
+| 8 Marathon Taper | 62–64 | Volume down into October 31. |
 
-Tue / Thu / Sun, Sunday long, weeks start Monday. Sessions are typed: easy,
-long, tempo and race.
-Strides begin week 8, the Thursday tempo begins week 22, marathon-pace finishes
-begin week 35. Week 33 is a half-marathon tune-up, week 39 the 30 km peak.
+Tue / Thu / Sun to start, Sunday long, weeks start Monday. From week 12 the
+week goes to four runs: Tue / Wed / Fri / Sun. Sessions are typed: easy, long,
+tempo and race. Strength and cross-training follow the run days rather than
+fixed weekdays.
+Strides begin week 8, the Tuesday tempo begins week 22, half-pace finishes
+begin week 35. Week 33 is a half-marathon tune-up, week 39 the 30 km peak and
+week 42 the half. Tempo returns week 46, marathon-pace finishes begin week 55,
+and week 61 is the 32 km peak.
 
 Long runs carry a 3½-hour time cap, and weeks that came with a note keep it —
 *"Do not make up missed distance"*, *"See a doctor before Phase 2"*, *"Taper
