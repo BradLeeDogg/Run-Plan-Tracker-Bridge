@@ -11,20 +11,21 @@ distances, which day each run falls on, which run carries the tempo and the
 strides, and how many weeks there are.
 
 Weeks 1–11 are the plan as it was already being run. From 26 October 2026
-every week is four runs — Tuesday easy, Thursday quality, Saturday easy
-recovery, Sunday long — and every long run is Zone 2. Volume holds flat at
+every week is four runs — Tuesday easy, Wednesday quality, Friday easy
+recovery, Sunday long — with Saturday and Monday kept as rest days either side
+of the long run. Every long run is Zone 2. Volume holds flat at
 24–25 km for the first three four-run weeks, then builds three weeks on and one
 week about 20% back.
 
 | Phase | Weeks | Focus |
 |---|---|---|
 | 1 Base Building | 1–16 | All easy. Four runs a week from week 12. |
-| 2 Winter Base | 17–29 | Cross-training mandatory. Thursday tempo from week 22. |
-| 3 Half Specific | 30–39 | Thursday at half-marathon goal pace. Long runs stay Zone 2. |
+| 2 Winter Base | 17–29 | Cross-training mandatory. Wednesday tempo from week 22. |
+| 3 Half Specific | 30–39 | Wednesday at half-marathon goal pace. Long runs stay Zone 2. |
 | 4 Half Taper | 40–42 | Three weeks down into the half on May 30. |
 | 5 Post-Half Recovery | 43–46 | Easy weeks. Let the half clear before rebuilding. |
 | 6 Marathon Build | 47–58 | Volume up, three weeks on and one back. Long runs stay Zone 2. |
-| 7 Marathon Specific | 59–61 | Longest runs, Zone 2. Thursday at marathon goal pace. |
+| 7 Marathon Specific | 59–61 | Longest runs, Zone 2. Wednesday at marathon goal pace. |
 | 8 Marathon Taper | 62–64 | Three weeks down into October 31. |
 
 | Month | Weekly km | Long run |
@@ -42,8 +43,9 @@ week about 20% back.
 | Sep 2027 | 58–62 | 26–29 |
 | Week of 4 Oct — marathon peak | 64.5 | 30.5 |
 
-Strength sits on Tuesday and Thursday and cross-training on Wednesday and
-Friday, so nothing extra lands the day before the long run.
+In the four-run weeks strength sits on Tuesday and Friday and cross-training
+on Thursday, so nothing is ever scheduled on the rest days either side of the
+long run.
 
 Long runs carry a 3½-hour time cap, and weeks that came with a note keep it —
 *"Do not make up missed distance"*, *"See a doctor before Phase 2"*, *"Taper
