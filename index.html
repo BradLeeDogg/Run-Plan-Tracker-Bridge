@@ -704,15 +704,18 @@ textarea:focus{outline:none;border-color:var(--accent)}
                      tempo tempo minutes inside the run
                      mp    race-pace kilometres at the end (half or marathon pace, from the next race)
                      strides  4-6 x 20s at the end, full recovery
-   Weeks 1-38 are the plan as it stood on the device, edits included. Weeks
-   39-64 were built on from there: a half taper, then a marathon build that
-   ramps from the device's own volume rather than jumping to a new one. */
+   Weeks 1-11 are the plan as it stood on the device, edits included. From
+   week 12 (26 October 2026) every week is Tue / Thu / Sat / Sun: easy, quality,
+   easy recovery, Zone 2 long. Volume holds flat for the first three four-run
+   weeks, then builds three weeks on and one 20% back, to a 45 km / 19 km half
+   peak in the week of 3 May and a 64.5 km / 30.5 km marathon peak in the week
+   of 4 October, each followed by a three-week taper. */
 /* Bumped with the service worker cache, so the two always name the same
    release. The page reports this; the shell reports whatever it actually has
    stored, and the two disagreeing is the whole point — that is how you tell
    "the new page loaded" from "the new page loaded and the shell caught up". */
-var APP_VERSION = "v30";
-var PLAN_ID = "half-2027-05-30-marathon-2027-10-31-b";
+var APP_VERSION = "v31";
+var PLAN_ID = "half-2027-05-30-marathon-2027-10-31-c";
 var PLAN_NAME = "Half May 30 \u2192 Marathon Oct 31, 2027";
 var RACE_DATE = "2027-10-31";
 /* Ids this app has stamped devices with and then moved on from. Correcting
@@ -732,7 +735,8 @@ var PLAN_NAME_PRIOR = {
   // around the weeks already set on the device. Deliberately not in
   // PLAN_ID_PRIOR: it shares a race day with the rebuild, so planIdFor would
   // count a device on it as current and never offer the rebuild.
-  "half-2027-05-30-marathon-2027-10-31": "Half May 30 \u2192 Marathon Oct 31, 2027 (first version)"
+  "half-2027-05-30-marathon-2027-10-31": "Half May 30 \u2192 Marathon Oct 31, 2027 (first version)",
+  "half-2027-05-30-marathon-2027-10-31-b": "Half May 30 \u2192 Marathon Oct 31, 2027 (second version)"
 };
 var RACE_KM = 42.2;
 var LONG_RUN_CAP_MIN = 210;
@@ -741,11 +745,11 @@ var SHOE_KM = 700;
 var PHASES = [
   { n:1, name:"Base Building", from:1, to:16, focus:"All easy. No speed work." },
   { n:2, name:"Winter Base", from:17, to:29, focus:"Cross-training mandatory. One tempo per week." },
-  { n:3, name:"Half Specific", from:30, to:39, focus:"Long runs and half-marathon pace finishes." },
+  { n:3, name:"Half Specific", from:30, to:39, focus:"Thursday at half-marathon goal pace. Long runs stay Zone 2." },
   { n:4, name:"Half Taper", from:40, to:42, focus:"Volume down into the half on May 30." },
-  { n:5, name:"Post-Half Recovery", from:43, to:45, focus:"Easy weeks. Let the half clear before rebuilding." },
-  { n:6, name:"Marathon Build", from:46, to:58, focus:"Volume up. Long runs lengthen past 30 km." },
-  { n:7, name:"Marathon Specific", from:59, to:61, focus:"Peak long runs with marathon-pace finishes." },
+  { n:5, name:"Post-Half Recovery", from:43, to:46, focus:"Easy weeks. Let the half clear before rebuilding." },
+  { n:6, name:"Marathon Build", from:47, to:58, focus:"Volume up, three weeks on and one back. Long runs stay Zone 2." },
+  { n:7, name:"Marathon Specific", from:59, to:61, focus:"Longest runs, Zone 2. Thursday at marathon goal pace." },
   { n:8, name:"Marathon Taper", from:62, to:64, focus:"Volume down into October 31." }
 ];
 
@@ -772,112 +776,112 @@ var DEFAULT_PLAN = [
     r:[[1,8,"easy",{strides:1}],[3,6,"easy"],[6,12,"long",{cap:210}]] },
   { s:"2026-10-19", t:"RECOVERY", p:1, n:null,
     r:[[1,6,"easy",{strides:1}],[3,5,"easy"],[6,10,"long",{cap:210}]] },
-  { s:"2026-10-26", t:null, p:1, n:null,
-    r:[[1,5,"easy"],[3,6,"easy",{strides:1}],[4,4,"easy"],[6,12,"long",{cap:210}]] },
+  { s:"2026-10-26", t:null, p:1, n:"Four runs a week from here. Volume holds flat for three weeks while the body adapts",
+    r:[[1,4.5,"easy",{strides:1}],[3,4.5,"easy"],[5,3,"easy"],[6,12,"long",{cap:210}]] },
   { s:"2026-11-02", t:null, p:1, n:null,
-    r:[[1,5,"easy"],[3,6,"easy",{strides:1}],[4,4,"easy"],[6,12,"long",{cap:210}]] },
+    r:[[1,4.5,"easy",{strides:1}],[3,5,"easy"],[5,3.5,"easy"],[6,12,"long",{cap:210}]] },
   { s:"2026-11-09", t:null, p:1, n:null,
-    r:[[0,6,"easy"],[2,6,"easy",{strides:1}],[3,4,"easy"],[6,12,"long",{cap:210}]] },
+    r:[[1,4.5,"easy",{strides:1}],[3,5,"easy"],[5,3.5,"easy"],[6,12,"long",{cap:210}]] },
   { s:"2026-11-16", t:"RECOVERY", p:1, n:null,
-    r:[[1,4,"easy"],[2,5,"easy",{strides:1}],[3,4,"easy"],[6,9,"long",{cap:210}]] },
+    r:[[1,3.5,"easy"],[3,4,"easy"],[5,2.5,"easy"],[6,10,"long",{cap:210}]] },
   { s:"2026-11-23", t:null, p:1, n:"See a doctor before Phase 2",
-    r:[[1,6,"easy"],[2,6,"easy",{strides:1}],[3,4,"easy"],[6,12,"long",{cap:210}]] },
+    r:[[1,5,"easy",{strides:1}],[3,5.5,"easy"],[5,3.5,"easy"],[6,12,"long",{cap:210}]] },
   { s:"2026-11-30", t:null, p:2, n:"Cross-training now mandatory",
-    r:[[0,6,"easy"],[1,7,"easy"],[3,5,"easy"],[6,12,"long",{cap:210}]] },
+    r:[[1,5,"easy",{strides:1}],[3,5.5,"easy"],[5,3.5,"easy"],[6,12,"long",{cap:210}]] },
   { s:"2026-12-07", t:null, p:2, n:null,
-    r:[[1,7,"easy"],[2,8,"easy",{strides:1}],[3,5,"easy"],[6,12,"long",{cap:210}]] },
+    r:[[1,5,"easy",{strides:1}],[3,5.5,"easy"],[5,4,"easy"],[6,12.5,"long",{cap:210}]] },
   { s:"2026-12-14", t:"RECOVERY", p:2, n:null,
-    r:[[1,5,"easy",{strides:1}],[3,5.5,"easy"],[4,4,"easy"],[6,8.5,"long",{cap:210}]] },
+    r:[[1,4,"easy"],[3,4.5,"easy"],[5,3.5,"easy"],[6,10,"long",{cap:210}]] },
   { s:"2026-12-21", t:"HOLD", p:2, n:"Holiday week - hold volume",
-    r:[[1,7,"easy"],[2,8,"easy",{strides:1}],[3,5,"easy"],[6,12,"long",{cap:210}]] },
+    r:[[1,5,"easy",{strides:1}],[3,6,"easy"],[5,4,"easy"],[6,13,"long",{cap:210}]] },
   { s:"2026-12-28", t:null, p:2, n:null,
-    r:[[1,6,"easy"],[3,8,"easy",{strides:1}],[4,6,"easy"],[6,13.5,"long",{cap:210}]] },
-  { s:"2027-01-04", t:null, p:2, n:"Friday tempo begins: 15-20 min",
-    r:[[1,6,"easy"],[3,8,"easy",{strides:1}],[4,6,"tempo",{tempo:20}],[6,14,"long",{cap:210}]] },
+    r:[[1,5,"easy",{strides:1}],[3,6,"easy"],[5,4,"easy"],[6,13,"long",{cap:210}]] },
+  { s:"2027-01-04", t:null, p:2, n:"Thursday tempo begins: 15 min",
+    r:[[1,5.5,"easy",{strides:1}],[3,6,"tempo",{tempo:15}],[5,4,"easy"],[6,13.5,"long",{cap:210}]] },
   { s:"2027-01-11", t:"RECOVERY", p:2, n:null,
-    r:[[1,4,"easy"],[3,3,"easy",{strides:1}],[4,3,"tempo",{tempo:20}],[6,10,"long",{cap:210}]] },
+    r:[[1,4,"easy"],[3,5,"tempo",{tempo:15}],[5,3,"easy"],[6,11,"long",{cap:210}]] },
   { s:"2027-01-18", t:null, p:2, n:null,
-    r:[[1,6,"easy"],[3,8,"easy",{strides:1}],[4,6,"tempo",{tempo:20}],[6,14,"long",{cap:210}]] },
+    r:[[1,6,"easy",{strides:1}],[3,6.5,"tempo",{tempo:20}],[5,4.5,"easy"],[6,14,"long",{cap:210}]] },
   { s:"2027-01-25", t:null, p:2, n:null,
-    r:[[1,6,"easy"],[3,8,"easy",{strides:1}],[4,6,"tempo",{tempo:20}],[6,15,"long",{cap:210}]] },
+    r:[[1,6,"easy",{strides:1}],[3,7,"tempo",{tempo:20}],[5,5,"easy"],[6,14,"long",{cap:210}]] },
   { s:"2027-02-01", t:null, p:2, n:null,
-    r:[[1,6,"easy"],[3,8,"easy",{strides:1}],[4,6,"tempo",{tempo:30}],[6,16,"long",{cap:210}]] },
+    r:[[1,6,"easy",{strides:1}],[3,7,"tempo",{tempo:20}],[5,5,"easy"],[6,15,"long",{cap:210}]] },
   { s:"2027-02-08", t:"RECOVERY", p:2, n:null,
-    r:[[1,4,"easy"],[3,6,"easy",{strides:1}],[4,4,"tempo",{tempo:30}],[6,10,"long",{cap:210}]] },
+    r:[[1,5,"easy"],[3,5.5,"tempo",{tempo:20}],[5,3.5,"easy"],[6,12,"long",{cap:210}]] },
   { s:"2027-02-15", t:null, p:2, n:null,
-    r:[[1,6,"easy"],[3,8,"easy",{strides:1}],[4,6,"tempo",{tempo:30}],[6,16,"long",{cap:210}]] },
-  { s:"2027-02-22", t:null, p:2, n:"Tempo now 30 min",
-    r:[[1,6.5,"easy"],[3,8,"easy",{strides:1}],[4,6,"tempo",{tempo:30}],[6,17,"long",{cap:210}]] },
-  { s:"2027-03-01", t:null, p:3, n:null,
-    r:[[1,7,"easy"],[3,8,"easy",{strides:1}],[4,6,"tempo",{tempo:30}],[6,18,"long",{cap:210}]] },
-  { s:"2027-03-08", t:"RECOVERY", p:3, n:"Begin fueling practice: 30-60g carb/hr",
-    r:[[1,5,"easy"],[3,6,"easy",{strides:1}],[4,4,"tempo",{tempo:30}],[6,12,"long",{cap:210}]] },
-  { s:"2027-03-15", t:null, p:3, n:null,
-    r:[[1,7,"easy"],[3,8,"easy",{strides:1}],[4,6,"tempo",{tempo:30}],[6,18,"long",{cap:210}]] },
-  { s:"2027-03-22", t:null, p:3, n:"Half-marathon tune-up - hard effort, not a PB attempt",
-    r:[[1,8,"easy"],[3,4.5,"easy",{strides:1}],[4,4,"tempo",{tempo:30}],[6,16.5,"race",{cap:210}]] },
-  { s:"2027-03-29", t:null, p:3, n:"Post-race recovery",
-    r:[[1,8,"easy"],[3,5,"easy",{strides:1}],[4,4,"tempo",{tempo:30}],[6,17,"long",{cap:210}]] },
-  { s:"2027-04-05", t:"RECOVERY", p:3, n:"Race-pace finish begins",
-    r:[[1,5.5,"easy"],[3,3.5,"easy",{strides:1}],[4,3,"tempo",{tempo:30}],[6,12,"long",{cap:210,mp:6}]] },
-  { s:"2027-04-12", t:null, p:3, n:null,
-    r:[[1,8,"easy"],[3,5,"easy",{strides:1}],[4,4,"tempo",{tempo:30}],[6,17,"long",{cap:210,mp:7}]] },
-  { s:"2027-04-19", t:null, p:3, n:null,
-    r:[[1,8,"easy"],[3,5.5,"easy",{strides:1}],[4,4,"tempo",{tempo:30}],[6,17.5,"long",{cap:210}]] },
-  { s:"2027-04-26", t:null, p:3, n:null,
-    r:[[1,8,"easy"],[3,6,"easy",{strides:1}],[4,4,"tempo",{tempo:30}],[6,18,"long",{cap:210,mp:8}]] },
-  { s:"2027-05-03", t:"PEAK", p:3, n:"PEAK - longest run before the half",
-    r:[[1,8,"easy"],[3,6,"easy",{strides:1}],[4,4,"tempo",{tempo:30}],[6,19,"long",{cap:210,mp:8}]] },
+    r:[[1,6.5,"easy",{strides:1}],[3,7.5,"tempo",{tempo:25}],[5,5,"easy"],[6,15,"long",{cap:210}]] },
+  { s:"2027-02-22", t:null, p:2, n:null,
+    r:[[1,7,"easy",{strides:1}],[3,7.5,"tempo",{tempo:25}],[5,5.5,"easy"],[6,15,"long",{cap:210}]] },
+  { s:"2027-03-01", t:null, p:3, n:"Thursday tempo moves to half-marathon goal pace",
+    r:[[1,7,"easy",{strides:1}],[3,8,"tempo",{tempo:30}],[5,5,"easy"],[6,16,"long",{cap:210}]] },
+  { s:"2027-03-08", t:"RECOVERY", p:3, n:"Begin fueling practice on long runs: 30-60g carb/hr",
+    r:[[1,5.5,"easy"],[3,6.5,"tempo",{tempo:20}],[5,4,"easy"],[6,13,"long",{cap:210}]] },
+  { s:"2027-03-15", t:null, p:3, n:"Thursday at half-marathon goal pace",
+    r:[[1,7,"easy",{strides:1}],[3,8.5,"tempo",{tempo:30}],[5,5.5,"easy"],[6,16,"long",{cap:210}]] },
+  { s:"2027-03-22", t:null, p:3, n:"Thursday at half-marathon goal pace",
+    r:[[1,7.5,"easy",{strides:1}],[3,8.5,"tempo",{tempo:35}],[5,6,"easy"],[6,16,"long",{cap:210}]] },
+  { s:"2027-03-29", t:null, p:3, n:"Thursday at half-marathon goal pace",
+    r:[[1,7,"easy",{strides:1}],[3,8.5,"tempo",{tempo:35}],[5,6.5,"easy"],[6,17,"long",{cap:210}]] },
+  { s:"2027-04-05", t:"RECOVERY", p:3, n:null,
+    r:[[1,5.5,"easy"],[3,7,"tempo",{tempo:20}],[5,4.5,"easy"],[6,14,"long",{cap:210}]] },
+  { s:"2027-04-12", t:null, p:3, n:"Thursday at half-marathon goal pace",
+    r:[[1,7,"easy",{strides:1}],[3,9,"tempo",{tempo:35}],[5,7,"easy"],[6,17,"long",{cap:210}]] },
+  { s:"2027-04-19", t:null, p:3, n:"Thursday at half-marathon goal pace",
+    r:[[1,7.5,"easy",{strides:1}],[3,9.5,"tempo",{tempo:40}],[5,7,"easy"],[6,18,"long",{cap:210}]] },
+  { s:"2027-04-26", t:null, p:3, n:"Thursday at half-marathon goal pace",
+    r:[[1,7.5,"easy",{strides:1}],[3,10,"tempo",{tempo:40}],[5,7.5,"easy"],[6,18,"long",{cap:210}]] },
+  { s:"2027-05-03", t:"PEAK", p:3, n:"PEAK - 45 km, 19 km long run. Thursday at half-marathon goal pace",
+    r:[[1,8,"easy",{strides:1}],[3,10,"tempo",{tempo:40}],[5,8,"easy"],[6,19,"long",{cap:210}]] },
   { s:"2027-05-10", t:"TAPER", p:4, n:"Volume comes down. Taper will feel wrong - this is normal",
-    r:[[1,7,"easy"],[3,5,"easy",{strides:1}],[4,4,"tempo",{tempo:20}],[6,14,"long",{cap:210}]] },
+    r:[[1,7,"easy",{strides:1}],[3,8,"tempo",{tempo:30}],[5,6,"easy"],[6,15,"long",{cap:210}]] },
   { s:"2027-05-17", t:"TAPER", p:4, n:null,
-    r:[[1,6,"easy"],[3,5,"easy",{strides:1}],[4,3,"tempo",{tempo:20}],[6,10,"long",{cap:210}]] },
-  { s:"2027-05-24", t:"RACE WEEK", p:4, n:"HALF MARATHON SUNDAY. Saturday full rest. Nothing new.",
-    r:[[1,5,"easy"],[3,4,"easy",{strides:1}],[4,3,"easy"],[6,21.1,"race"]] },
-  { s:"2027-05-31", t:"RECOVERY", p:5, n:"Post-half recovery. Nothing hard, nothing long",
-    r:[[1,4,"easy"],[3,4,"easy"],[4,4,"easy"],[6,8,"long",{cap:210}]] },
+    r:[[1,6,"easy",{strides:1}],[3,6.5,"tempo",{tempo:20}],[5,4.5,"easy"],[6,12,"long",{cap:210}]] },
+  { s:"2027-05-24", t:"RACE WEEK", p:4, n:"HALF MARATHON SUNDAY. Saturday is a 3 km shakeout. Nothing new.",
+    r:[[1,6,"easy"],[3,5,"tempo",{tempo:10}],[5,3,"easy"],[6,21.1,"race"]] },
+  { s:"2027-05-31", t:"RECOVERY", p:5, n:"Post-half recovery. Easy effort only",
+    r:[[1,4,"easy"],[3,4,"easy"],[5,4,"easy"],[6,6,"long",{cap:210}]] },
   { s:"2027-06-07", t:"RECOVERY", p:5, n:"Still rebuilding. Easy effort only",
-    r:[[1,5,"easy"],[3,5,"easy"],[4,4,"easy"],[6,10,"long",{cap:210}]] },
-  { s:"2027-06-14", t:null, p:5, n:"Strides return",
-    r:[[1,6,"easy"],[3,6,"easy",{strides:1}],[4,4,"easy"],[6,12,"long",{cap:210}]] },
-  { s:"2027-06-21", t:null, p:6, n:"Marathon build begins. Friday tempo returns",
-    r:[[1,6,"easy"],[3,6,"easy",{strides:1}],[4,5,"tempo",{tempo:20}],[6,14,"long",{cap:210}]] },
-  { s:"2027-06-28", t:null, p:6, n:null,
-    r:[[1,7,"easy"],[3,6,"easy",{strides:1}],[4,5,"tempo",{tempo:20}],[6,16,"long",{cap:210}]] },
-  { s:"2027-07-05", t:"RECOVERY", p:6, n:null,
-    r:[[1,5,"easy"],[3,5,"easy",{strides:1}],[4,4,"tempo",{tempo:20}],[6,12,"long",{cap:210}]] },
+    r:[[1,5.5,"easy"],[3,6,"easy"],[5,4.5,"easy"],[6,8,"long",{cap:210}]] },
+  { s:"2027-06-14", t:null, p:5, n:null,
+    r:[[1,6,"easy",{strides:1}],[3,7,"easy"],[5,5,"easy"],[6,10,"long",{cap:210}]] },
+  { s:"2027-06-21", t:null, p:5, n:null,
+    r:[[1,6.5,"easy",{strides:1}],[3,8,"easy"],[5,5.5,"easy"],[6,10,"long",{cap:210}]] },
+  { s:"2027-06-28", t:null, p:6, n:"Marathon build begins. Thursday tempo returns",
+    r:[[1,7,"easy",{strides:1}],[3,8.5,"tempo",{tempo:20}],[5,6.5,"easy"],[6,14,"long",{cap:210}]] },
+  { s:"2027-07-05", t:null, p:6, n:"Returning to pre-half volume. Hold a week if it feels heavy",
+    r:[[1,8,"easy",{strides:1}],[3,10,"tempo",{tempo:25}],[5,7,"easy"],[6,17,"long",{cap:210}]] },
   { s:"2027-07-12", t:null, p:6, n:null,
-    r:[[1,7,"easy"],[3,7,"easy",{strides:1}],[4,6,"tempo",{tempo:25}],[6,17,"long",{cap:210}]] },
-  { s:"2027-07-19", t:null, p:6, n:null,
-    r:[[1,7,"easy"],[3,7,"easy",{strides:1}],[4,6,"tempo",{tempo:25}],[6,19,"long",{cap:210}]] },
+    r:[[1,9,"easy",{strides:1}],[3,10.5,"tempo",{tempo:30}],[5,7.5,"easy"],[6,19,"long",{cap:210}]] },
+  { s:"2027-07-19", t:"RECOVERY", p:6, n:null,
+    r:[[1,7,"easy"],[3,8.5,"tempo",{tempo:20}],[5,6.5,"easy"],[6,15,"long",{cap:210}]] },
   { s:"2027-07-26", t:null, p:6, n:"Long run past two hours. Fuel every 30-45 min",
-    r:[[1,8,"easy"],[3,7,"easy",{strides:1}],[4,6,"tempo",{tempo:30}],[6,21,"long",{cap:210}]] },
-  { s:"2027-08-02", t:"RECOVERY", p:6, n:null,
-    r:[[1,6,"easy"],[3,5,"easy",{strides:1}],[4,5,"tempo",{tempo:30}],[6,14,"long",{cap:210}]] },
-  { s:"2027-08-09", t:null, p:6, n:null,
-    r:[[1,8,"easy"],[3,7,"easy",{strides:1}],[4,7,"tempo",{tempo:30}],[6,22,"long",{cap:210}]] },
-  { s:"2027-08-16", t:null, p:6, n:null,
-    r:[[1,8,"easy"],[3,8,"easy",{strides:1}],[4,7,"tempo",{tempo:30}],[6,24,"long",{cap:210}]] },
-  { s:"2027-08-23", t:null, p:6, n:"Marathon-pace finish begins",
-    r:[[1,8,"easy"],[3,8,"easy",{strides:1}],[4,7,"tempo",{tempo:30}],[6,25,"long",{cap:210,mp:6}]] },
-  { s:"2027-08-30", t:"RECOVERY", p:6, n:null,
-    r:[[1,6,"easy"],[3,6,"easy",{strides:1}],[4,5,"tempo",{tempo:30}],[6,16,"long",{cap:210}]] },
-  { s:"2027-09-06", t:null, p:6, n:null,
-    r:[[1,8,"easy"],[3,8,"easy",{strides:1}],[4,7,"tempo",{tempo:30}],[6,27,"long",{cap:210,mp:7}]] },
-  { s:"2027-09-13", t:null, p:6, n:null,
-    r:[[1,8,"easy"],[3,8,"easy",{strides:1}],[4,7,"tempo",{tempo:30}],[6,29,"long",{cap:210,mp:8}]] },
-  { s:"2027-09-20", t:"RECOVERY", p:7, n:null,
-    r:[[1,6,"easy"],[3,6,"easy",{strides:1}],[4,5,"tempo",{tempo:30}],[6,18,"long",{cap:210}]] },
-  { s:"2027-09-27", t:null, p:7, n:"Dress rehearsal: race kit, race fuel, race pace",
-    r:[[1,8,"easy"],[3,8,"easy",{strides:1}],[4,7,"tempo",{tempo:30}],[6,30,"long",{cap:210,mp:8}]] },
-  { s:"2027-10-04", t:"PEAK", p:7, n:"PEAK - longest run of the whole block",
-    r:[[1,8,"easy"],[3,8,"easy",{strides:1}],[4,7,"tempo",{tempo:30}],[6,32,"long",{cap:210,mp:8}]] },
+    r:[[1,9,"easy",{strides:1}],[3,11,"tempo",{tempo:30}],[5,8,"easy"],[6,20,"long",{cap:210}]] },
+  { s:"2027-08-02", t:null, p:6, n:null,
+    r:[[1,9.5,"easy",{strides:1}],[3,11,"tempo",{tempo:35}],[5,8.5,"easy"],[6,21,"long",{cap:210}]] },
+  { s:"2027-08-09", t:null, p:6, n:"Thursday at marathon goal pace from here",
+    r:[[1,9.5,"easy",{strides:1}],[3,11,"tempo",{tempo:40}],[5,8.5,"easy"],[6,23,"long",{cap:210}]] },
+  { s:"2027-08-16", t:"RECOVERY", p:6, n:null,
+    r:[[1,8,"easy"],[3,10,"tempo",{tempo:25}],[5,7,"easy"],[6,17,"long",{cap:210}]] },
+  { s:"2027-08-23", t:null, p:6, n:"Thursday at marathon goal pace",
+    r:[[1,10,"easy",{strides:1}],[3,11.5,"tempo",{tempo:40}],[5,8.5,"easy"],[6,24,"long",{cap:210}]] },
+  { s:"2027-08-30", t:null, p:6, n:"Thursday at marathon goal pace",
+    r:[[1,10.5,"easy",{strides:1}],[3,12,"tempo",{tempo:45}],[5,8.5,"easy"],[6,25,"long",{cap:210}]] },
+  { s:"2027-09-06", t:null, p:6, n:"Thursday at marathon goal pace",
+    r:[[1,10.5,"easy",{strides:1}],[3,12,"tempo",{tempo:50}],[5,9.5,"easy"],[6,26,"long",{cap:210}]] },
+  { s:"2027-09-13", t:"RECOVERY", p:6, n:null,
+    r:[[1,9,"easy"],[3,10.5,"tempo",{tempo:30}],[5,7.5,"easy"],[6,19,"long",{cap:210}]] },
+  { s:"2027-09-20", t:null, p:7, n:"Thursday at marathon goal pace",
+    r:[[1,10.5,"easy",{strides:1}],[3,12,"tempo",{tempo:50}],[5,9.5,"easy"],[6,28,"long",{cap:210}]] },
+  { s:"2027-09-27", t:null, p:7, n:"Dress rehearsal: race kit and race fuel. Long run stays Zone 2",
+    r:[[1,11,"easy",{strides:1}],[3,12.5,"tempo",{tempo:55}],[5,9.5,"easy"],[6,29,"long",{cap:210}]] },
+  { s:"2027-10-04", t:"PEAK", p:7, n:"PEAK - 64.5 km, 30.5 km long run. Thursday at marathon goal pace",
+    r:[[1,11,"easy",{strides:1}],[3,13,"tempo",{tempo:60}],[5,10,"easy"],[6,30.5,"long",{cap:210}]] },
   { s:"2027-10-11", t:"TAPER", p:8, n:"Volume down. The work is already done",
-    r:[[1,7,"easy"],[3,6,"easy",{strides:1}],[4,5,"tempo",{tempo:20}],[6,22,"long",{cap:210,mp:5}]] },
+    r:[[1,9.5,"easy",{strides:1}],[3,11,"tempo",{tempo:40}],[5,7.5,"easy"],[6,24,"long",{cap:210}]] },
   { s:"2027-10-18", t:"TAPER", p:8, n:"Legs will feel flat. That is the taper, not your fitness",
-    r:[[1,6,"easy"],[3,5,"easy",{strides:1}],[4,4,"tempo",{tempo:20}],[6,16,"long",{cap:210}]] },
-  { s:"2027-10-25", t:"RACE WEEK", p:8, n:"MARATHON SUNDAY. Saturday full rest. Nothing new.",
-    r:[[1,5,"easy"],[3,4,"easy"],[4,3,"easy"],[6,42.2,"race"]] }
+    r:[[1,8,"easy",{strides:1}],[3,9,"tempo",{tempo:25}],[5,7,"easy"],[6,16,"long",{cap:210}]] },
+  { s:"2027-10-25", t:"RACE WEEK", p:8, n:"MARATHON SUNDAY. Saturday is a 3 km shakeout. Nothing new.",
+    r:[[1,8,"easy"],[3,6,"tempo",{tempo:15}],[5,3,"easy"],[6,42.2,"race"]] }
 ];
 
 var WEEK1_MONDAY = DEFAULT_PLAN[0].s;   // 2026-08-10
@@ -1055,6 +1059,12 @@ function supportOffsets(runs){
     if (r.type !== "long" && r.type !== "race") easy.push(r.off);
   });
   easy.sort(function(a, b){ return a - b; });
+  /* Not the day before the long run, when legs should be fresh for it -
+     unless that would leave fewer than two days to choose from. */
+  var longOff = runs.filter(function(r){ return r.type === "long" || r.type === "race"; })
+                    .map(function(r){ return r.off; })[0];
+  var fresh = easy.filter(function(o){ return o !== longOff - 1; });
+  if (fresh.length >= 2) easy = fresh;
   // the first and last of the shorter runs, so the two sessions stay apart
   var st = easy.length > 1 ? [easy[0], easy[easy.length - 1]] : easy.slice();
   // free days, skipping Monday: that is the day after the long run
@@ -1332,6 +1342,7 @@ var TYPE_LABEL = { easy:"Easy", long:"Long", tempo:"Tempo", race:"Race" };
 function runPrescription(w, d){
   var r = runAt(w, d), out = [];
   if (!r) return out;
+  if (r.type === "long") out.push("Zone 2 only");
   if (r.tempo) out.push(r.tempo + " min at tempo");
   if (r.mp) out.push("last " + n1(r.mp) + " km at " + racePaceName(w));
   if (r.strides && stridesOn()) out.push(STRIDES_REPS[0] + "\u2013" +
