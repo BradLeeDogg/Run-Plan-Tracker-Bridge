@@ -710,7 +710,7 @@ textarea:focus{outline:none;border-color:var(--accent)}
    release. The page reports this; the shell reports whatever it actually has
    stored, and the two disagreeing is the whole point — that is how you tell
    "the new page loaded" from "the new page loaded and the shell caught up". */
-var APP_VERSION = "v28";
+var APP_VERSION = "v29";
 var PLAN_ID = "half-2027-05-30-marathon-2027-10-31";
 var PLAN_NAME = "Half May 30 \u2192 Marathon Oct 31, 2027";
 var RACE_DATE = "2027-10-31";
@@ -721,6 +721,13 @@ var RACE_DATE = "2027-10-31";
    `var state = load()` further down this file — a `var` below that point is
    hoisted but not yet assigned, and planIdFor would read undefined. */
 var PLAN_ID_PRIOR = ["marathon-2027-05-29", "marathon-2027-05-30"];
+/* What each earlier plan was called. A device still on one of them has no
+   stored name, and without this the header would put the new plan's name
+   over the old plan's weeks and race day. */
+var PLAN_NAME_PRIOR = {
+  "marathon-2027-05-29": "Marathon Build - May 29, 2027",
+  "marathon-2027-05-30": "Marathon Build \u2014 May 30, 2027"
+};
 var RACE_KM = 42.2;
 var LONG_RUN_CAP_MIN = 210;
 var SHOE_KM = 700;
@@ -2607,7 +2614,11 @@ function fmtK(x){
    already logged is moved to history first, so switching plans cannot cost you
    a run you actually did. */
 function planIsCurrent(){ return state.planId === PLAN_ID; }
-function planName(){ return state.planName || PLAN_NAME; }
+function planName(){
+  if (state.planName) return state.planName;
+  if (planIsCurrent()) return PLAN_NAME;
+  return PLAN_NAME_PRIOR[state.planId] || "Your plan";
+}
 
 /* ---------- reshaping several weeks at once ----------
 
