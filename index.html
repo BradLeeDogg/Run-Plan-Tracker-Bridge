@@ -2856,19 +2856,43 @@ function planSlots(plan, key){
   });
   return out.sort(function(a, b){ return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
 }
-/* The free slot nearest a date, exact match first. Entries are matched in date
-   order so that an earlier run cannot be displaced by a later one reaching
-   back for the same slot. */
-function nearestSlot(slots, taken, date, windowDays){
-  var best = null, bestGap = Infinity;
-  for (var i = 0; i < slots.length; i++){
-    if (taken[slots[i].id]) continue;
-    var gap = Math.abs(dayDiff(parseISO(date), parseISO(slots[i].date)));
-    if (gap > windowDays) continue;
-    if (gap < bestGap){ best = slots[i]; bestGap = gap; }
-    if (gap === 0) break;                      // nothing beats the same day
+/* Pair logged entries with slots on another plan by date.
+
+   Taking each entry in date order and giving it the nearest free slot let an
+   early entry push every later one along: a run logged a day early took the
+   next slot, the run that belonged there took the one after, and a whole block
+   of runs could end up a slot out, each on the wrong day, with the last one
+   marking a future run done. So every exact-date pairing is made first, then
+   every one a day out, then two, and so on — an entry only reaches further
+   when its own day is already filled by a run that was done on that day.
+
+   Done entries are placed before skipped ones, so a skip cannot hold a slot
+   that a run actually done nearby needs. And nothing lands on a slot after
+   today unless it was itself logged for that day: a run already done does not
+   belong to a day still to come. */
+function assignSlots(entries, slots, windowDays){
+  var out = new Array(entries.length), taken = {}, now = toISO(today()), gap, k;
+  var order = entries.map(function(e, i){ return i; }).sort(function(a, b){
+    var da = entries[a].log.done ? 0 : 1, db = entries[b].log.done ? 0 : 1;
+    if (da !== db) return da - db;
+    var x = entries[a].log.date, y = entries[b].log.date;
+    return x < y ? -1 : x > y ? 1 : a - b;
+  });
+  for (gap = 0; gap <= windowDays; gap++){
+    order.forEach(function(i){
+      if (out[i]) return;
+      var date = entries[i].log.date, limit = date > now ? date : now;
+      for (k = 0; k < slots.length; k++){
+        var sl = slots[k];
+        if (taken[sl.id] || sl.date > limit) continue;
+        if (Math.abs(dayDiff(parseISO(date), parseISO(sl.date))) !== gap) continue;
+        taken[sl.id] = true;
+        out[i] = sl;
+        break;
+      }
+    });
   }
-  return best;
+  return out;
 }
 
 /* Work out where everything lands, without changing anything. The preview and
@@ -2902,11 +2926,10 @@ function planTransfer(newPlan, opts){
   });
   runEntries.sort(function(a, b){ return a.log.date < b.log.date ? -1 : 1; });
 
-  var runSlots = planSlots(newPlan, "runs"), takenRuns = {};
-  runEntries.forEach(function(e){
-    var slot = nearestSlot(runSlots, takenRuns, e.log.date, REATTACH_DAYS);
+  var runSlots = assignSlots(runEntries, planSlots(newPlan, "runs"), REATTACH_DAYS);
+  runEntries.forEach(function(e, i){
+    var slot = runSlots[i];
     if (slot){
-      takenRuns[slot.id] = true;
       var copy = JSON.parse(JSON.stringify(e.log));
       delete copy.fromPlan;                     // it is on a plan again
       delete copy.extra;
@@ -2933,11 +2956,10 @@ function planTransfer(newPlan, opts){
     var key = pair[0];
     var entries = gather(state[key], state.plan, key)
       .sort(function(a, b){ return a.log.date < b.log.date ? -1 : 1; });
-    var slots = planSlots(newPlan, key), taken = {};
-    entries.forEach(function(e){
-      var slot = nearestSlot(slots, taken, e.log.date, REATTACH_DAYS);
+    var slots = assignSlots(entries, planSlots(newPlan, key), REATTACH_DAYS);
+    entries.forEach(function(e, i){
+      var slot = slots[i];
       if (!slot) return;                        // no home, and no history for these
-      taken[slot.id] = true;
       res[key][slot.id] = JSON.parse(JSON.stringify(e.log));
       res[pair[1]]++;
     });
