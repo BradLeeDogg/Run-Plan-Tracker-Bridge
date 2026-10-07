@@ -2725,6 +2725,27 @@ function placeStrides(from, to, pos){
   return { changed:changed, skipped:skipped };
 }
 
+/* The same for the tempo: move it to the nth shorter run of each week in a
+   range, keeping that week's tempo minutes. Only weeks that already have a
+   tempo are moved, and there is no "off" here - taking a tempo out would lose
+   its minutes, and the week's edit sheet already does that for one week. */
+function placeTempo(from, to, pos){
+  var changed = 0, skipped = 0;
+  for (var w = from; w <= to && w < planLen(); w++){
+    var rs = runsOf(w), slots = qualitySlots(w), cur = tempoIndex(w);
+    if (cur < 0) continue;                      // no tempo this week
+    var want = slots[pos] ? slots[pos].d : null;
+    if (want === null){ skipped++; continue; }
+    if (want === cur) continue;
+    var mins = rs[cur].tempo;
+    rs[cur].type = "easy"; delete rs[cur].tempo;
+    rs[want].type = "tempo";
+    if (mins) rs[want].tempo = mins;
+    changed++;
+  }
+  return { changed:changed, skipped:skipped };
+}
+
 /* ---------- reading a plan from outside the app ----------
 
    Until now the only plan this app knew was the one in its own source, which
@@ -5399,7 +5420,7 @@ var rsDraft = null;
 function openReshapeSheet(){
   draft = null; editW = null; strDraft = null; xtDraft = null;
   var c = currentWeekIndex();
-  rsDraft = { op:"scale", from:c + 1, to:planLen(), pct:100, which:"long", target:5, spos:1 };
+  rsDraft = { op:"scale", from:c + 1, to:planLen(), pct:100, which:"long", target:5, spos:1, tpos:1 };
   drawReshapeSheet();
   scrim.classList.add("on"); sheet.classList.add("on");
 }
@@ -5416,7 +5437,7 @@ function drawReshapeSheet(){
     'and there is an undo afterwards.</div>';
 
   h += '<div class="field"><span class="label">What to change</span><div class="seg">' +
-    seg("op","scale","Distances") + seg("op","move","A day") + seg("op","strides","Strides") +
+    seg("op","scale","Distances") + seg("op","move","A day") + seg("op","strides","Strides") + seg("op","tempo","Tempo") +
     '</div></div>';
 
   h += '<div class="field"><span class="label">Weeks</span><div class="inputs">' +
@@ -5449,6 +5470,12 @@ function drawReshapeSheet(){
       'run and race day are never counted, so &ldquo;2nd run&rdquo; is Thursday in a Tue / Thu / ' +
       'Sun week and Wednesday in a Tue / Wed / Fri / Sun week. Only weeks that already have ' +
       'strides are changed: recovery and race weeks without them stay without them.</div></div>';
+  } else if (r.op === "tempo"){
+    h += '<div class="field"><span class="label">Put the tempo on</span><div class="seg qseg">' +
+      seg("tpos","0","1st run") + seg("tpos","1","2nd run") + seg("tpos","2","3rd run") + '</div>' +
+      '<div class="tiny" style="margin-top:6px">Counted from the start of each week, the long run ' +
+      'and race day never counted. Each week keeps its own tempo minutes. Only weeks that already ' +
+      'have a tempo are changed.</div></div>';
   } else {
     h += '<div class="field"><span class="label">Move</span><div class="chips cond">' +
       '<button data-rs="which" data-v="long"' + (r.which === "long" ? ' class="on"' : '') +
@@ -5509,6 +5536,19 @@ function applyReshape(){
           body:sres.changed + " week" + (sres.changed === 1 ? "" : "s") + " changed." +
             (sres.skipped ? " " + sres.skipped + " week" + (sres.skipped === 1 ? " has" : "s have") +
               " no run in that place and " + (sres.skipped === 1 ? "was" : "were") + " left alone." : "") +
+            "\n\nStats has an undo." });
+    return;
+  }
+
+  if (r.op === "tempo"){
+    var tpos = parseInt(r.tpos, 10);
+    snapshot("Tempo in weeks " + from + "\u2013" + to);
+    var tres = placeTempo(from-1, to-1, tpos);
+    save(); closeSheet(); render();
+    say({ title:"Tempo on the " + ["1st","2nd","3rd"][tpos] + " run, weeks " + from + "\u2013" + to,
+          body:tres.changed + " week" + (tres.changed === 1 ? "" : "s") + " changed." +
+            (tres.skipped ? " " + tres.skipped + " week" + (tres.skipped === 1 ? " has" : "s have") +
+              " no run in that place and " + (tres.skipped === 1 ? "was" : "were") + " left alone." : "") +
             "\n\nStats has an undo." });
     return;
   }
