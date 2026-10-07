@@ -43,10 +43,8 @@ week about 20% back.
 | Sep 2027 | 58–62 | 26–29 |
 | Week of 4 Oct — marathon peak | 64.5 | 30.5 |
 
-Strides go on the second run of the week: Thursday while the week is
-Tue / Thu / Sun, Wednesday once it is Tue / Wed / Fri / Sun. Recovery and race
-weeks go without. *Reshape several weeks → Strides* moves them for a whole range
-of weeks at once, and *Reshape several weeks → Tempo* does the same for the
+*Reshape several weeks → Strides* moves the strides for a whole
+range of weeks at once, and *Reshape several weeks → Tempo* does the same for the
 tempo, keeping each week's minutes.
 
 In the four-run weeks strength sits on Tuesday and Friday and cross-training
