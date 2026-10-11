@@ -2044,24 +2044,69 @@ var PB_DISTANCES = [
    corners are exactly the kilometre marks plus the points one window-width
    before them. So checking those two families finds the true best of the
    model, rather than sampling along the run and hoping to land near it. */
-function bestWindowKm(splits, W){
+/* How much ground one split entry covers.
+
+   A watch does not have to lap every kilometre. Half-kilometre and mile laps
+   are both common settings, and the array of times alone cannot say which was
+   used. When the splits account for the whole run, the run's own distance can:
+   twenty-four entries across twelve kilometres are half-kilometre laps, and
+   reading them as kilometres halves every pace and invents records the legs
+   never ran — a 6:05/km runner comes out with a 2:53 kilometre and a 14:58
+   five.
+
+   Coverage is what distinguishes the two cases. Splits that add up to the
+   whole run's time describe the whole run, so the distance divides evenly over
+   them. Splits that fall short cover only part of it — splitsFromPoints emits
+   nothing for a trailing part-kilometre, and a run logged by hand may carry
+   only the first few — and there is nothing to divide, so a kilometre each is
+   the only safe reading. */
+function splitEntryKm(l){
+  var sp = l && l.splits;
+  if (!sp || !sp.length) return 0;
+  var n = sp.length, i, sum = 0;
+  for (i = 0; i < n; i++) sum += sp[i];
+  if (l.km > 0 && l.durSec > 0 && sum > 0){
+    /* The splits time this fraction of the run, so at roughly even pace they
+       cover that fraction of its distance — which then divides over them.
+       Going through coverage rather than straight to km/n is what lets mile
+       laps work: seven of them on a twelve-kilometre run time 94% of it, not
+       all of it, and dividing the whole distance by seven would stretch each
+       lap to 1.71 km. */
+    var covered = sum / l.durSec;
+    if (covered > 0.2 && covered < 1.05){
+      var per = covered * l.km / n;
+      // laps shorter than 100 m or longer than 5 km are not a lap setting
+      if (per > 0.1 && per < 5) return per;
+    }
+  }
+  return 1;
+}
+
+/* Fastest continuous stretch of W kilometres, read from splits that each
+   cover entryKm. */
+function bestWindowKm(splits, W, entryKm){
   if (!splits || !splits.length || !(W > 0)) return null;
   var n = splits.length, EPS = 1e-9;
-  if (W > n + EPS) return null;                    // the run never went that far
+  var per = (entryKm > 0) ? entryKm : 1;
+  var total = n * per;
+  if (W > total + EPS) return null;                // the run never went that far
 
   var cum = [0], i;
   for (i = 0; i < n; i++) cum.push(cum[i] + splits[i]);
   var timeAt = function(x){                        // elapsed time at x km
     if (x <= 0) return 0;
-    if (x >= n) return cum[n];
-    var k = Math.floor(x);
-    return cum[k] + splits[k] * (x - k);
+    if (x >= total) return cum[n];
+    var k = Math.floor(x / per);
+    if (k >= n) return cum[n];
+    return cum[k] + splits[k] * ((x - k * per) / per);
   };
 
+  /* The window time is piecewise-linear in where it starts, so its minimum is
+     at a breakpoint: a lap boundary entering the window, or one leaving it. */
   var best = null, starts = [], j;
-  for (j = 0; j <= n; j++){ starts.push(j); starts.push(j - W); }
+  for (j = 0; j <= n; j++){ starts.push(j * per); starts.push(j * per - W); }
   starts.forEach(function(x){
-    if (x < -EPS || x + W > n + EPS) return;       // window falls off the run
+    if (x < -EPS || x + W > total + EPS) return;   // window falls off the run
     x = Math.max(0, x);
     var t = timeAt(x + W) - timeAt(x);
     if (best === null || t < best) best = t;
@@ -2086,7 +2131,7 @@ function pbAt(km, ents){
   };
   ents.forEach(function(e){
     var l = e.log;
-    var w = bestWindowKm(l.splits, km);
+    var w = bestWindowKm(l.splits, km, splitEntryKm(l));
     if (w) take({ sec:Math.round(w), km:km, e:e, from:"splits" });
     /* A run barely past the distance is that distance run; 15% past is a
        different session, and its pace would not be a record of anything.
@@ -5178,7 +5223,9 @@ function syncPace(){
     var tot = sp.reduce(function(a, b){ return a+b; }, 0);
     // The part-kilometre the run ended on, worked out from what is typed so far.
     var tl = tailOf({ done:true, km:draft.km, durSec:sec, splits:sp });
+    var per = splitEntryKm({ done:true, km:draft.km, durSec:sec, splits:sp });
     sel.innerHTML = sp.length + " split" + (sp.length === 1 ? "" : "s") +
+      (per && Math.abs(per - 1) > 0.05 ? " of <b>" + n1(per) + " km</b>" : "") +
       " &middot; fastest <b>" + splitStr(fast) + "</b> &middot; slowest <b>" + splitStr(slow) +
       "</b> &middot; mean <b>" + splitStr(tot / sp.length) + "</b>" +
       (tl ? '<br><span style="color:var(--dim)">plus ' + splitStr(tl.sec) + " for the last " +
